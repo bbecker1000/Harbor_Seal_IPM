@@ -1,3 +1,19 @@
+2021-08-06
+
+Silas - These are my notes from a few years ago.  Please:
+
+1. Please look up the MARSS package for guidance
+2. I added two .R files to your code folder with some of the code for the presentation I showed you for 1997 - 2017. 
+The files are essentially copies of the MARRS vignette (link: https://cran.r-project.org/web/packages/MARSS/vignettes/UserGuide.pdf) 
+chapters 8 and 9 (used to be chapters 7 and 8), hence my file names.
+3. You could try to updated this code or start from scratch, up to you. I recall that I didn't get all of the Ch8 file to run.
+
+Thanks!
+
+######################################################################################################
+##### Old notes below from 2017-2018, may be useful to understand motivation behind existing code ####
+######################################################################################################
+
 =Seal project outline
 
 BREEDING SEASON EMPHASIS
