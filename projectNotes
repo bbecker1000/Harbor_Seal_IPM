@@ -1,0 +1,62 @@
+=Seal project outline
+
+BREEDING SEASON EMPHASIS
+
+1. population trends 
+   overall and by site
+   
+2. get survivorship (NO GOOD)
+      year on year adult + pup
+
+3. get fecundity = 
+      pups/adults 
+      assume 50:50 sex ratio
+         = so pups/(0.5*adults)
+         but males in water more during peak pupping season.  check with sarah.....
+
+4. What number of surveys needed for monitoring?
+   top_n with regressions
+      compare estimates of population growth
+      
+5. Covariates on fecundity, pups, etc.
+   ENSO
+  
+   double cpoint crash in 2016 with slides and coyote
+   how much move to other colonies?
+   
+   phenology cline by site?
+   
+   if lose 2 big centers what happens to PORE colony?
+   
+   check with Codde on coyotes
+   
+6. MARRS
+make files with top count of year for 
+  1) adults, 
+  2) pups
+  3) adults + pups
+
+H1: DP+DE+BL vs TB+TP
+H2: all independent  (basic models show this is lowest AIC by far)
+H3: Estuary vs Coast
+      DE+BL+TB vs. DP + TP
+don't count DUX, PB, or PRH
+WELL, maybe count PRH and 
+   
+ -> how include ENSO covariate
+ -> how code inverse relationship between sites withing a hypothesized group?  B-matrix, but performs poorly in converging.
+   
+   OTHER IDEAS FOR MARRS
+   weigh station of 3 small sites during molt?
+   
+COMPARE: PORE Breed and Molt VS NMFS Molt 
+  plots and population parameters.
+  
+  
+7. basic MARRS file show that 5 independent pops are most parsimoniuos
+next going with GAMMS for pops over time and MEI index
+
+8. fix plots
+report MARSS
+report GLMMs including pup/adult
+report rstanarm models
