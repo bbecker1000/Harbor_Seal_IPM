@@ -79,7 +79,7 @@ hseals <- subset(hseals, Age == "PUP" | Age == "ADULT")
 # function to get the max count for each year.
 # args are location (string) and table 
 get_max <- function(tbl, location) {
-  tbl <- subset(adult_b, Subsite == location)
+  tbl <- subset(tbl, Subsite == location)
   m <- tbl %>% group_by(Year) %>% slice(which.max(Count))
   return(m)
 }
