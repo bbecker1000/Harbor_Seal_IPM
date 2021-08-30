@@ -343,7 +343,7 @@ U.model="unequal"
 Q.model="diagonal and unequal"
 R.model="diagonal and equal"
 B.model="diagonal and unequal"
-kemNS = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) )
+kemNS = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) ) #also convergence warning.. something to do with Q and B??
 
 #plot residuals
 par(mfrow=c(2,3))
