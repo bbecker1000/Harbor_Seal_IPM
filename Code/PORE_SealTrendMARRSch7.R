@@ -225,6 +225,7 @@ par(mfrow=c(1,1))
 
 ###################################################
 ### code chunk number 23: Cs2_Code4
+### Each population is independent
 ###################################################
 Z.model=factor(c(1,2,3,4,5))
 U.model="unequal"
@@ -370,12 +371,12 @@ coef(kemNS)
 
 ##########################################################
 #Three subpopulations with different population parameters  
-## (BL + DE/DP + TP/DE)
+## (BL + DE/DP + TP/TB)
 ##########################################################
-Z.model=factor(c(1,2,2,3,3))
+Z.model=factor(c(1,2,2,3,3)) 
 U.model="unequal"
 Q.model="diagonal and unequal"
-R.model="diagonal and equal"
+R.model="diagonal and unequal" #this makes the plots nonlinear, diagonal and equal makes them linear
 B.model= "identity"   # "diagonal and unequal"
 kem3pop = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) )
 
@@ -387,6 +388,7 @@ lines(years,kem3pop$states[1,]-1.96*kem3pop$states.se[1,],type="l",
 lines(years,kem3pop$states[1,]+1.96*kem3pop$states.se[1,],type="l",
       lwd=1,lty=2,col="red")
 lines(years,kem3pop$states[1,],type="l",lwd=2)
+title("Bolinas Lagoon",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3", "4", "5"), ylim=c(3,9), bty="L")
@@ -395,6 +397,7 @@ lines(years,kem3pop$states[2,]-1.96*kem3pop$states.se[2,],type="l",
 lines(years,kem3pop$states[2,]+1.96*kem3pop$states.se[2,],type="l",
       lwd=1,lty=2,col="red")
 lines(years,kem3pop$states[2,],type="l",lwd=2)
+title("Drakes Estero, Double Point",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3", "4", "5"), ylim=c(3,9), bty="L")
@@ -403,6 +406,7 @@ lines(years,kem3pop$states[3,]-1.96*kem3pop$states.se[3,],type="l",
 lines(years,kem3pop$states[3,]+1.96*kem3pop$states.se[3,],type="l",
       lwd=1,lty=2,col="red")
 lines(years,kem3pop$states[3,],type="l",lwd=2)
+title("Tomales Bay and Tomales Point",cex.main=.9)
 
 par(mfrow=c(1,1))
 plot(years,kem3pop$states[1,])
@@ -429,6 +433,7 @@ coef(kem3pop, type="matrix")$B
 ## AICs
 c(kem_onepop$AIC,kem2$AIC,kem4_ind$AIC,kemNS$AIC, kemOB$AIC, kem3pop$AIC)
 
+#Best AIC is 3 groups, then all independent 
 
 
 ############################
