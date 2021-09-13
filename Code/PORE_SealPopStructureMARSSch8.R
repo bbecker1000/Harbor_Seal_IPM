@@ -34,7 +34,7 @@ legendnames = (unlist(dimnames(sealData)[1]))
 ### code chunk number 10: Cs03_set.up.Z.models
 ###################################################
 #H1 Site
-Z1=factor(c("BL", "DE", "DP", "TB", "TP")) #site
+Z1=factor(c("BL", "DE", "DP", "TB", "TP")) 
 #H2 coastal+estuary
 Z2=factor(c("E","E","C","E","C")) 
 #H3 N and S
@@ -72,7 +72,7 @@ model.constant=list(
 
 
 ###################################################
-### code chunk number 13: Cs05_run.the.models  (runs in 75 sec with H=5)
+### code chunk number 13: Cs05_run.the.models  (runs in 75 sec with H=5) pg 113
 ###################################################
 out.tab=NULL
 fits=list()
@@ -81,7 +81,7 @@ for(i in 1:length(Z.models)){
     fit.model = c(list(Z=Z.models[[i]], Q=Q.model), model.constant)
     fit = MARSS(sealData, model=fit.model,
                 silent=TRUE, control=list(maxit=1000))
-    out=data.frame(H=names(Z.models)[i], Q=Q.model, U=U.model, B=B.model,
+    out=data.frame(H=names(Z.models)[i], Q=Q.model, U=U.model, 
                    logLik=fit$logLik, AICc=fit$AICc, num.param=fit$num.params,
                    m=length(unique(Z.models[[i]])),
                    num.iter=fit$numIter, converged=!fit$convergence)
@@ -93,7 +93,7 @@ for(i in 1:length(Z.models)){
 
 
 ###################################################
-### code chunk number 14: Cs06_sort.results
+### code chunk number 14: Cs06_sort.results ##9.4
 ###################################################
 min.AICc=order(out.tab$AICc)
 out.tab.1=out.tab[min.AICc,]
@@ -125,7 +125,7 @@ out.tab.1=cbind(out.tab.1,
 ###################################################
 out.tab.1$delta.AICc = round(out.tab.1$delta.AICc, digits=2)
 out.tab.1$AIC.weight = round(out.tab.1$AIC.weight, digits=3)
-print(out.tab.1[,c("H","Q","B", "delta.AICc","AIC.weight")], row.names=FALSE)
+print(out.tab.1[,c("H","Q", "delta.AICc","AIC.weight")], row.names=FALSE)
 
 
 ###################################################
@@ -138,7 +138,10 @@ matplot(years, t(best.fit$states-best.fit$states[,1]),
         type="l",lwd=2,col="black")
 legend("topleft",c("Bolinas Lagoon","South (DE/DP)","North (TB/TP)"),lwd=2,lty=c(1:3),bty="n")
 
-## why are these linear!!!  same problem with SealTrend
+## why are these linear!!!  same problem with SealTrend 
+## (Silas) I think we determined it was because of the Q value saying diagonal and equal... unequal -> nonlinear
+## but still weird, in Chapter 9 their best model used diagonal and equal but didn't have linear projections in figure 9.3
+
 
 
 
@@ -163,7 +166,7 @@ for(i in 1:length(Z.models)){
 
 
 ###################################################
-### code chunk number 22: Cs13_out.tab.2
+### code chunk number 22: Cs13_out.tab.2  #pg 117
 ###################################################
 min.AICc=order(out.tab$AICc)
 out.tab.2=out.tab[min.AICc,]
@@ -190,6 +193,7 @@ c(
   sum(out.tab.2$AIC.weight[out.tab.2$Q=="diagonal and equal"])
 )
 
+## model weights: equalvarcov 0.544, unconstrained 0.003, diagonal and equal 0.426
 
 ###################################################
 ### code chunk number 25: Cs16_Q.mat
@@ -202,16 +206,20 @@ Q.unc=coef(fits[[3]],type="matrix")$Q
 ###################################################
 diag(Q.unc)
 
+# (Silas) the diagonals are all equal is this supposed to be the case??
 
 ###################################################
-### code chunk number 27: Cs18_Q.corr  
+### code chunk number 27: Cs18_Q.corr CORRELATION MATRIX, pg 118
 ###################################################
 h=diag(1/sqrt(diag(Q.unc)))
 Q.corr=h%*%Q.unc%*%h
-rownames(Q.corr)=unique(Z4)
-colnames(Q.corr)=unique(Z4)
+rownames(Q.corr)=Z4 #unique(Z4)
+colnames(Q.corr)=Z4 #unique(Z4)
 
 Q.corr
+
+# (Silas) Q.corr has 5 rows and columns, even though it seems like there should only be 3
+# also all the correlations are almost 1 which seems off
 
 ### let's ge the U's
 ###################################################
@@ -270,7 +278,7 @@ c(
 
 ####---------------- end 3rd model loop 
 
-
+## (Silas) this is identical to the above?? what???
 
 
 ## going to run best model Z4 standalone to easily get parameters for plotting, etc.
@@ -307,13 +315,20 @@ for(i in 1:n){
 par(mfrow=c(1,1))
 matplot(years, t(sealData),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,as.data.frame(t(ThreePopFinal$states-1.96*ThreePopFinal$states.se)),type="l",
-      lwd=1,lty=2,col="red")
-lines(years,ThreePopFinal$states+1.96*ThreePopFinal$states.se,type="l",
-      lwd=1,lty=2,col="red")
-lines(years,ThreePopFinal$states,type="l",lwd=2)
+for (i in 1:5) {
+  lines(years,as.data.frame(t(ThreePopFinal$states-1.96*ThreePopFinal$states.se))[,i],type="l",
+        lwd=1,lty=2,col="red")
+  lines(years,ThreePopFinal$states[i,]+1.96*ThreePopFinal$states.se[i,],type="l", lwd=1,lty=2,col="red")
+  lines(years,ThreePopFinal$states[i,],type="l",lwd=2)
+}
+#lines(years,as.data.frame(t(ThreePopFinal$states-1.96*ThreePopFinal$states.se)),type="l",
+#      lwd=1,lty=2,col="red")
+#lines(years,ThreePopFinal$states+1.96*ThreePopFinal$states.se,type="l",
+#      lwd=1,lty=2,col="red")
+#lines(years,ThreePopFinal$states,type="l",lwd=2)
 title("Observations and total population estimate",cex.main=.9)
 
+# (silas) plot was erroring, I think this was the correct thing to do but now it looks messy
 
 ## get parameters
 options(scipen = 999) ## turn off sci notation (use 1 to turn back on)
@@ -324,17 +339,17 @@ coef(ThreePopFinal, type="matrix")$B
 
 ## recover q-matrix
 Q.unc=coef(ThreePopFinal,type="matrix")$Q
-Q.unc
+Q.unc #(Silas) different from above?? almost all zeros now
 h=diag(1/sqrt(diag(Q.unc)))
 Q.corr=h%*%Q.unc%*%h
-print(Q.corr, figs = 3)
+print(Q.corr, figs = 3) #(Silas) this gives NaNs.. what???
 
 ## recover R-matrix
 R.unc=coef(ThreePopFinal,type="matrix")$R
-R.unc
+R.unc #(Silas) all pretty much zeros
 hR=diag(1/sqrt(diag(R.unc)))
 R.corr=hR%*%R.unc%*%hR
-print(R.corr, figs = 3)
+print(R.corr, figs = 3) #ones along diagonal
 
 
 ########################################################################
