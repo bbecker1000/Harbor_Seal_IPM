@@ -369,7 +369,11 @@ print(R.corr, figs = 3) #ones along diagonal
 
 
 ##---------- lets do a covariate model with MEI from Dec-Jan
-MEI <- read.csv("C:/bbecker/Projects/phoca_trends/2011-/Phoca Long Term Analysis/Data 1997-2014 PROOFED/MEI.csv")
+#(Silas) look at chapter 13
+# can use C or D for covariates, need to standardize/z-score them?
+
+
+MEI <- read_excel("Data/MEI.xlsx")
 show(MEI)
 ##cut to seaData time series
 MEI <- dplyr::filter(MEI, Year > 1995)
@@ -384,17 +388,17 @@ A.model="scaling"
 B.model="identity"
 x0.model="unequal"
 V0.model="zero"
-d.model="MEI"
+c.model="MEI"
 model.constant=list(
   U=U.model, R=R.model, A=A.model, 
-  x0=x0.model, V0=V0.model, d = d.model, tinitx=0)
+  x0=x0.model, V0=V0.model, c = c.model, tinitx=0)
 ThreePopFinal = MARSS(sealData, model=model.constant, control=list(maxit=1000))
 
 ##----------------------------------------
 ## can't get covariate to work....go back to old school glmm/gamm
 ## set up dataframe
 ## get MEI
-MEI <- read.csv("C:/bbecker/Projects/phoca_trends/2011-/Phoca Long Term Analysis/Data 1997-2014 PROOFED/MEI.csv")
+MEI <- read_excel("Data/MEI.xlsx")
 show(MEI)
 ##cut to seaData time series
 MEI <- dplyr::filter(MEI, Year > 1995)
@@ -414,27 +418,34 @@ pup.breed$region <- ifelse(pup.breed$Subsite == "BL", "BL",
 
 ## and the glmm
 library(lme4)
-m1.pup.p <- glmer(Count ~ I(Year-1995) + MEI_DEC_JAN + (1|region/Subsite), data = pup.breed, family = poisson)
+m1.pup.p <- glmer(Count ~ I(Year-1995) + MEI_DEC_JAN + (1|region/Subsite), data = pup.breed, family = poisson) #(Silas) non-integer x warnings
 summary(m1.pup.p)
 par(mfrow = c(1,3))
 plot(fitted(m1.pup.p), resid(m1.pup.p))
 
 m1.pup.nb <- glmer(Count ~ I(Year-1995) + MEI_DEC_JAN + (1|region/Subsite), 
                    data = pup.breed, 
-                   family = negative.binomial(1))
+                   family = negative.binomial(1)) # (Silas) warnings say it ends up being singular (variances of one or more linear combinations of effects are (close to) zero.)
 summary(m1.pup.nb)
 plot(fitted(m1.pup.nb), resid(m1.pup.nb))
 ## nb binomial model best, with region/Subsite nesting better than Subsite
 ## so maybe better to use binomial # pups over adults?
 
+all.breed <- dplyr::left_join(pup.breed, top1.adult.breed, by = c("Year", "Subsite"))
+##rename columns
+all.breed <- dplyr::rename(all.breed, Pup.Count = Count.x, Adult.Count = Count.y)
+
 m1.pup.bin <- glmer(cbind(Pup.Count, Adult.Count) ~ I(Year-1995) + MEI_DEC_JAN * (1|region/Subsite), 
-                    data = all.breed, family = binomial)
+                    data = all.breed, family = binomial) # (Silas) both non-integer warnings and singular warnings.. also why are both pups and adults included here?
 summary(m1.pup.bin)
 plot(fitted(m1.pup.bin), resid(m1.pup.bin))
-AIC(m1.pup.p,m1.pup.nb, m1.pup.bin) 
-library(effects)
-plot(allEffects(m1.pup.bin))
-plot(allEffects(m1.pup.nb))
+
+## (Silas) each of the 3 models above produce warnings but the models still technically run and the plot will show up
+
+AIC(m1.pup.p,m1.pup.nb, m1.pup.bin) # all over 100
+#library(effects)
+#plot(allEffects(m1.pup.bin))
+#plot(allEffects(m1.pup.nb))
 
 ##---------------------------------
 ## ok, rstanarm models
