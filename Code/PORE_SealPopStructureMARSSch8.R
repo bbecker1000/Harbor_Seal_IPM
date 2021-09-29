@@ -370,29 +370,38 @@ print(R.corr, figs = 3) #ones along diagonal
 
 ##---------- lets do a covariate model with MEI from Dec-Jan
 #(Silas) look at chapter 13
-# can use C or D for covariates, need to standardize/z-score them?
+# can use C or D for covariates
+# process error use C and observation error use D... or R??
 
 
 MEI <- read_excel("Data/MEI.xlsx")
 show(MEI)
 ##cut to seaData time series
 MEI <- dplyr::filter(MEI, Year > 1995)
+MEI <- dplyr::filter(MEI, Year < 2020)
 ## make MEI a vector
 MEI <- as.vector(MEI[,2])
 
-Z.model=Z4
-Q.model="diagonal and equal"
-U.model="unequal"
-R.model="diagonal and equal"
-A.model="scaling"
-B.model="identity"
-x0.model="unequal"
-V0.model="zero"
-c.model="MEI"
-model.constant=list(
-  U=U.model, R=R.model, A=A.model, 
-  x0=x0.model, V0=V0.model, c = c.model, tinitx=0)
+Z.model=Z4 #3 populations
+Q.model="diagonal and equal" #default is diagonal and unequal
+U.model="unequal" #default
+R.model="diagonal and equal" #default
+#A.model="scaling" #default
+B.model="identity" #default
+x0.model="unequal" #???
+V0.model="zero" #default
+#d.model = "MEI"
+#C.model = "unconstrained"
+#c.model="MEI"
+
+small_c <- as.matrix(t(MEI))
+
+model.constant = list(Z=Z.model, Q=Q.model, C="unconstrained", c=small_c)
+
 ThreePopFinal = MARSS(sealData, model=model.constant, control=list(maxit=1000))
+
+MARSSparamCIs(ThreePopFinal, method = "hessian", alpha = 0.05, nboot = 100, silent = FALSE, hessian.fun = "Harvey1989")
+
 
 ##----------------------------------------
 ## can't get covariate to work....go back to old school glmm/gamm
