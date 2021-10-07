@@ -436,6 +436,29 @@ c(kem_onepop$AIC,kem2$AIC,kem4_ind$AIC,kemNS$AIC, kemOB$AIC, kem3pop$AIC)
 #Best AIC is 3 groups, then all independent 
 
 
+##NEW PLOTS
+df <- as.data.frame(t(dat))
+mod <- as.data.frame(t(kem3pop$states))
+names(mod) <- c("BL_m", "DEDP_m", "TBTP_m")
+se <- as.data.frame(t(kem3pop$states.se))
+df$BL_m <- mod$BL_m
+df$BL_lower <- df$BL_m-1.96*se[,1]
+df$BL_upper <- df$BL_m+1.96*se[,1]
+df$year <- 1996:2019
+ggplot(df) + geom_point(aes(years, BL)) + geom_line(aes(years, BL_m)) + geom_line(aes(years, BL_lower), linetype="dashed", color="red") + geom_line(aes(years, BL_upper), linetype="dashed", color="red") + labs(title="Bolinas Lagoon", y="index of log abundance")
+
+df$DEDP_m <- mod$DEDP_m
+df$DEDP_lower <- df$DEDP_m-1.96*se[,2]
+df$DEDP_upper <- df$DEDP_m+1.96*se[,2]
+
+ggplot(df) + geom_point(aes(years, DE)) + geom_point(aes(years, DP)) + geom_line(aes(years, DEDP_m)) + geom_line(aes(years, DEDP_lower), linetype="dashed", color="red") + geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + labs(title="Drakes Estero and Double Point", y="index of log abundance")
+
+df$TBTP_m <- mod$TBTP_m
+#SE is all 0 for some reason 
+df$TBTP_lower <- df$TBTP_m-1.96*se[,3]
+df$TBTP_upper <- df$TBTP_m-1.96*se[,3]
+ggplot(df) + geom_point(aes(years, TB)) + geom_point(aes(years, TP)) + geom_line(aes(years, TBTP_m)) + labs(title="Tomales Bay and Tomales Point", y="index of log abundance") #+ geom_line(aes(years, TBTP_lower), linetype="dashed", color="red") + geom_line(aes(years, TBTP_upper), linetype="dashed", color="red")
+
 ############################
 # leftover from vignette ## NOT USED
 #Hood Canal covaries with the other regions
