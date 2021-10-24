@@ -445,19 +445,41 @@ df$BL_m <- mod$BL_m
 df$BL_lower <- df$BL_m-1.96*se[,1]
 df$BL_upper <- df$BL_m+1.96*se[,1]
 df$year <- 1996:2019
-ggplot(df) + geom_point(aes(years, BL)) + geom_line(aes(years, BL_m)) + geom_line(aes(years, BL_lower), linetype="dashed", color="red") + geom_line(aes(years, BL_upper), linetype="dashed", color="red") + labs(title="Bolinas Lagoon", y="index of log abundance")
+p1 <-
+  ggplot(df) + 
+  geom_point(aes(years, BL)) + 
+  geom_line(aes(years, BL_m)) + 
+  geom_line(aes(years, BL_lower), linetype = "dashed", color = "red") + 
+  geom_line(aes(years, BL_upper), linetype = "dashed", color = "red") + 
+  ylim(c(4.5,7)) +
+  labs(title = "Bolinas Lagoon", y = "index of log abundance")
 
 df$DEDP_m <- mod$DEDP_m
 df$DEDP_lower <- df$DEDP_m-1.96*se[,2]
 df$DEDP_upper <- df$DEDP_m+1.96*se[,2]
 
-ggplot(df) + geom_point(aes(years, DE)) + geom_point(aes(years, DP)) + geom_line(aes(years, DEDP_m)) + geom_line(aes(years, DEDP_lower), linetype="dashed", color="red") + geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + labs(title="Drakes Estero and Double Point", y="index of log abundance")
+p2 <- ggplot(df) + 
+  geom_point(aes(years, DE)) + 
+  geom_point(aes(years, DP)) + 
+  geom_line(aes(years, DEDP_m)) + 
+  geom_line(aes(years, DEDP_lower), linetype="dashed", color="red") + 
+  geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + 
+  ylim(c(4.5,7)) +
+  labs(title="Drakes Estero and Double Point", y="index of log abundance")
 
 df$TBTP_m <- mod$TBTP_m
 #SE is all 0 for some reason 
 df$TBTP_lower <- df$TBTP_m-1.96*se[,3]
 df$TBTP_upper <- df$TBTP_m-1.96*se[,3]
-ggplot(df) + geom_point(aes(years, TB)) + geom_point(aes(years, TP)) + geom_line(aes(years, TBTP_m)) + labs(title="Tomales Bay and Tomales Point", y="index of log abundance") #+ geom_line(aes(years, TBTP_lower), linetype="dashed", color="red") + geom_line(aes(years, TBTP_upper), linetype="dashed", color="red")
+p3 <- ggplot(df) + 
+  geom_point(aes(years, TB)) + 
+  geom_point(aes(years, TP)) + 
+  geom_line(aes(years, TBTP_m)) + 
+  ylim(c(4.5,7)) +
+  labs(title="Tomales Bay and Tomales Point", y="index of log abundance") #+ geom_line(aes(years, TBTP_lower), linetype="dashed", color="red") + geom_line(aes(years, TBTP_upper), linetype="dashed", color="red")
+
+cowplot::plot_grid(p1,p2,p3)
+
 
 ############################
 # leftover from vignette ## NOT USED
