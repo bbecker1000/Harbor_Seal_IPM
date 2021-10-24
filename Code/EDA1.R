@@ -189,3 +189,4 @@ plot_gg <- function(DATA){
 plot_gg(pup_breeding)
 plot_gg(adult_breeding)
 plot_gg(molting)
+
