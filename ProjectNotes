@@ -76,3 +76,14 @@ next going with GAMMS for pops over time and MEI index
 report MARSS
 report GLMMs including pup/adult
 report rstanarm models
+
+
+2021-09-20
+TO DO
+1. update plots to ggplot
+2. get MEI to run
+3. Solve linear plotting issue for best model
+
+2021-10-08
+Quick git update on bb computer test
+

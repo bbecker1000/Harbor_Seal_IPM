@@ -463,7 +463,7 @@ library(parallel)
 library(shinystan)
 CORES <- 8
 THIN <- 5
-ITER = 1000
+ITER = 5000
 CHAINS = 3
 m1.pup.stan.nb <- stan_glmer.nb(
   Count ~ I(Year - 1995) + MEI_DEC_JAN * Subsite + (1 | region / Subsite),
@@ -486,6 +486,15 @@ m1.pup.stan.bin <- stan_glmer(
   cores = CORES, thin = THIN
 )
 launch_shinystan(m1.pup.stan.bin)
+
+
+m1.pup.stan <- stan_glmer(
+  Count ~ I(Year - 1995) + MEI_DEC_JAN * Subsite + (1 | region / Subsite),
+  data = pup.breed,
+  cores = CORES, thin = THIN
+  )
+launch_shinystan(m1.pup.stan)
+
 
 #####---------------------
 
