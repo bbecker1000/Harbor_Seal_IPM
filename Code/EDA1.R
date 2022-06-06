@@ -56,7 +56,7 @@ hseals$Molting <- hseals$Month == "06" | hseals$Month == "07"
 peakBreed <- format(seq(as.Date("1981-04-15"), as.Date("1981-05-15"), by="days"), format="%m-%d")
 hseals$Peak_breeding <- hseals $Month_day %in% peakBreed
 
-# need to get subsitetime in better format
+# need to get subsite time in better format
 hseals_time <- strptime(hseals$SubsiteTime, format="%Y-%m-%d %H:%M:%S")
 hseals$Time <- format(hseals_time, "%H:%M")
 
@@ -186,6 +186,11 @@ plot_gg <- function(DATA){
     facet_grid(Subsite ~ Age)
 }
 
+pup_breeding$Age[pup_breeding$Age == "PUP"] <- "Pup Breeding Season"
+adult_breeding$Age[adult_breeding$Age == "ADULT"] <- "Adult Breeding Season"
+molting$Age[molting$Age == "ADULT"] <- "Adult Molting Season"
+
 plot_gg(pup_breeding)
 plot_gg(adult_breeding)
 plot_gg(molting)
+

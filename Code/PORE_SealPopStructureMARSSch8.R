@@ -376,7 +376,7 @@ print(R.corr, figs = 3) #ones along diagonal
 
 MEI <- read_excel("Data/MEI.xlsx")
 show(MEI)
-##cut to seaData time series
+##cut to sealData time series
 MEI <- dplyr::filter(MEI, Year > 1995)
 MEI <- dplyr::filter(MEI, Year < 2020)
 ## make MEI a vector

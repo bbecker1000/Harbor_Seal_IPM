@@ -49,7 +49,7 @@ seasonal.plot.adult + facet_grid(. ~ Subsite)
 ## previous hard to see patterns due to molt and pups becoming big(= adults), so just look at pups?
 Phoca.PUP <- dplyr::filter(Phoca, Age == "PUP")
 ## subset to the peak seal breeding season about April 20 - May 10
-# should this be April 15 to May 15 or April 20 to May 10??  right now using wider interval
+# (Silas) should this be April 15 to May 15 or April 20 to May 10??  right now using wider interval
 Phoca.breeding <- dplyr::filter(Phoca, Julian > 105 & Julian < 135)
 
 if (FALSE) { #remove this line and 80 to get this plot again
@@ -89,6 +89,7 @@ top1 <- tbl_df(Phoca.breed.seas) %>%
 ##remove any duplicate rows (some problem in the above queries!)
 top1 <- dplyr::distinct(top1)
 
+#(silas) pr and pb missing lines connecting the dots 
 plot.top1 <- ggplot(top1, aes(Year, Count, shape = Age, colour = Age)) + 
   geom_point() + 
   geom_smooth()
@@ -108,6 +109,7 @@ top1.pup.breed <- top1.pup.breed[myvars]
 top1.adult.breed <- subset(top1.adult.breed, Subsite != "DR" & Subsite != "PB")
 top1.pup.breed <- subset(top1.pup.breed, Subsite != "DR" & Subsite != "PB")
 ## and for the trial runs, lets get rid of PRH
+#(Silas) should we add this back in ???
 top1.adult.breed <- dplyr::filter(top1.adult.breed, Subsite != "PR")
 top1.pup.breed <- dplyr::filter(top1.pup.breed, Subsite != "PR")
 
@@ -173,7 +175,7 @@ title("Observations and total population estimate",cex.main=.9)
 coef(kem_onepop, type="vector")  #show the estimated parameter elements as a vector
 coef(kem_onepop, type="matrix")$R
 #show estimated elements for each parameter matrix as a list
-coef(kem_onepop) 
+#coef(kem_onepop) 
 
 kem_onepop$logLik   #show the log-likelihood
 kem_onepop$AIC  #show the AIC
@@ -190,16 +192,19 @@ for(i in 1:n){
   plot(resids[!is.na(resids[,i]),i],ylab="residuals")
   title(paste("One Population", legendnames[i]))
 }
-
+#bad residuals: BL, DP
+#good-ish residuals: DE, TB, TP(?)
 
 
 ##########################################################
 ### 8.2 A single well-mixed population with i.i.d. errors
 ##########################################################
-#Code to fit the single population model with independent and equal errors 
+#Code to fit the single population model with independent and equal errors
+#(silas) model is linear and BAD if R. model = "diagonal and equal" changed to unequal 6/6
+#(silas) now model follows similar patterns throughout, works better for some (TB + CI for example) than others (bad for BL + CI)
 
 Z.model = factor(c(1,1,1,1,1))
-R.model = "diagonal and equal" 
+R.model = "diagonal and unequal" 
 kem2 = MARSS(dat, model=list(Z=Z.model, R=R.model))
 
 coef(kem2) #the estimated parameter elements
@@ -226,7 +231,11 @@ par(mfrow=c(1,1))
 ###################################################
 ### code chunk number 23: Cs2_Code4
 ### Each population is independent
-###################################################
+
+#(silas) BL and DE clearly nonlinear but DP, TB, and TP aren't
+#(silas) is this because of the convergence problems??
+#(Silas) tried running with maxit=10000 and it didn't change the plots (except the confidence estimates for TB??)
+
 Z.model=factor(c(1,2,3,4,5))
 U.model="unequal"
 Q.model="diagonal and unequal"
@@ -303,10 +312,18 @@ lines(years,kem4_ind$states[5,]+1.96*kem4_ind$states.se[5,],type="l",
 lines(years,kem4_ind$states[5,],type="l",lwd=2, col="cadetblue1")
 title("Observations and total population estimate for site 5",cex.main=.9)
 
+#(silas)
+#above shows the same thing as calling plot(kem4_ind) and looking just at the first plot
+#still see that only BL and DE are nonlinear
+
 ####################################
 ## let's try ocean vs bay model
 ## Most similar to 8.4 Two Sub-populations
 ###################################
+#(silas) ALL PLOTS ARE NONLINEAR YAY
+#only looks good for DE and TB 
+#why does the line look like it's following the same pattern for TP and DP but has different intercepts?
+
 Z.model=factor(c(1,1,2,1,2))
 U.model="unequal" #default is unequal, not necessary to include
 Q.model="diagonal and unequal"
@@ -339,6 +356,8 @@ coef(kemOB)
 #Two subpopulations with different population parameters  
 ## (North and South)
 ##########################################################
+#(silas) no plots are nonlinear
+
 Z.model=factor(c(1,1,1,2,2))
 U.model="unequal"
 Q.model="diagonal and unequal"
@@ -373,10 +392,13 @@ coef(kemNS)
 #Three subpopulations with different population parameters  
 ## (BL + DE/DP + TP/TB)
 ##########################################################
+#(silas) i get convergence warnings
+#only plot looks good for BL. all others are strictly linear with R unequal. all lin if R equal
+
 Z.model=factor(c(1,2,2,3,3)) 
 U.model="unequal"
 Q.model="diagonal and unequal"
-R.model="diagonal and unequal" #this makes the plots nonlinear, diagonal and equal makes them linear
+R.model="diagonal and equal" #this makes the plots nonlinear, diagonal and equal makes them linear
 B.model= "identity"   # "diagonal and unequal"
 kem3pop = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) )
 
@@ -451,13 +473,13 @@ df$DEDP_m <- mod$DEDP_m
 df$DEDP_lower <- df$DEDP_m-1.96*se[,2]
 df$DEDP_upper <- df$DEDP_m+1.96*se[,2]
 
-ggplot(df) + geom_point(aes(years, DE)) + geom_point(aes(years, DP)) + geom_line(aes(years, DEDP_m)) + geom_line(aes(years, DEDP_lower), linetype="dashed", color="red") + geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + labs(title="Drakes Estero and Double Point", y="index of log abundance")
+ggplot(df) + geom_point(aes(years, DE), colour="salmon") + geom_point(aes(years, DP), colour="blue") + geom_line(aes(years, DEDP_m)) + geom_line(aes(years, DEDP_lower), linetype="dashed", color="red") + geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + labs(title="Drakes Estero and Double Point", y="index of log abundance") + theme(legend.title = element_text(face = "bold"))
 
 df$TBTP_m <- mod$TBTP_m
 #SE is all 0 for some reason 
 df$TBTP_lower <- df$TBTP_m-1.96*se[,3]
 df$TBTP_upper <- df$TBTP_m-1.96*se[,3]
-ggplot(df) + geom_point(aes(years, TB)) + geom_point(aes(years, TP)) + geom_line(aes(years, TBTP_m)) + labs(title="Tomales Bay and Tomales Point", y="index of log abundance") #+ geom_line(aes(years, TBTP_lower), linetype="dashed", color="red") + geom_line(aes(years, TBTP_upper), linetype="dashed", color="red")
+ggplot(df) + geom_point(aes(years, TB), colour="salmon") + geom_point(aes(years, TP), colour="blue") + geom_line(aes(years, TBTP_m)) + labs(title="Tomales Bay and Tomales Point", y="index of log abundance") #+ geom_line(aes(years, TBTP_lower), linetype="dashed", color="red") + geom_line(aes(years, TBTP_upper), linetype="dashed", color="red") 
 
 ############################
 # leftover from vignette ## NOT USED
