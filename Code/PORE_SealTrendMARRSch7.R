@@ -480,9 +480,9 @@ df$DEDP_m <- mod$DEDP_m
 df$DEDP_lower <- df$DEDP_m-1.96*se[,2]
 df$DEDP_upper <- df$DEDP_m+1.96*se[,2]
 
-<<<<<<< HEAD
+
 ggplot(df) + geom_point(aes(years, DE), colour="salmon") + geom_point(aes(years, DP), colour="blue") + geom_line(aes(years, DEDP_m)) + geom_line(aes(years, DEDP_lower), linetype="dashed", color="red") + geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + labs(title="Drakes Estero and Double Point", y="index of log abundance") + theme(legend.title = element_text(face = "bold"))
-=======
+
 p2 <- ggplot(df) + 
   geom_point(aes(years, DE)) + 
   geom_point(aes(years, DP)) + 
@@ -491,7 +491,7 @@ p2 <- ggplot(df) +
   geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + 
   ylim(c(4.5,7)) +
   labs(title="Drakes Estero and Double Point", y="index of log abundance")
->>>>>>> b6a24cce93126981bda068e49de2ba825f160726
+
 
 df$TBTP_m <- mod$TBTP_m
 #SE is all 0 for some reason 
@@ -499,7 +499,7 @@ df$TBTP_lower <- df$TBTP_m-1.96*se[,3]
 df$TBTP_upper <- df$TBTP_m-1.96*se[,3]
 <<<<<<< HEAD
 ggplot(df) + geom_point(aes(years, TB), colour="salmon") + geom_point(aes(years, TP), colour="blue") + geom_line(aes(years, TBTP_m)) + labs(title="Tomales Bay and Tomales Point", y="index of log abundance") #+ geom_line(aes(years, TBTP_lower), linetype="dashed", color="red") + geom_line(aes(years, TBTP_upper), linetype="dashed", color="red") 
-=======
+
 p3 <- ggplot(df) + 
   geom_point(aes(years, TB)) + 
   geom_point(aes(years, TP)) + 
@@ -509,7 +509,7 @@ p3 <- ggplot(df) +
 
 cowplot::plot_grid(p1,p2,p3)
 
->>>>>>> b6a24cce93126981bda068e49de2ba825f160726
+
 
 ############################
 # leftover from vignette ## NOT USED
