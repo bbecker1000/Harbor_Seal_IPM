@@ -1,6 +1,6 @@
 ##edited code from MARSS UserGuide chapter 7
 
-library(MARSS)
+library("MARSS")
 library(ggplot2)
 library("readxl")
 
@@ -134,7 +134,7 @@ dat <- t(top1.adult.breed.spread)
 
 
 ##########################################################################
-### 8.3 Single population model with independent and non-identical errors
+### 8.3 Single population model with independent and (non)identical errors
 ##########################################################################
 #Code to fit the single population model with i.i.d. errors
 #Read in data
@@ -155,10 +155,12 @@ legendnames = (unlist(dimnames(dat)[1]))
 
 #####################################################################
 
+df_aic <- data.frame(model=character(), aic=integer())
+
 ###NOW TO MODELS ##########
 #estimate parameters
 Z.model = factor(c(1,1,1,1,1))
-R.model = "diagonal and unequal" 
+R.model = "diagonal and unequal" #error variance not the same
 kem_onepop = MARSS(dat, model=list(Z=Z.model, R=R.model))
 
 #make figure
@@ -180,6 +182,8 @@ coef(kem_onepop, type="matrix")$R
 kem_onepop$logLik   #show the log-likelihood
 kem_onepop$AIC  #show the AIC
 
+df_aic <- df_aic %>% add_row(model = "one pop - r unequal", aic = kem_onepop$AIC)
+
 #plot residuals, from 8.3 (page 99)
 plotdat = t(dat)
 matrix.of.biases = matrix(coef(kem_onepop, type="matrix")$A,
@@ -200,16 +204,19 @@ for(i in 1:n){
 ### 8.2 A single well-mixed population with i.i.d. errors
 ##########################################################
 #Code to fit the single population model with independent and equal errors
-#(silas) model is linear and BAD if R. model = "diagonal and equal" changed to unequal 6/6
-#(silas) now model follows similar patterns throughout, works better for some (TB + CI for example) than others (bad for BL + CI)
+#(silas) model is linear if R. model = "diagonal and equal" changed to unequal 6/6
+
 
 Z.model = factor(c(1,1,1,1,1))
-R.model = "diagonal and unequal" 
+R.model = "diagonal and equal" 
 kem2 = MARSS(dat, model=list(Z=Z.model, R=R.model))
 
 coef(kem2) #the estimated parameter elements
 kem2$logLik #log likelihood
 kem2$AIC  #AICs
+
+df_aic <- df_aic %>% add_row(model = "one pop - r equal", aic = kem2$AIC)
+
 
 #plot residuals from page 99
 plotdat = t(dat)
@@ -236,121 +243,323 @@ par(mfrow=c(1,1))
 #(silas) is this because of the convergence problems??
 #(Silas) tried running with maxit=10000 and it didn't change the plots (except the confidence estimates for TB??)
 
+
+###
+# 5 independent populations with unequal observation variances, unequal growth, equal hidden process variance, not too sure about B being identity
+###
 Z.model=factor(c(1,2,3,4,5))
-U.model="unequal"
-Q.model="diagonal and unequal"
 R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
 B.Model="identity"
-kem4_ind=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-                    control=list(maxit=1000, safe=TRUE)) ## still not getting convergence! (45 sec to run)
+kem4_ind1=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+                    control=list(maxit=1000, safe=TRUE)) 
+kem4_ind1$AIC #3.995799
+
+df_aic <- df_aic %>% add_row(model = "all ind 1", aic = kem4_ind1$AIC)
+
+#same as above but now B.Model is "unequal instead of identity"
+#DOESN'T REACH CONVERGENCE
+Z.model=factor(c(1,2,3,4,5))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.Model="unequal"
+kem4_ind2=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+               control=list(maxit=5000, safe=TRUE)) 
+kem4_ind2$AIC #4.71455
+
+df_aic <- df_aic %>% add_row(model = "all ind 2", aic = kem4_ind2$AIC)
+
+
+#change Q to unequal
+#DOESN'T REACH CONVERGENCE
+#Z.model=factor(c(1,2,3,4,5))
+#R.model="diagonal and unequal"
+#U.model="unequal"
+#Q.model="diagonal and unequal"
+#B.Model="identity"
+#kem4_ind3=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+#                control=list(maxit=1000, safe=TRUE)) 
+#kem4_ind3$AIC #11.94
+
+#change u to equal (reset Q back to equal)
+#Z.model=factor(c(1,2,3,4,5))
+#R.model="diagonal and unequal"
+#U.model="equal"
+#Q.model="diagonal and equal"
+#B.Model="identity"
+#kem4_ind4=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+#                control=list(maxit=1000, safe=TRUE)) 
+#kem4_ind4$AIC #16.13822
+
+#change both u and Q
+#DOESN'T CONVERGE
+#Z.model=factor(c(1,2,3,4,5))
+#R.model="diagonal and unequal"
+#U.model="equal"
+#Q.model="diagonal and unequal"
+#B.Model="identity"
+#kem4_ind5=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+#                control=list(maxit=1000, safe=TRUE)) 
+#kem4_ind5$AIC #15.13663
+
+#change Q, u, and B
+#DOESN'T CONVERGE, probably because the model isn't specified correctly mathematically (i.e. If an element of the diagonal of Q is 0, the corresponding row and col of B must be fixed.)
+#Z.model=factor(c(1,2,3,4,5))
+#R.model="diagonal and unequal"
+#U.model="equal"
+#Q.model="diagonal and unequal"
+#B.Model="unequal"
+#kem4_ind6=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+#                control=list(maxit=1000, safe=TRUE)) 
+#kem4_ind6$AIC #4.962436
+
+#same as first but this time R is equal
+Z.model=factor(c(1,2,3,4,5))
+R.model="diagonal and equal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.Model="identity"
+kem4_ind7=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+                control=list(maxit=1000, safe=TRUE)) 
+kem4_ind7$AIC # 4.137058
+
+df_aic <- df_aic %>% add_row(model = "all ind 7", aic = kem4_ind7$AIC)
+
+
+#from first, change R and B
+# DOESN'T CONVERGE (again due to a wrongly specified model)
+#Z.model=factor(c(1,2,3,4,5))
+#R.model="diagonal and equal"
+#U.model="unequal"
+#Q.model="diagonal and equal"
+#B.Model="unequal"
+#kem4_ind8=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+#                control=list(maxit=1000, safe=TRUE)) 
+#kem4_ind8$AIC #15.41875
+
+#change R and u
+#Z.model=factor(c(1,2,3,4,5))
+#R.model="diagonal and equal"
+#U.model="equal"
+#Q.model="diagonal and equal"
+#B.Model="identity"
+#kem4_ind9=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+#                control=list(maxit=1000, safe=TRUE)) 
+#kem4_ind9$AIC #20.79055
+
+#change R and Q
+#Z.model=factor(c(1,2,3,4,5))
+#R.model="diagonal and equal"
+#U.model="unequal"
+#Q.model="diagonal and unequal"
+#B.Model="identity"
+#kem4_ind10=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+#               control=list(maxit=1000, safe=TRUE)) 
+#kem4_ind10$AIC #13.19429
+
+#change R and Q and u
+#DOESN'T CONVERGE
+#Z.model=factor(c(1,2,3,4,5))
+#R.model="diagonal and equal"
+#U.model="equal"
+#Q.model="diagonal and unequal"
+#B.Model="identity"
+#kem4_ind11=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+#                control=list(maxit=1000, safe=TRUE)) 
+#kem4_ind11$AIC #19.85212
+
+#change R and Q and u and B
+#hypothesis: doesn't converge due to badly specified model
+#above is correct
+#Z.model=factor(c(1,2,3,4,5))
+#R.model="diagonal and equal"
+#U.model="equal"
+#Q.model="diagonal and unequal"
+#B.Model="unequal"
+#kem4_ind12=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+#                control=list(maxit=1000, safe=TRUE)) 
+#kem4_ind12$AIC #19.23859
+
+###CONSIDER ONLY 1, 2 and 7
+
 
 #plot residuals
 plotdat = t(dat)
-matrix.of.biases = matrix(coef(kem4_ind,type="matrix")$A,
+matrix.of.biases = matrix(coef(kem4_ind1,type="matrix")$A,
                           nrow=nrow(plotdat),ncol=ncol(plotdat),byrow=T)
 par(mfrow=c(2,3))
 for(i in 1:n){
   j=c(1,2,3,4,5)
-  xs = kem4_ind$states[j[i],]
+  xs = kem4_ind1$states[j[i],]
   resids = plotdat[,i]-matrix.of.biases[,i]-xs
   plot(resids[!is.na(resids)],ylab="residuals")
-  title(paste("Independent Populations", legendnames[i]))
+  title(paste("Independent Populations 1", legendnames[i]))
 }
+
+plotdat = t(dat)
+matrix.of.biases = matrix(coef(kem4_ind2,type="matrix")$A,
+                          nrow=nrow(plotdat),ncol=ncol(plotdat),byrow=T)
+par(mfrow=c(2,3))
+for(i in 1:n){
+  j=c(1,2,3,4,5)
+  xs = kem4_ind2$states[j[i],]
+  resids = plotdat[,i]-matrix.of.biases[,i]-xs
+  plot(resids[!is.na(resids)],ylab="residuals")
+  title(paste("Independent Populations 2", legendnames[i]))
+}
+
+plotdat = t(dat)
+matrix.of.biases = matrix(coef(kem4_ind7,type="matrix")$A,
+                          nrow=nrow(plotdat),ncol=ncol(plotdat),byrow=T)
+par(mfrow=c(2,3))
+for(i in 1:n){
+  j=c(1,2,3,4,5)
+  xs = kem4_ind7$states[j[i],]
+  resids = plotdat[,i]-matrix.of.biases[,i]-xs
+  plot(resids[!is.na(resids)],ylab="residuals")
+  title(paste("Independent Populations 7", legendnames[i]))
+}
+
+##2 has the best residuals
 
 ####### THIS INDEPENDENT HAS BEST RESIDUALS SO FAR!! #######
 # (Silas) I don't like DP and TB too much but definite improvement
 
-coef(kem4_ind, type="vector")  #show the estimated parameter elements as a vector
-coef(kem4_ind, type="matrix")$R
+#oef(kem4_ind2, type="vector")  #show the estimated parameter elements as a vector
+coef(kem4_ind2, type="matrix")$R
 #show estimated elements for each parameter matrix as a list
-coef(kem4_ind) 
+coef(kem4_ind2) 
 
 ## try opepop plot
 par(mfrow=c(2,3))
 #make figure
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind$states[1,]-1.96*kem4_ind$states.se[1,],type="l",
+lines(years,kem4_ind2$states[1,]-1.96*kem4_ind2$states.se[1,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[1,]+1.96*kem4_ind$states.se[1,],type="l",
+lines(years,kem4_ind2$states[1,]+1.96*kem4_ind2$states.se[1,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[1,],type="l",lwd=2)
-title("Observations and total population estimate for site 1",cex.main=.9)
+lines(years,kem4_ind2$states[1,],type="l",lwd=2)
+title("Observations and total population estimate for BL",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind$states[2,]-1.96*kem4_ind$states.se[2,],type="l",
+lines(years,kem4_ind2$states[2,]-1.96*kem4_ind2$states.se[2,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[2,]+1.96*kem4_ind$states.se[2,],type="l",
+lines(years,kem4_ind2$states[2,]+1.96*kem4_ind2$states.se[2,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[2,],type="l",lwd=2, col="red")
-title("Observations and total population estimate for site 2",cex.main=.9)
+lines(years,kem4_ind2$states[2,],type="l",lwd=2, col="red")
+title("Observations and total population estimate for DE",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind$states[3,]-1.96*kem4_ind$states.se[3,],type="l",
+lines(years,kem4_ind2$states[3,]-1.96*kem4_ind2$states.se[3,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[3,]+1.96*kem4_ind$states.se[3,],type="l",
+lines(years,kem4_ind2$states[3,]+1.96*kem4_ind2$states.se[3,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[3,],type="l",lwd=2, col="green")
-title("Observations and total population estimate for site 3",cex.main=.9)
+lines(years,kem4_ind2$states[3,],type="l",lwd=2, col="green")
+title("Observations and total population estimate for DP",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind$states[4,]-1.96*kem4_ind$states.se[4,],type="l",
+lines(years,kem4_ind2$states[4,]-1.96*kem4_ind2$states.se[4,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[4,]+1.96*kem4_ind$states.se[4,],type="l",
+lines(years,kem4_ind2$states[4,]+1.96*kem4_ind2$states.se[4,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[4,],type="l",lwd=2, col="blue")
-title("Observations and total population estimate for site 4",cex.main=.9)
+lines(years,kem4_ind2$states[4,],type="l",lwd=2, col="blue")
+title("Observations and total population estimate for TB",cex.main=.9)
+
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind$states[5,]-1.96*kem4_ind$states.se[5,],type="l",
+lines(years,kem4_ind2$states[5,]-1.96*kem4_ind2$states.se[5,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[5,]+1.96*kem4_ind$states.se[5,],type="l",
+lines(years,kem4_ind2$states[5,]+1.96*kem4_ind2$states.se[5,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind$states[5,],type="l",lwd=2, col="cadetblue1")
-title("Observations and total population estimate for site 5",cex.main=.9)
-
-#(silas)
-#above shows the same thing as calling plot(kem4_ind) and looking just at the first plot
-#still see that only BL and DE are nonlinear
+lines(years,kem4_ind2$states[5,],type="l",lwd=2, col="cadetblue1")
+title("Observations and total population estimate for TP",cex.main=.9)
+##all plots are nonlinear for independent try 2
 
 ####################################
 ## let's try ocean vs bay model
 ## Most similar to 8.4 Two Sub-populations
 ###################################
-#(silas) ALL PLOTS ARE NONLINEAR YAY
-#only looks good for DE and TB 
-#why does the line look like it's following the same pattern for TP and DP but has different intercepts?
 
+#convergence warning due to badly defined model
+#Z.model=factor(c(1,1,2,1,2))
+#U.model="unequal" 
+#Q.model="diagonal and unequal"
+#R.model="diagonal and unequal"
+#B.model="unconstrained" 
+#kemOB1 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+#              control=list(maxit=500, safe=TRUE)) 
+#kemOB1$AIC #39.23521
+
+#change B
+#unequal growth parameters, unequal hidden state process variances, unequal observation error variances
 Z.model=factor(c(1,1,2,1,2))
-U.model="unequal" #default is unequal, not necessary to include
+U.model="unequal" 
 Q.model="diagonal and unequal"
 R.model="diagonal and unequal"
-B.model="unconstrained" #what's going on with this?? only reference is in chapter 9
-kemOB = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
-              control=list(maxit=500, safe=TRUE)) #getting convergence warning
+B.model="identity" 
+kemOB2 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+              control=list(maxit=500, safe=TRUE)) 
+kemOB2$AIC #35.93709
+
+df_aic <- df_aic %>% add_row(model = "ocean vs bay", aic = kemOB2$AIC)
+
+
+#using the same as for the best independent
+#unequal observation error variances, unequal growth parameters, equal hidden state process variances
+#Z.model=factor(c(1,1,2,1,2))
+#R.model="diagonal and unequal"
+#U.model="unequal"
+#Q.model="diagonal and equal"
+#B.Model="unequal"
+#kemOB3 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+#               control=list(maxit=500, safe=TRUE)) 
+#kemOB3$AIC #37.39974
+
+#Z.model=factor(c(1,1,2,1,2))
+#R.model="diagonal and equal"
+#U.model="unequal"
+#Q.model="diagonal and equal"
+#B.Model="unequal"
+#kemOB4 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+#               control=list(maxit=500, safe=TRUE)) 
+#kemOB4$AIC #40.95777
+
+
+#Z.model=factor(c(1,1,2,1,2))
+#R.model="diagonal and equal"
+#U.model="unequal"
+#Q.model="diagonal and unequal"
+#B.Model="unequal"
+#kemOB5 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+#               control=list(maxit=500, safe=TRUE)) 
+#kemOB5$AIC #43.09786
+
 
 #plot residuals
 plotdat = t(dat)
 par(mfrow=c(2,3))
-matrix.of.biases = matrix(coef(kemOB,type="matrix")$A,
+matrix.of.biases = matrix(coef(kemOB2,type="matrix")$A,
                           nrow=nrow(plotdat),ncol=ncol(plotdat),byrow=T)
 
 for(i in 1:n){
   j=c(1,1,2,1,2)
-  xs = kemOB$states[j[i],]
+  xs = kemOB2$states[j[i],]
   resids = plotdat[,i]-matrix.of.biases[,i]-xs
   plot(resids[!is.na(resids)],ylab="residuals")
   title(paste("Bay vs Ocean", legendnames[i]))
 }
 
 ## kem 4 still looks best residual and AIC wise.
-coef(kemOB, type="vector")  #show the estimated parameter elements as a vector
-coef(kemOB, type="matrix")$R
+coef(kemOB2, type="vector")  #show the estimated parameter elements as a vector
+coef(kemOB2, type="matrix")$R
 #show estimated elements for each parameter matrix as a list
-coef(kemOB) 
+coef(kemOB2) 
 
 ##########################################################
 #Two subpopulations with different population parameters  
@@ -358,21 +567,52 @@ coef(kemOB)
 ##########################################################
 #(silas) no plots are nonlinear
 
+#convergence warning because of badly defined model
+#Z.model=factor(c(1,1,1,2,2))
+#U.model="unequal"
+#Q.model="diagonal and unequal"
+#R.model="diagonal and equal"
+#B.model="diagonal and unequal"
+#kemNS1 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) ) 
+#kemNS1$AIC #60.09191
+
+#convergence warning 
+#Z.model=factor(c(1,1,1,2,2))
+#U.model="unequal"
+#Q.model="diagonal and unequal"
+#R.model="diagonal and equal"
+#B.model="identity"
+#kemNS2 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) ) 
+#kemNS2$AIC #56.24401
+
+#Z.model=factor(c(1,1,1,2,2))
+#U.model="unequal"
+#Q.model="diagonal and unequal"
+#R.model="diagonal and unequal"
+#B.model="identity"
+#kemNS3 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) ) 
+#kemNS3$AIC #44.34793
+
+#unequal observation errors but the same hidden state process errors
 Z.model=factor(c(1,1,1,2,2))
 U.model="unequal"
-Q.model="diagonal and unequal"
-R.model="diagonal and equal"
-B.model="diagonal and unequal"
-kemNS = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) ) #also convergence warning.. something to do with Q and B??
+Q.model="diagonal and equal"
+R.model="diagonal and unequal"
+B.model="identity"
+kemNS4 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) ) 
+kemNS4$AIC #40.47371
+
+df_aic <- df_aic %>% add_row(model = "north vs south", aic = kemNS4$AIC)
+
 
 #plot residuals
 par(mfrow=c(2,3))
 plotdat = t(dat)
-matrix.of.biases = matrix(coef(kemNS,type="matrix")$A,
+matrix.of.biases = matrix(coef(kemNS4,type="matrix")$A,
                           nrow=nrow(plotdat),ncol=ncol(plotdat),byrow=T)
 for(i in 1:n){
   j=c(1,1,1,2,2)
-  xs = kemNS$states[j[i],]
+  xs = kemNS4$states[j[i],]
   resids = plotdat[,i]-matrix.of.biases[,i]-xs
   plot(resids[!is.na(resids)],ylab="residuals")
   title(paste("North vs South", legendnames[i]))
@@ -381,84 +621,133 @@ for(i in 1:n){
 
 
 ## N and S model not so good
-coef(kemNS, type="vector")  #show the estimated parameter elements as a vector
-coef(kemNS, type="matrix")$R
+coef(kemNS4, type="vector")  #show the estimated parameter elements as a vector
+coef(kemNS4, type="matrix")$R
 #show estimated elements for each parameter matrix as a list
-coef(kemNS) 
-
+coef(kemNS4) 
 
 
 ##########################################################
 #Three subpopulations with different population parameters  
 ## (BL + DE/DP + TP/TB)
 ##########################################################
-#(silas) i get convergence warnings
-#only plot looks good for BL. all others are strictly linear with R unequal. all lin if R equal
 
+#convergence warning for Q(1,1) and Q(2,2)
+#all plots linear
+#Z.model=factor(c(1,2,2,3,3)) 
+#U.model="unequal"
+#Q.model="diagonal and unequal"
+#R.model="diagonal and equal" 
+#B.model= "identity"   # "diagonal and unequal"
+#kem3pop1 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) )
+#kem3pop1$AIC #6.946689
+
+#convergence warning for Q(2,2)
+#BL nonlinear, other two are linear
 Z.model=factor(c(1,2,2,3,3)) 
 U.model="unequal"
 Q.model="diagonal and unequal"
-R.model="diagonal and equal" #this makes the plots nonlinear, diagonal and equal makes them linear
-B.model= "identity"   # "diagonal and unequal"
-kem3pop = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model) )
+R.model="diagonal and unequal" 
+B.model= "identity"  
+kem3pop2 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model), control=list(maxit=5000, safe=TRUE))
+kem3pop2$AIC #6.304194
+
+df_aic <- df_aic %>% add_row(model = "3 pop - convergence warning", aic = kem3pop2$AIC)
+
+#badly specified -> convergence error
+#all nonlinear
+#Z.model=factor(c(1,2,2,3,3)) 
+#U.model="unequal"
+#Q.model="diagonal and unequal"
+#R.model="diagonal and equal" 
+#B.model= "unequal"   
+#kem3pop3 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),control=list(maxit=1000, safe=TRUE))
+#kem3pop3$AIC #12.24963
+
+#badly specified -> convergence warnings
+#all nonlinear, looks very similar to 3
+#Z.model=factor(c(1,2,2,3,3)) 
+#U.model="unequal"
+#Q.model="diagonal and unequal"
+#R.model="diagonal and unequal" 
+#B.model= "unequal"   
+#kem3pop4 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),control=list(maxit=1000, safe=TRUE))
+#kem3pop4$AIC #11.12605
+
+#convergence warnings, badly specified
+#very similar to 3 and 4
+#Z.model=factor(c(1,2,2,3,3)) 
+#U.model="unequal"
+#Q.model="diagonal and equal"
+#R.model="diagonal and unequal" 
+#B.model= "unequal"   
+#kem3pop5 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),control=list(maxit=1000, safe=TRUE))
+#kem3pop5$AIC #6.980729
+
+
+
 
 par(mfrow=c(1,3))
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3", "4", "5"), ylim=c(3,9), bty="L")
-lines(years,kem3pop$states[1,]-1.96*kem3pop$states.se[1,],type="l",
+lines(years,kem3pop2$states[1,]-1.96*kem3pop2$states.se[1,],type="l",
       lwd=1,lty=2,col="red")
-lines(years,kem3pop$states[1,]+1.96*kem3pop$states.se[1,],type="l",
+lines(years,kem3pop2$states[1,]+1.96*kem3pop2$states.se[1,],type="l",
       lwd=1,lty=2,col="red")
-lines(years,kem3pop$states[1,],type="l",lwd=2)
+lines(years,kem3pop2$states[1,],type="l",lwd=2)
 title("Bolinas Lagoon",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3", "4", "5"), ylim=c(3,9), bty="L")
-lines(years,kem3pop$states[2,]-1.96*kem3pop$states.se[2,],type="l",
+lines(years,kem3pop2$states[2,]-1.96*kem3pop2$states.se[2,],type="l",
       lwd=1,lty=2,col="red")
-lines(years,kem3pop$states[2,]+1.96*kem3pop$states.se[2,],type="l",
+lines(years,kem3pop2$states[2,]+1.96*kem3pop2$states.se[2,],type="l",
       lwd=1,lty=2,col="red")
-lines(years,kem3pop$states[2,],type="l",lwd=2)
+lines(years,kem3pop2$states[2,],type="l",lwd=2)
 title("Drakes Estero, Double Point",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3", "4", "5"), ylim=c(3,9), bty="L")
-lines(years,kem3pop$states[3,]-1.96*kem3pop$states.se[3,],type="l",
+lines(years,kem3pop2$states[3,]-1.96*kem3pop2$states.se[3,],type="l",
       lwd=1,lty=2,col="red")
-lines(years,kem3pop$states[3,]+1.96*kem3pop$states.se[3,],type="l",
+lines(years,kem3pop2$states[3,]+1.96*kem3pop2$states.se[3,],type="l",
       lwd=1,lty=2,col="red")
-lines(years,kem3pop$states[3,],type="l",lwd=2)
+lines(years,kem3pop2$states[3,],type="l",lwd=2)
 title("Tomales Bay and Tomales Point",cex.main=.9)
 
+#not sure what this plot is
 par(mfrow=c(1,1))
-plot(years,kem3pop$states[1,])
+plot(years,kem3pop2$states[1,])
 
 
 plotdat = t(dat)
-matrix.of.biases = matrix(coef(kem3pop,type="matrix")$A,
+matrix.of.biases = matrix(coef(kem3pop2,type="matrix")$A,
                           nrow=nrow(plotdat),ncol=ncol(plotdat),byrow=T)
+
+#residuals
 par(mfrow=c(2,3))
 for(i in 1:n){
   j=c(1,2,2,3,3)
-  xs = kem3pop$states[j[i],]
+  xs = kem3pop2$states[j[i],]
   resids = plotdat[,i]-matrix.of.biases[,i]-xs
   plot(resids[!is.na(resids)],ylab="residuals")
-  title(paste("3 pops", legendnames[i]))
+  title(paste("3 pops", i))
 }
 
 ## get parameters
-coef(kem3pop, type="matrix")$R
-coef(kem3pop, type="matrix")$Q
-coef(kem3pop, type="matrix")$U
-coef(kem3pop, type="matrix")$B
+coef(kem3pop2, type="matrix")$R
+coef(kem3pop2, type="matrix")$Q
+coef(kem3pop2, type="matrix")$U
+coef(kem3pop2, type="matrix")$B
 
 ## AICs
-c(kem_onepop$AIC,kem2$AIC,kem4_ind$AIC,kemNS$AIC, kemOB$AIC, kem3pop$AIC)
+#c(kem_onepop$AIC,kem2$AIC,kem4_ind$AIC,kemNS$AIC, kemOB$AIC, kem3pop$AIC)
 
 #Best AIC is 3 groups, then all independent 
 
 
 ##NEW PLOTS
+##NOT UPDATED AS OF 6/16/2022
 df <- as.data.frame(t(dat))
 mod <- as.data.frame(t(kem3pop$states))
 names(mod) <- c("BL_m", "DEDP_m", "TBTP_m")
@@ -509,19 +798,6 @@ p3 <- ggplot(df) +
 
 cowplot::plot_grid(p1,p2,p3)
 
-
-
-############################
-# leftover from vignette ## NOT USED
-#Hood Canal covaries with the other regions
-if (FALSE) {
-Z.model=factor(c(1,1,1,1,2))
-U.model="unequal"
-Q.model="equalvarcov"
-R.model="diagonal and unequal"
-kem = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model) )
-
-}
 ##%######################################################%##
 #                                                          #
 ####                 OK, now got models                 ####
