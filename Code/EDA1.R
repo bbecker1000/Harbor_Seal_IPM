@@ -181,10 +181,10 @@ molting <- rbind(molting, PB_adult_m)
 
 plot_gg <- function(DATA){
   ggplot(DATA, aes(Year, Count)) +
-    geom_line(color = "blue") +
-    geom_point(size = 0.1) +
+    geom_line(color = "azure4") +
+    geom_point(size = 1, colour="salmon") +
     theme_gray(base_size = 14) +
-    facet_grid(Subsite ~ Age)
+    facet_grid(Subsite ~ Age) #try facet_wrap ?
 }
 
 pup_breeding$Age[pup_breeding$Age == "PUP"] <- "Pup Breeding Season"

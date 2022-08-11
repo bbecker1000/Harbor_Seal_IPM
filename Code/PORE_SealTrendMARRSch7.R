@@ -395,7 +395,7 @@ for(i in 1:n){
   xs = kem4_ind1$states[j[i],]
   resids = plotdat[,i]-matrix.of.biases[,i]-xs
   plot(resids[!is.na(resids)],ylab="residuals")
-  title(paste("Independent Populations 1", legendnames[i]))
+  title(paste(legendnames[i]))
 }
 
 plotdat = t(dat)
@@ -407,7 +407,7 @@ for(i in 1:n){
   xs = kem4_ind2$states[j[i],]
   resids = plotdat[,i]-matrix.of.biases[,i]-xs
   plot(resids[!is.na(resids)],ylab="residuals")
-  title(paste("Independent Populations 2", legendnames[i]))
+  title(paste(legendnames[i]))
 }
 
 plotdat = t(dat)
@@ -428,56 +428,56 @@ for(i in 1:n){
 # (Silas) I don't like DP and TB too much but definite improvement
 
 #oef(kem4_ind2, type="vector")  #show the estimated parameter elements as a vector
-coef(kem4_ind2, type="matrix")$R
+coef(kem4_ind1, type="matrix")$R
 #show estimated elements for each parameter matrix as a list
-coef(kem4_ind2) 
+coef(kem4_ind1) 
 
 ## try opepop plot
 par(mfrow=c(2,3))
 #make figure
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind2$states[1,]-1.96*kem4_ind2$states.se[1,],type="l",
+lines(years,kem4_ind1$states[1,]-1.96*kem4_ind1$states.se[1,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind2$states[1,]+1.96*kem4_ind2$states.se[1,],type="l",
+lines(years,kem4_ind1$states[1,]+1.96*kem4_ind1$states.se[1,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind2$states[1,],type="l",lwd=2)
+lines(years,kem4_ind1$states[1,],type="l",lwd=2)
 title("Observations and total population estimate for BL",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind2$states[2,]-1.96*kem4_ind2$states.se[2,],type="l",
+lines(years,kem4_ind1$states[2,]-1.96*kem4_ind1$states.se[2,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind2$states[2,]+1.96*kem4_ind2$states.se[2,],type="l",
+lines(years,kem4_ind1$states[2,]+1.96*kem4_ind1$states.se[2,],type="l",
       lwd=1,lty=2,col="purple")
 lines(years,kem4_ind2$states[2,],type="l",lwd=2, col="red")
 title("Observations and total population estimate for DE",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind2$states[3,]-1.96*kem4_ind2$states.se[3,],type="l",
+lines(years,kem4_ind1$states[3,]-1.96*kem4_ind1$states.se[3,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind2$states[3,]+1.96*kem4_ind2$states.se[3,],type="l",
+lines(years,kem4_ind1$states[3,]+1.96*kem4_ind1$states.se[3,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind2$states[3,],type="l",lwd=2, col="green")
+lines(years,kem4_ind1$states[3,],type="l",lwd=2, col="green")
 title("Observations and total population estimate for DP",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind2$states[4,]-1.96*kem4_ind2$states.se[4,],type="l",
+lines(years,kem4_ind1$states[4,]-1.96*kem4_ind1$states.se[4,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind2$states[4,]+1.96*kem4_ind2$states.se[4,],type="l",
+lines(years,kem4_ind1$states[4,]+1.96*kem4_ind1$states.se[4,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind2$states[4,],type="l",lwd=2, col="blue")
+lines(years,kem4_ind1$states[4,],type="l",lwd=2, col="blue")
 title("Observations and total population estimate for TB",cex.main=.9)
 
 matplot(years, t(dat),xlab="",ylab="index of log abundance",
         pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem4_ind2$states[5,]-1.96*kem4_ind2$states.se[5,],type="l",
+lines(years,kem4_ind1$states[5,]-1.96*kem4_ind1$states.se[5,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind2$states[5,]+1.96*kem4_ind2$states.se[5,],type="l",
+lines(years,kem4_ind1$states[5,]+1.96*kem4_ind1$states.se[5,],type="l",
       lwd=1,lty=2,col="purple")
-lines(years,kem4_ind2$states[5,],type="l",lwd=2, col="cadetblue1")
+lines(years,kem4_ind1$states[5,],type="l",lwd=2, col="cadetblue1")
 title("Observations and total population estimate for TP",cex.main=.9)
 ##all plots are nonlinear for independent try 2
 
@@ -563,7 +563,7 @@ coef(kemOB2)
 
 ##########################################################
 #Two subpopulations with different population parameters  
-## (North and South)
+## (VNorth and South)
 ##########################################################
 #(silas) no plots are nonlinear
 
@@ -749,54 +749,160 @@ coef(kem3pop2, type="matrix")$B
 ##NEW PLOTS
 ##NOT UPDATED AS OF 6/16/2022
 df <- as.data.frame(t(dat))
-mod <- as.data.frame(t(kem3pop$states))
-names(mod) <- c("BL_m", "DEDP_m", "TBTP_m")
-se <- as.data.frame(t(kem3pop$states.se))
+mod <- as.data.frame(t(kem4_ind1$states))
+names(mod) <- c("BL_m", "DE_m", "DP_m", "TB_m", "TP_m")
+se_a <- as.data.frame(t(kem4_ind1$states.se))
 df$BL_m <- mod$BL_m
-df$BL_lower <- df$BL_m-1.96*se[,1]
-df$BL_upper <- df$BL_m+1.96*se[,1]
+#df$BL_lower <- df$BL_m-1.96*se[,1]
+#df$BL_upper <- df$BL_m+1.96*se[,1]
 df$year <- 1996:2019
-p1 <-
+p1a <-
   ggplot(df) + 
-  geom_point(aes(years, BL)) + 
-  geom_line(aes(years, BL_m)) + 
-  geom_line(aes(years, BL_lower), linetype = "dashed", color = "red") + 
-  geom_line(aes(years, BL_upper), linetype = "dashed", color = "red") + 
-  ylim(c(4.5,7)) +
-  labs(title = "Bolinas Lagoon", y = "index of log abundance")
+  geom_point(aes(years, exp(BL)), colour="salmon") + 
+  geom_line(aes(years, exp(BL_m))) + 
+  #geom_line(aes(years, exp(BL_lower)), linetype = "dashed", color = "red") + 
+  #geom_line(aes(years, BL_upper), linetype = "dashed", color = "red") + 
+  #ylim(c(4.5,7)) +
+  labs(title = "Bolinas Lagoon", y = "Abundance", x = "Year") +
+  ylim(175, 1200) + xlim(1995, 2021)
 
-df$DEDP_m <- mod$DEDP_m
-df$DEDP_lower <- df$DEDP_m-1.96*se[,2]
-df$DEDP_upper <- df$DEDP_m+1.96*se[,2]
-
-
-ggplot(df) + geom_point(aes(years, DE), colour="salmon") + geom_point(aes(years, DP), colour="blue") + geom_line(aes(years, DEDP_m)) + geom_line(aes(years, DEDP_lower), linetype="dashed", color="red") + geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + labs(title="Drakes Estero and Double Point", y="index of log abundance") + theme(legend.title = element_text(face = "bold"))
-
-p2 <- ggplot(df) + 
-  geom_point(aes(years, DE)) + 
-  geom_point(aes(years, DP)) + 
-  geom_line(aes(years, DEDP_m)) + 
-  geom_line(aes(years, DEDP_lower), linetype="dashed", color="red") + 
-  geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + 
-  ylim(c(4.5,7)) +
-  labs(title="Drakes Estero and Double Point", y="index of log abundance")
+df$DE_m <- mod$DE_m
+#df$DE_lower <- df$DE_m-1.96*se[,2]
+#df$DE_upper <- df$DE_m+1.96*se[,2]
 
 
-df$TBTP_m <- mod$TBTP_m
+p2a <- ggplot(df) + geom_point(aes(years, exp(DE)), colour="salmon")  + geom_line(aes(years, exp(DE_m))) + 
+  labs(title="Drakes Estero", y="Abundance", x = "Year") + theme(legend.title = element_text(face = "bold")) +
+  ylim(175, 1200) + xlim(1995, 2021)
+  #+ geom_line(aes(years, exp(DE_lower)), linetype = "dashed", color = "red") + geom_line(aes(years, DE_upper), linetype = "dashed", color = "red")
+
+#p2 <- ggplot(df) + 
+#  geom_point(aes(years, DE)) + 
+#  geom_point(aes(years, DP)) + 
+#  geom_line(aes(years, DEDP_m)) + 
+  #geom_line(aes(years, DEDP_lower), linetype="dashed", color="red") + 
+  #geom_line(aes(years, DEDP_upper), linetype="dashed", color="red") + 
+  #ylim(c(4.5,7)) +
+#  labs(title="Drakes Estero and Double Point", y="index of log abundance")
+
+
+df$DP_m <- mod$DP_m
 #SE is all 0 for some reason 
-df$TBTP_lower <- df$TBTP_m-1.96*se[,3]
-df$TBTP_upper <- df$TBTP_m-1.96*se[,3]
-<<<<<<< HEAD
-ggplot(df) + geom_point(aes(years, TB), colour="salmon") + geom_point(aes(years, TP), colour="blue") + geom_line(aes(years, TBTP_m)) + labs(title="Tomales Bay and Tomales Point", y="index of log abundance") #+ geom_line(aes(years, TBTP_lower), linetype="dashed", color="red") + geom_line(aes(years, TBTP_upper), linetype="dashed", color="red") 
+#df$TBTP_lower <- df$TBTP_m-1.96*se[,3]
+#df$TBTP_upper <- df$TBTP_m-1.96*se[,3]
 
-p3 <- ggplot(df) + 
-  geom_point(aes(years, TB)) + 
-  geom_point(aes(years, TP)) + 
-  geom_line(aes(years, TBTP_m)) + 
-  ylim(c(4.5,7)) +
-  labs(title="Tomales Bay and Tomales Point", y="index of log abundance") #+ geom_line(aes(years, TBTP_lower), linetype="dashed", color="red") + geom_line(aes(years, TBTP_upper), linetype="dashed", color="red")
+p3a <- ggplot(df) + geom_point(aes(years, exp(DP)), colour="salmon") + geom_line(aes(years, exp(DP_m))) + 
+  labs(title="Double Point", y="Abundance", x = "Year") +
+  ylim(175, 1200) + xlim(1995, 2021)
+  #+ geom_line(aes(years, TBTP_lower), linetype="dashed", color="red") + geom_line(aes(years, TBTP_upper), linetype="dashed", color="red") 
 
-cowplot::plot_grid(p1,p2,p3)
+
+df$TB_m <- mod$TB_m
+p4a <- ggplot(df) + geom_point(aes(years, exp(TB)), colour="salmon") + geom_line(aes(years, exp(TB_m))) + 
+  labs(title="Tomales Bay", y="Abundance", x = "Year") + ylim(175, 1200) + xlim(1995, 2021)
+
+df$TP_m <- mod$TP_m
+p5a <- ggplot(df) + geom_point(aes(years, exp(TP)), colour="salmon") + geom_line(aes(years, exp(TP_m))) + 
+  labs(title="Tomales Point", y="Abundance", x = "Year")+ ylim(175, 1200) + xlim(1995, 2021)
+
+
+## BL DE DP TB TP
+plot1 <- cowplot::plot_grid(p1a, p2a, p3a, p4a, p5a)
+
+title <- ggdraw() + 
+  draw_label(
+    "5 Independent #1",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7)
+  )
+plot_grid(
+  title, plot1,
+  ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1)
+)
+
+df <- as.data.frame(t(dat))
+mod <- as.data.frame(t(kem4_ind2$states))
+names(mod) <- c("BL_m", "DE_m", "DP_m", "TB_m", "TP_m")
+se_b <- as.data.frame(t(kem4_ind2$states.se)) #nonzero but incredibly small
+se_b <- exp(se_b) #backtransform
+df$BL_m <- mod$BL_m
+df$BL_lower <- exp(df$BL_m)-1.96*se_b[,1]
+df$BL_upper <- exp(df$BL_m)+1.96*se_b[,1]
+
+df$year <- 1996:2019
+p1b <- ggplot(df) + 
+  geom_point(aes(years, exp(BL)), colour="salmon") + 
+  geom_line(aes(years, exp(BL_m))) + 
+  labs(title = "Bolinas Lagoon", y = "Abundance", x = "Year") +
+  ylim(175, 1200) + xlim(1995, 2021) 
+  #geom_line(aes(years, BL_lower), linetype="dashed", color="red") + geom_line(aes(years, BL_upper), linetype="dashed", color="red") 
+
+df$DE_m <- mod$DE_m
+df$DE_lower <- exp(df$DE_m)-1.96*se_b[,2]
+df$DE_upper <- exp(df$DE_m)+1.96*se_b[,2]
+p2b <- ggplot(df) + geom_point(aes(years, exp(DE)), colour="salmon")  + geom_line(aes(years, exp(DE_m))) + 
+  labs(title="Drakes Estero", y="Abundance", x ="Year") + theme(legend.title = element_text(face = "bold")) +
+  ylim(175, 1200) + xlim(1995, 2021)
+  #geom_line(aes(years, DE_lower), linetype="dashed", color="red") + geom_line(aes(years, DE_upper), linetype="dashed", color="red") 
+
+df$DP_m <- mod$DP_m
+df$DP_lower <- exp(df$DP_m)-1.96*se_b[,3]
+df$DP_upper <- exp(df$DP_m)+1.96*se_b[,3]
+p3b <- ggplot(df) + geom_point(aes(years, exp(DP)), colour="salmon") + geom_line(aes(years, exp(DP_m))) + 
+  labs(title="Double Point", y="Abundance", x = "Year") + 
+  ylim(175, 1200) + xlim(1995, 2021)
+  #geom_line(aes(years, DP_lower), linetype="dashed", color="red") + geom_line(aes(years, DP_upper), linetype="dashed", color="red") 
+
+
+df$TB_m <- mod$TB_m
+df$TB_lower <- exp(df$TB_m)-1.96*se_b[,4]
+df$TB_upper <- exp(df$TB_m)+1.96*se_b[,4]
+p4b <- ggplot(df) + geom_point(aes(years, exp(TB)), colour="salmon") + geom_line(aes(years, exp(TB_m))) + 
+  labs(title="Tomales Bay", y="Abundance", x = "Year") +
+  ylim(175, 1200) + xlim(1995, 2021)
+  #geom_line(aes(years, TB_lower), linetype="dashed", color="red") + geom_line(aes(years, TB_upper), linetype="dashed", color="red") 
+
+df$TP_m <- mod$TP_m
+df$TP_lower <- exp(df$TP_m)-1.96*se_b[,5]
+df$TP_upper <- exp(df$TP_m)+1.96*se_b[,5]
+p5b <- ggplot(df) + geom_point(aes(years, exp(TP)), colour="salmon") + geom_line(aes(years, exp(TP_m))) + 
+  labs(title="Tomales Point", y="Abundance", x = "Year") +
+  ylim(175, 1200) + xlim(1995, 2021)
+  #geom_line(aes(years, TP_lower), linetype="dashed", color="red") + geom_line(aes(years, TP_upper), linetype="dashed", color="red") 
+
+
+## BL DE DP TB TP
+##ggplot to facet: DF = site, year, Count, Flag for raw vs model
+#pivot_longer look up in dplyr
+
+plot2 <- cowplot::plot_grid(p1b, p2b, p3b, p4b, p5b)
+
+title <- ggdraw() + 
+  draw_label(
+    "5 Independent #2",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7)
+  )
+plot_grid(
+  title, plot2,
+  ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1)
+)
 
 ##%######################################################%##
 #                                                          #
