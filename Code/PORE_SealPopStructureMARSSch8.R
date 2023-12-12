@@ -7,9 +7,9 @@
 
 ## data processed in PORE_SealTrend.....
 ## change dataset name so no conflicts between SealTrend and SealPopStructure
-dat2 ## get from SealTrend Script before transposed
+dat ## get from SealTrend 
 
-dat3 <- t(dat2)
+
 ###################################################
 ### code chunk number 8: Cs01_set.up.data
 ###################################################
@@ -79,7 +79,7 @@ fits=list()
 for(i in 1:length(Z.models)){
   for(Q.model in Q.models){
     fit.model = c(list(Z=Z.models[[i]], Q=Q.model), model.constant)
-    fit = MARSS(sealData, model=fit.model,
+    fit = MARSS(dat, model=fit.model,
                 silent=TRUE, control=list(maxit=1000))
     out=data.frame(H=names(Z.models)[i], Q=Q.model, U=U.model, 
                    logLik=fit$logLik, AICc=fit$AICc, num.param=fit$num.params,
@@ -134,7 +134,7 @@ print(out.tab.1[,c("H","Q", "delta.AICc","AIC.weight")], row.names=FALSE)
 best.fit=fits[min.AICc][[1]]
 par(mfrow = c(1,1))
 matplot(years, t(best.fit$states-best.fit$states[,1]), 
-        xlab="abundance index", ylab="",
+        xlab="Year", ylab="abundance index",
         type="l",lwd=2,col="black")
 legend("topleft",c("Bolinas Lagoon","South (DE/DP)","North (TB/TP)"),lwd=2,lty=c(1:3),bty="n")
 
@@ -292,10 +292,12 @@ x0.model="unequal"
 V0.model="zero"
 model.constant=list(
   U=U.model, R=R.model, A=A.model, 
-  x0=x0.model, V0=V0.model, tinitx=0)
-ThreePopFinal = MARSS(sealData, model=model.constant, control=list(maxit=1000))
+  x0=x0.model, V0=V0.model, tinitx=0,
+  c = small_c)
+ThreePopFinal = MARSS(sealData, model=model.constant, control=list(maxit=2000))
 ## get CIs
 CIs <- MARSSparamCIs(ThreePopFinal)
+CIs
 
 ## plot resids
 plotdat = t(sealData)
@@ -376,11 +378,12 @@ print(R.corr, figs = 3) #ones along diagonal
 
 MEI <- read_excel("Data/MEI.xlsx")
 show(MEI)
+View(MEI)
 ##cut to sealData time series
 MEI <- dplyr::filter(MEI, Year > 1995)
-MEI <- dplyr::filter(MEI, Year < 2020)
+MEI <- dplyr::filter(MEI, Year < 2023)
 ## make MEI a vector
-MEI <- as.vector(MEI[,2])
+MEI <- (MEI[,2])
 
 Z.model=Z4 #3 populations
 Q.model="diagonal and equal" #default is diagonal and unequal
@@ -397,6 +400,8 @@ V0.model="zero" #default
 small_c <- as.matrix(t(MEI))
 
 model.constant = list(Z=Z.model, Q=Q.model, C="unconstrained", c=small_c)
+
+model.constant = list(Z=Z.model, Q=Q.model, C="unconstrained")
 
 ThreePopFinal = MARSS(sealData, model=model.constant, control=list(maxit=1000))
 
