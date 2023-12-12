@@ -3,6 +3,8 @@
 library("MARSS")
 library(ggplot2)
 library("readxl")
+library(dplyr)
+library(tidyverse)
 
 ## B in
 #  terms of the interaction strengths between species; bij
@@ -28,7 +30,9 @@ hseal_max_1975_1999_long <- hseal_max_1975_1999 %>%
   pivot_longer(!c(Year, Age, Season), names_to = "Subsite", values_to = "Count")
 hseal_max_1975_1999_long
 
-
+# remove pre-1996 data since in the modern data file
+hseal_max_1975_1995_long <- hseal_max_1975_1999_long %>%
+  filter(Year < 1996)
 
 
 
@@ -41,25 +45,33 @@ Phoca$Year <- year(Phoca$Date2)
 ## get Julian Date (yday) for within year dates
 Phoca$Julian <- yday(Phoca$Date2)
 
+#rename adults during molting season "MOLTING"
+Phoca$Age <- ifelse(Phoca$Julian > 135, "MOLT", Phoca$Age)
+
+
 ## Looks like need to remove Dead adult and deadpup
 library(plyr)
 library(dplyr)
 
-Phoca <- subset(Phoca, Age != "DEADPUP" | Age != "DEADADULT")
+Phoca <- filter(Phoca, Age != "DEADPUP" & Age != "DEADADULT")
+unique(Phoca$Age)
+
 
 ## and need to convert HPUP (typo in database!) to PUP
 Phoca$Age[Phoca$Age == "HPUP"] <- "PUP"
 Phoca$Yearf <- as.factor(Phoca$Year)
 
 
-
 #now put files together
 Phoca
-hseal_max_1975_1999_long
+hseal_max_1975_1995_long
 
-all_data <- bind_rows(hseal_max_1975_1999_long, Phoca)
+all_data <- bind_rows(hseal_max_1975_1995_long, Phoca)
 
 all_data$Season <- ifelse(all_data$Julian <= 135 | !is.na(all_data$Season), "PUPPING", "MOLT")
+all_data
+
+all_data$Yearf <- as.factor(all_data$Year)
 all_data
 
 # Change PR to PRH
@@ -68,102 +80,64 @@ unique(all_data$Subsite)
 all_data$Subsite <- ifelse(all_data$Subsite == "PR", "PRH", all_data$Subsite)
 unique(all_data$Subsite)
 
+#top1 master file (all data)
+top1_all_data <- all_data %>% 
+  group_by(Year, Subsite, Age) %>%
+  slice_max(Count, n = 1) %>%
+  filter(Age != "PUP" | Season != "MOLT") #remove pups counted in early molting season
+top1_all_data
+
+top.plot <- ggplot(top1_all_data, aes(Year, Count)) + 
+  geom_point() + 
+  geom_smooth() + 
+  geom_vline(xintercept = 1994, lty = 3) +
+  scale_y_continuous(trans='log10') 
+top.plot + facet_grid(Age ~ Subsite)
+
+
+
+
+
 ## now within year plots to look at breeding and molting season peaks
 
 #Phoca.Adult <- dplyr::filter(Phoca, Age == "ADULT")
 
-
-
-
-
-
-
-seasonal.plot.adult <- plot.breeding <- ggplot(Phoca.Adult, aes(Julian, Count, colour = Year)) + geom_point() + geom_smooth(aes(colour = Year))
-seasonal.plot.adult + facet_grid(Age ~ Subsite)
-
-## previous hard to see patterns due to molt and pups becoming big(= adults), so just look at pups?
-Phoca.PUP <- dplyr::filter(Phoca, Age == "PUP")
-## subset to the peak seal breeding season about April 20 - May 10
-# (Silas) should this be April 15 to May 15 or April 20 to May 10??  right now using wider interval
-Phoca.breeding <- dplyr::filter(Phoca, Julian > 105 & Julian < 135)
-
-if (FALSE) { #remove this line and 80 to get this plot again
-d1 <- Phoca.PUP %>% 
-  group_by(Subsite, Year) %>% 
-  summarise_each(funs(MaxCount = max), Count)
-d1
-
-## julian is meaningless here, just for practice  
-d2 <- Phoca.PUP %>% 
-  group_by(Subsite, Year) %>% 
-  summarise_each(funs(MaxJulian = max), Julian)
-d2
-## combine d1 and d2
-d3 <- dplyr::bind_cols(d2, d1)
-d3
-## rename duplicate rows
-## need to fix this... must have been a dplyr update
-d3 <- d3[ -c(4:5)]
-d3
-d3 <- rename(d3, Subsite = Subsite...1) 
-d3 <- rename(d3, Year = Year...2)
-## plot just the max
-p1<-ggplot(d3, aes(Year, MaxCount)) +
-  geom_point() +
-  geom_smooth(se = TRUE)
-p1 + facet_grid(. ~ Subsite) 
-}
-
-Phoca.Adult.Breed <- dplyr::filter(Phoca.Adult, Julian > 105 & Julian < 135) #April 15 to May 15
-
-Phoca.breed.seas <- dplyr::filter(Phoca, Julian > 105 & Julian < 135)
-top1 <- tbl_df(Phoca.breed.seas) %>% 
-  group_by(Subsite, Yearf, Age) %>%
-  top_n(n = 1, wt = Count)
-
-##remove any duplicate rows (some problem in the above queries!)
-top1 <- dplyr::distinct(top1)
-
-#(silas) pr and pb missing lines connecting the dots 
-plot.top1 <- ggplot(top1, aes(Year, Count, shape = Age, colour = Age)) + 
+seasonal.plot <- plot.breeding <- ggplot(all_data, aes(Julian, Count, colour = Year)) + 
   geom_point() + 
-  geom_smooth()
-plot.top1 + facet_wrap(~ Subsite) + labs(title = "Top 1 Data Point") #PB and PR don't have line; remove deadpup??
-#ggsave("plot.top1.jpg", width = 8, height = 6, units = "in")
+  geom_smooth(aes(colour = Year))
+seasonal.plot + facet_grid(Age ~ Subsite)
 
-## now make 3 files of "top 1 for breeding season for pups, adults, and pups + adults (later)
-top1.adult.breed <- dplyr::filter(top1, Age == "ADULT")
-top1.pup.breed <- dplyr::filter(top1, Age == "PUP")
-## MARSS only needs year, site and count
-## dplyr:filter won't let me filter out fYear, so use base R
-myvars <- c("Year", "Subsite", "Count")
-top1.adult.breed <- top1.adult.breed[myvars]
-top1.pup.breed <- top1.pup.breed[myvars]
+## remove Point Bonita, PRH, and Duxbury since no or few pups
+all_data.MARSS <- subset(top1_all_data, Subsite != "DR" & Subsite != "PB" & Subsite != "PRH")
+unique(all_data.MARSS$Subsite)
 
-## remove Point Bonita and Duxbury since no pups and some duplicates in the dataset!
-top1.adult.breed <- subset(top1.adult.breed, Subsite != "DR" & Subsite != "PB")
-top1.pup.breed <- subset(top1.pup.breed, Subsite != "DR" & Subsite != "PB")
-## and for the trial runs, lets get rid of PRH
-#(Silas) should we add this back in ???
-top1.adult.breed <- dplyr::filter(top1.adult.breed, Subsite != "PR")
-top1.pup.breed <- dplyr::filter(top1.pup.breed, Subsite != "PR")
-
-# make sure no duplicate rows
-top1.adult.breed <- dplyr::distinct(top1.adult.breed)
-top1.pup.breed <- dplyr::distinct(top1.pup.breed)
+# remove extra columns
+all_data.MARSS <- all_data.MARSS[,c(1, 2, 4,5)]
 
 ## log all the counts, # log = ln in R
-top1.adult.breed$Count <- log(top1.adult.breed$Count) 
-top1.pup.breed$Count <- log(top1.pup.breed$Count)
+all_data.MARSS$Count <- log(all_data.MARSS$Count) 
+
+# check no duplicate rows
+all_data.MARSS <- distinct(all_data.MARSS)
+
+#make new age-subsite column
+all_data.MARSS$Subsite_Age <- paste0(all_data.MARSS$Subsite, "_", all_data.MARSS$Age)
+
+#remove extra columns
+all_data.MARSS <- all_data.MARSS[,-c(2:3)]
+
 
 ## now need to make the data wide for MARSS
-top1.adult.breed.spread <- tidyr::spread(top1.adult.breed, Subsite, Count)
-top1.pup.breed.spread <- tidyr::spread(top1.pup.breed, Subsite, Count)
+all_data.MARSS.wide <- all_data.MARSS %>% 
+  pivot_wider(names_from = Subsite_Age, values_from = Count)
 
-dat2 <- top1.adult.breed.spread ## for use in SealPopStructure Script
+
+
+
+dat2 <- all_data.MARSS.wide ## for use in SealPopStructure Script
 
 ## now use names in the basic MARSS code 
-dat <- t(top1.adult.breed.spread)
+dat <- t(all_data.MARSS.wide)
 ## OR FOR PUPS
 ## dat <- t(top1.pup.breed.spread)
 
@@ -185,7 +159,7 @@ legendnames = (unlist(dimnames(dat)[1]))
 ## R = observation errors          equal
 ## U = growth parameter            unequal  
 ## Z = design matrix 
-## Q = hidden state process        diagonal and unequal
+## Q = hidden state process        diagonal and equal
 ## B = effect of column on row     unequal (these are the interactions)
 
 #####################################################################
@@ -194,7 +168,7 @@ df_aic <- data.frame(model=character(), aic=integer())
 
 ###NOW TO MODELS ##########
 #estimate parameters
-Z.model = factor(c(1,1,1,1,1))
+Z.model = factor(c(rep(1, 15)))
 R.model = "diagonal and unequal" #error variance not the same
 kem_onepop = MARSS(dat, model=list(Z=Z.model, R=R.model))
 
@@ -226,7 +200,7 @@ matrix.of.biases = matrix(coef(kem_onepop, type="matrix")$A,
 xs = matrix(kem_onepop$states,
             nrow=dim(plotdat)[1],ncol=dim(plotdat)[2],byrow=F)
 resids = plotdat-matrix.of.biases-xs
-par(mfrow=c(2,3))
+par(mfrow=c(3, 5))
 for(i in 1:n){
   plot(resids[!is.na(resids[,i]),i],ylab="residuals")
   title(paste("One Population", legendnames[i]))
@@ -242,7 +216,7 @@ for(i in 1:n){
 #(silas) model is linear if R. model = "diagonal and equal" changed to unequal 6/6
 
 
-Z.model = factor(c(1,1,1,1,1))
+Z.model = factor(c(rep(1, 15)))
 R.model = "diagonal and equal" 
 kem2 = MARSS(dat, model=list(Z=Z.model, R=R.model))
 
@@ -260,7 +234,7 @@ matrix.of.biases = matrix(coef(kem2, type="matrix")$A,
 xs = matrix(kem2$states,
             nrow=dim(plotdat)[1],ncol=dim(plotdat)[2],byrow=F)
 resids = plotdat-matrix.of.biases-xs
-par(mfrow=c(2,3))
+par(mfrow=c(3,5))
 for(i in 1:n){
   plot(resids[!is.na(resids[,i]),i],ylab="residuals")
   title(paste("One Population", legendnames[i]))
@@ -282,143 +256,368 @@ par(mfrow=c(1,1))
 ###
 # 5 independent populations with unequal observation variances, unequal growth, equal hidden process variance, not too sure about B being identity
 ###
-Z.model=factor(c(1,2,3,4,5))
-R.model="identity"
+Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
+R.model="diagonal and equal"
 U.model="unequal"
 Q.model="diagonal and equal"
-B.Model="identity"
-kem4_ind1=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+B.model="diagonal and equal"
+kem4_ind1=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
                     control=list(maxit=1000, safe=TRUE)) 
-kem4_ind1$AIC #3.995799
+kem4_ind1$AIC 
 
 df_aic <- df_aic %>% add_row(model = "all ind 1", aic = kem4_ind1$AIC)
 
 #same as above but now B.Model is "unequal instead of identity"
 #DOESN'T REACH CONVERGENCE
-Z.model=factor(c(1,2,3,4,5))
+Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
 R.model="diagonal and unequal"
 U.model="unequal"
 Q.model="diagonal and equal"
-B.Model="diagonal and equal"#"unequal"
-kem4_ind2=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+B.model="diagonal and equal"#"unequal"
+kem4_ind2=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
                control=list(maxit=5000, safe=TRUE)) 
 beepr::beep(0)
-kem4_ind2$AIC #4.71455
+kem4_ind2$AIC 
 
-df_aic <- df_aic %>% add_row(model = "all ind 2", aic = kem4_ind2$AIC)
+df_aic <- df_aic %>% add_row(model = "Site ind 2", aic = kem4_ind2$AIC)
 
 
-#change Q to unequal
-#DOESN'T REACH CONVERGENCE
-#Z.model=factor(c(1,2,3,4,5))
-#R.model="diagonal and unequal"
-#U.model="unequal"
-#Q.model="diagonal and unequal"
-#B.Model="identity"
-#kem4_ind3=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-#                control=list(maxit=1000, safe=TRUE)) 
-#kem4_ind3$AIC #11.94
+#by site, unequal R, U, and B
+#RT about 5 min
+Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and unequal"#"unequal"   "LOWEST AIC SO FAR"
+kem4_ind3=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+                control=list(maxit=5000, safe=TRUE)) 
+beepr::beep(0)
+kem4_ind3$AIC 
 
-#change u to equal (reset Q back to equal)
-#Z.model=factor(c(1,2,3,4,5))
-#R.model="diagonal and unequal"
-#U.model="equal"
-#Q.model="diagonal and equal"
-#B.Model="identity"
-#kem4_ind4=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-#                control=list(maxit=1000, safe=TRUE)) 
-#kem4_ind4$AIC #16.13822
+df_aic <- df_aic %>% add_row(model = "Site ind 3", aic = kem4_ind3$AIC)
 
-#change both u and Q
-#DOESN'T CONVERGE
-#Z.model=factor(c(1,2,3,4,5))
-#R.model="diagonal and unequal"
-#U.model="equal"
-#Q.model="diagonal and unequal"
-#B.Model="identity"
-#kem4_ind5=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-#                control=list(maxit=1000, safe=TRUE)) 
-#kem4_ind5$AIC #15.13663
 
-#change Q, u, and B
-#DOESN'T CONVERGE, probably because the model isn't specified correctly mathematically (i.e. If an element of the diagonal of Q is 0, the corresponding row and col of B must be fixed.)
-#Z.model=factor(c(1,2,3,4,5))
-#R.model="diagonal and unequal"
-#U.model="equal"
-#Q.model="diagonal and unequal"
-#B.Model="unequal"
-#kem4_ind6=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-#                control=list(maxit=1000, safe=TRUE)) 
-#kem4_ind6$AIC #4.962436
+plotdat = t(dat)
+matrix.of.biases = matrix(coef(kem4_ind3, type="matrix")$A,
+                          nrow=nrow(plotdat),ncol=ncol(plotdat),byrow=T)
+xs = matrix(kem4_ind3$states,
+            nrow=dim(plotdat)[1],ncol=dim(plotdat)[2],byrow=F)
+resids = plotdat-matrix.of.biases-xs
+par(mfrow=c(3, 5))
+for(i in 1:n){
+  plot(resids[!is.na(resids[,i]),i],ylab="residuals")
+  title(paste("One Population", legendnames[i]))
+}
+
+
+#Molt not related to breeding season
+#crashing R
+Z.model=factor(c(1,2,1,1,2,1,1,2,1,1,2,1,1,2,1))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and unequal"#"unequal"
+kem4_MoltInd=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+                control=list(maxit=5000, safe=TRUE)) 
+beepr::beep(0)
+kem4_MoltInd$AIC 
+
+df_aic <- df_aic %>% add_row(model = "Molt ind", aic = kem4_MoltInd$AIC)
+
+
+# 3 sites
+Z.model=factor(c(1,1,1,2,2,2,2,2,2,3,3,3,3,3,3))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and equal"#"unequal"
+kem4_3_sites_unequal=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+                control=list(maxit=5000, safe=TRUE)) 
+beepr::beep(0)
+kem4_3_sites_unequal$AIC 
+
+df_aic <- df_aic %>% add_row(model = "3 Sites_unequal", aic = kem4_3_sites$AIC)
+df_aic
+
+
+## IND + NPGO
+Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and equal"#"unequal"
+kem4_ind2_NPGO=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                c = small_c),
+                control=list(maxit=5000, safe=TRUE)) 
+beepr::beep(0)
+kem4_ind2_NPGO$AIC 
+
+df_aic <- df_aic %>% add_row(model = "Site ind 2 + NPGO", aic = kem4_ind2_NPGO$AIC)
+
+
+#by site, unequal R, U, and B
+#RT 10+ min
+Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and unequal"#"unequal"   "LOWEST AIC SO FAR"
+kem4_ind3_NPGO=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                     c = small_c),
+                control=list(maxit=5000, safe=TRUE)) 
+beepr::beep(0)
+kem4_ind3_NPGO$AIC 
+
+df_aic <- df_aic %>% add_row(model = "Site ind 3 + NPGO", aic = kem4_ind3_NPGO$AIC)
+df_aic
+
+
+#by site, unequal R, U, and B and Coyote
+#RT 10+ min
+#works, but not matching covariates to sites correctly.
+Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and unequal"
+# if Z is 1:15
+# C.model=matrix(c("BL_1","OTH","OTH","OTH","OTH",
+#                  "BL_1","OTH","OTH","OTH","OTH",
+#                  "BL_1","OTH","OTH","OTH","OTH",
+#                  
+#                  "OTH","DE_1","OTH","OTH","OTH",
+#                  "OTH","DE_1","OTH","OTH","OTH",
+#                  "OTH","DE_1","OTH","OTH","OTH",
+#                  
+#                  "OTH","OTH","DP_1","OTH","OTH",
+#                  "OTH","OTH","DP_1","OTH","OTH",
+#                  "OTH","OTH","DP_1","OTH","OTH",
+#                  
+#                  "OTH","OTH","OTH","OTH","OTH",
+#                  "OTH","OTH","OTH","OTH","OTH",
+#                  "OTH","OTH","OTH","OTH","OTH",
+#                  
+#                  "OTH","OTH","OTH","OTH","OTH",
+#                  "OTH","OTH","OTH","OTH","OTH",
+#                  "OTH","OTH","OTH","OTH","OTH"),
+#               nrow = 15, ncol = 5,
+#               byrow = TRUE)
+
+# if Z is rep(1:5), times = 3
+# 6 min RT
+C.model=matrix(c("BL_1","OTH","OTH","OTH","OTH",
+                 "OTH","DE_1","OTH","OTH","OTH",
+                 "OTH","OTH","DP_1","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH"),
+               nrow = 5, ncol = 5,
+               byrow = TRUE)
+
+kem4_ind3_Coyote=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                       C = C.model,
+                                       c = small_c),
+                     control=list(maxit=5000, safe=TRUE, trace = 1)) 
+beepr::beep(0)
+kem4_ind3_Coyote$AIC 
+
+CIs <- MARSSparamCIs(kem4_ind3_Coyote)
+CIs
+
+
+df_aic <- df_aic %>% add_row(model = "Site ind 5 pops + Coyote", aic = kem4_ind3_Coyote$AIC)
+df_aic
+
+
+
+
+#each ts different
+Z.model=factor(c(1:15))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and unequal"
+# if Z is 1:15
+C.model=matrix(c("BL_1","OTH","OTH","OTH","OTH",
+                 "BL_1","OTH","OTH","OTH","OTH",
+                 "BL_1","OTH","OTH","OTH","OTH",
+
+                 "OTH","DE_1","OTH","OTH","OTH",
+                 "OTH","DE_1","OTH","OTH","OTH",
+                 "OTH","DE_1","OTH","OTH","OTH",
+
+                 "OTH","OTH","DP_1","OTH","OTH",
+                 "OTH","OTH","DP_1","OTH","OTH",
+                 "OTH","OTH","DP_1","OTH","OTH",
+
+                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH",
+
+                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH"),
+              nrow = 15, ncol = 5,
+              byrow = TRUE)
+
+# if Z is rep(1:5), times = 3
+# 28 min RT !
+# Q did not converge
+
+kem4_ind5_Coyote=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                       C = C.model,
+                                       c = small_c),
+                       control=list(maxit=5000, safe=TRUE, trace = 1)) 
+beepr::beep(0)
+kem4_ind5_Coyote$AIC 
+
+
+
+# 15 pops is 2 AIC higher than five pops.
+
+CIs <- MARSSparamCIs(kem4_ind5_Coyote)
+CIs
+
+
+df_aic <- df_aic %>% add_row(model = "Site ind all ages + pops + Coyote", aic = kem4_ind5_Coyote$AIC)
+df_aic
+
+######
+# molt unrelated to breeding season at each site
+# RT = 10 min
+Z.model=factor(c(1,2,1,3,4,3,5,6,5,7,8,7,9,10,9))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and unequal"#"unequal"
+C.model=matrix(c("BL_B","OTH","OTH","OTH","OTH",
+                 "BL_M","OTH","OTH","OTH","OTH",
+                 
+                 "OTH","DE_B","OTH","OTH","OTH",
+                 "OTH","DE_M","OTH","OTH","OTH",
+                 
+                 "OTH","OTH","DP_B","OTH","OTH",
+                 "OTH","OTH","DP_M","OTH","OTH",
+                 
+                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH",
+                 
+                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH"),
+               nrow = 10, ncol = 5,
+               byrow = TRUE)
+kem4_MoltInd.coyote=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                   C = C.model,
+                                   c = small_c),
+                   control=list(maxit=5000, safe=TRUE)) 
+
+CIs <- MARSSparamCIs(kem4_MoltInd.coyote)
+CIs
+
+beepr::beep(0)
+kem4_MoltInd.coyote$AIC 
+
+df_aic <- df_aic %>% add_row(model = "Molt ind coyote", aic = kem4_MoltInd.coyote$AIC)
+
+
+###############
+
+######
+# Pups unrelated to breeding adults and molt season at each site
+# RT = 12 min
+Z.model=factor(c(1,1,2,3,3,4,5,5,6,7,7,8,9,9,10))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and unequal"#"unequal"
+C.model=matrix(c("BL_A","OTH","OTH","OTH","OTH",
+                 "BL_P","OTH","OTH","OTH","OTH",
+                 
+                 "OTH","DE_A","OTH","OTH","OTH",
+                 "OTH","DE_P","OTH","OTH","OTH",
+                 
+                 "OTH","OTH","DP_A","OTH","OTH",
+                 "OTH","OTH","DP_P","OTH","OTH",
+                 
+                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH",
+                 
+                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH"),
+               nrow = 10, ncol = 5,
+               byrow = TRUE)
+kem4_Pup_Ind.coyote=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                          C = C.model,
+                                          c = small_c),
+                          control=list(maxit=5000, safe=TRUE)) 
+
+CIs <- MARSSparamCIs(kem4_Pup_Ind.coyote)
+CIs
+
+beepr::beep(0)
+kem4_Pup_Ind.coyote$AIC 
+
+df_aic <- df_aic %>% add_row(model = "Pup ind coyote", aic = kem4_Pup_Ind.coyote$AIC)
+df_aic
+
+###############
+
+
+
+
+
+
 
 #same as first but this time R is equal
 Z.model=factor(c(1,2,3,4,5))
 R.model="diagonal and equal"
 U.model="unequal"
 Q.model="diagonal and equal"
-B.Model="identity"
-kem4_ind7=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
+B.model="identity"
+kem4_ind7=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
                 control=list(maxit=1000, safe=TRUE)) 
 kem4_ind7$AIC # 4.137058
 
 df_aic <- df_aic %>% add_row(model = "all ind 7", aic = kem4_ind7$AIC)
 
+## Ocean vs Bay
+Z.model=factor(c(1,1,1,1,1,1,2,2,2,1,1,1,2,2,2))
+R.model="diagonal and equal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and equal"#"unequal" 
+kemOB2 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+                    control=list(maxit=500, safe=TRUE)) 
+kemOB2$AIC #35.93709
 
-#from first, change R and B
-# DOESN'T CONVERGE (again due to a wrongly specified model)
-#Z.model=factor(c(1,2,3,4,5))
-#R.model="diagonal and equal"
-#U.model="unequal"
-#Q.model="diagonal and equal"
-#B.Model="unequal"
-#kem4_ind8=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-#                control=list(maxit=1000, safe=TRUE)) 
-#kem4_ind8$AIC #15.41875
+df_aic <- df_aic %>% add_row(model = "ocean vs bay", aic = kemOB2$AIC)
 
-#change R and u
-#Z.model=factor(c(1,2,3,4,5))
-#R.model="diagonal and equal"
-#U.model="equal"
-#Q.model="diagonal and equal"
-#B.Model="identity"
-#kem4_ind9=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-#                control=list(maxit=1000, safe=TRUE)) 
-#kem4_ind9$AIC #20.79055
+## adult_molt_pup diff
+Z.model=factor(c(1,2,3,1,2,3,1,2,3,1,2,3,1,2,3))
+R.model="diagonal and equal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and equal"#"unequal" 
+kem_adult_molt_pup = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+               control=list(maxit=500, safe=TRUE)) 
+kem_adult_molt_pup$AIC #35.93709
 
-#change R and Q
-#Z.model=factor(c(1,2,3,4,5))
-#R.model="diagonal and equal"
-#U.model="unequal"
-#Q.model="diagonal and unequal"
-#B.Model="identity"
-#kem4_ind10=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-#               control=list(maxit=1000, safe=TRUE)) 
-#kem4_ind10$AIC #13.19429
+df_aic <- df_aic %>% add_row(model = "adult_molt_pup diff", aic = kem_adult_molt_pup$AIC)
+df_aic
 
-#change R and Q and u
-#DOESN'T CONVERGE
-#Z.model=factor(c(1,2,3,4,5))
-#R.model="diagonal and equal"
-#U.model="equal"
-#Q.model="diagonal and unequal"
-#B.Model="identity"
-#kem4_ind11=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-#                control=list(maxit=1000, safe=TRUE)) 
-#kem4_ind11$AIC #19.85212
 
-#change R and Q and u and B
-#hypothesis: doesn't converge due to badly specified model
-#above is correct
-#Z.model=factor(c(1,2,3,4,5))
-#R.model="diagonal and equal"
-#U.model="equal"
-#Q.model="diagonal and unequal"
-#B.Model="unequal"
-#kem4_ind12=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
-#                control=list(maxit=1000, safe=TRUE)) 
-#kem4_ind12$AIC #19.23859
+## adult_molt_pup diff
+Z.model=factor(c(1,2,3,1,2,3,1,2,3,1,2,3,1,2,3))
+R.model="diagonal and unequal"
+U.model="equal"
+Q.model="diagonal and equal"
+B.model="diagonal and equal"#"unequal" 
+kem_adult_molt_pup_u_equal = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+                           control=list(maxit=500, safe=TRUE)) 
+kem_adult_molt_pup_u_equal$AIC #35.93709
 
-###CONSIDER ONLY 1, 2 and 7
+df_aic <- df_aic %>% add_row(model = "adult_molt_pup diff_U_unequal", aic = kem_adult_molt_pup_u_equal$AIC)
+df_aic
+
 
 
 #plot residuals
@@ -539,11 +738,11 @@ U.model="unequal"
 Q.model="diagonal and unequal"
 R.model="diagonal and unequal"
 B.model="identity" 
-kemOB2 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
+kemOB2.NPGO = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model, c = small_c),
               control=list(maxit=500, safe=TRUE)) 
 kemOB2$AIC #35.93709
 
-df_aic <- df_aic %>% add_row(model = "ocean vs bay", aic = kemOB2$AIC)
+df_aic <- df_aic %>% add_row(model = "ocean vs bay.NPGO", aic = kemOB2.NPGO$AIC)
 
 
 #using the same as for the best independent
@@ -686,8 +885,8 @@ U.model="unequal"
 Q.model="diagonal and unequal"
 R.model="diagonal and unequal" 
 B.model= "identity"  
-kem3pop2 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model), control=list(maxit=5000, safe=TRUE))
-kem3pop2$AIC #6.304194
+kem3pop2 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model), control=list(maxit=2000, safe=TRUE))
+kem3pop2$AIC 
 
 beepr::beep(0)
 
@@ -698,7 +897,7 @@ kem3pop2.MEI$AIC
 beepr::beep(0)  
 
 
-df_aic <- df_aic %>% add_row(model = "3 pop - convergence warning", aic = kem3pop2$AIC)
+df_aic <- df_aic %>% add_row(model = "3 pop - NPGO", aic = kem3pop2$AIC)
 
 #badly specified -> convergence error
 #all nonlinear

@@ -28,7 +28,9 @@ hseal_max_1975_1999_long <- hseal_max_1975_1999 %>%
   pivot_longer(!c(Year, Age, Season), names_to = "Subsite", values_to = "Count")
 hseal_max_1975_1999_long
 
-
+# remove pre-1996 data since in the modern data file
+hseal_max_1975_1995_long <- hseal_max_1975_1999_long %>%
+  filter(Year < 1996)
 
 
 
@@ -45,21 +47,25 @@ Phoca$Julian <- yday(Phoca$Date2)
 library(plyr)
 library(dplyr)
 
-Phoca <- subset(Phoca, Age != "DEADPUP" | Age != "DEADADULT")
+Phoca <- filter(Phoca, Age != "DEADPUP" & Age != "DEADADULT")
+unique(Phoca$Age)
+
 
 ## and need to convert HPUP (typo in database!) to PUP
 Phoca$Age[Phoca$Age == "HPUP"] <- "PUP"
 Phoca$Yearf <- as.factor(Phoca$Year)
 
 
-
 #now put files together
 Phoca
-hseal_max_1975_1999_long
+hseal_max_1975_1995_long
 
-all_data <- bind_rows(hseal_max_1975_1999_long, Phoca)
+all_data <- bind_rows(hseal_max_1975_1995_long, Phoca)
 
 all_data$Season <- ifelse(all_data$Julian <= 135 | !is.na(all_data$Season), "PUPPING", "MOLT")
+all_data
+
+all_data$Yearf <- as.factor(all_data$Year)
 all_data
 
 # Change PR to PRH
@@ -68,102 +74,118 @@ unique(all_data$Subsite)
 all_data$Subsite <- ifelse(all_data$Subsite == "PR", "PRH", all_data$Subsite)
 unique(all_data$Subsite)
 
+
+
 ## now within year plots to look at breeding and molting season peaks
 
 #Phoca.Adult <- dplyr::filter(Phoca, Age == "ADULT")
 
+seasonal.plot <- plot.breeding <- ggplot(all_data, aes(Julian, Count, colour = Year)) + 
+  geom_point() + 
+  geom_smooth(aes(colour = Year))
+seasonal.plot + facet_grid(Age ~ Subsite)
 
 
+## make adult_breeding file for MARSS
+Phoca.Adult.Breed <- dplyr::filter(all_data, Age == "ADULT" & Season == "PUPPING", ) #April 15 to May 15
 
+top1.Phoca.Adult.Breed <- as_tibble(Phoca.Adult.Breed) %>% 
+  group_by(Year, Subsite) %>%
+  slice_max(Count, n = 1)
+top1.Phoca.Adult.Breed
 
-
-
-seasonal.plot.adult <- plot.breeding <- ggplot(Phoca.Adult, aes(Julian, Count, colour = Year)) + geom_point() + geom_smooth(aes(colour = Year))
-seasonal.plot.adult + facet_grid(Age ~ Subsite)
-
-## previous hard to see patterns due to molt and pups becoming big(= adults), so just look at pups?
-Phoca.PUP <- dplyr::filter(Phoca, Age == "PUP")
-## subset to the peak seal breeding season about April 20 - May 10
-# (Silas) should this be April 15 to May 15 or April 20 to May 10??  right now using wider interval
-Phoca.breeding <- dplyr::filter(Phoca, Julian > 105 & Julian < 135)
-
-if (FALSE) { #remove this line and 80 to get this plot again
-d1 <- Phoca.PUP %>% 
-  group_by(Subsite, Year) %>% 
-  summarise_each(funs(MaxCount = max), Count)
-d1
-
-## julian is meaningless here, just for practice  
-d2 <- Phoca.PUP %>% 
-  group_by(Subsite, Year) %>% 
-  summarise_each(funs(MaxJulian = max), Julian)
-d2
-## combine d1 and d2
-d3 <- dplyr::bind_cols(d2, d1)
-d3
-## rename duplicate rows
-## need to fix this... must have been a dplyr update
-d3 <- d3[ -c(4:5)]
-d3
-d3 <- rename(d3, Subsite = Subsite...1) 
-d3 <- rename(d3, Year = Year...2)
-## plot just the max
-p1<-ggplot(d3, aes(Year, MaxCount)) +
-  geom_point() +
-  geom_smooth(se = TRUE)
-p1 + facet_grid(. ~ Subsite) 
-}
-
-Phoca.Adult.Breed <- dplyr::filter(Phoca.Adult, Julian > 105 & Julian < 135) #April 15 to May 15
-
-Phoca.breed.seas <- dplyr::filter(Phoca, Julian > 105 & Julian < 135)
-top1 <- tbl_df(Phoca.breed.seas) %>% 
-  group_by(Subsite, Yearf, Age) %>%
-  top_n(n = 1, wt = Count)
-
-##remove any duplicate rows (some problem in the above queries!)
-top1 <- dplyr::distinct(top1)
-
-#(silas) pr and pb missing lines connecting the dots 
-plot.top1 <- ggplot(top1, aes(Year, Count, shape = Age, colour = Age)) + 
+plot.breeding <- ggplot(top1.Phoca.Adult.Breed, aes(Year, Count)) + 
   geom_point() + 
   geom_smooth()
-plot.top1 + facet_wrap(~ Subsite) + labs(title = "Top 1 Data Point") #PB and PR don't have line; remove deadpup??
-#ggsave("plot.top1.jpg", width = 8, height = 6, units = "in")
+plot.breeding + facet_grid(. ~ Subsite)
 
-## now make 3 files of "top 1 for breeding season for pups, adults, and pups + adults (later)
-top1.adult.breed <- dplyr::filter(top1, Age == "ADULT")
-top1.pup.breed <- dplyr::filter(top1, Age == "PUP")
-## MARSS only needs year, site and count
-## dplyr:filter won't let me filter out fYear, so use base R
-myvars <- c("Year", "Subsite", "Count")
-top1.adult.breed <- top1.adult.breed[myvars]
-top1.pup.breed <- top1.pup.breed[myvars]
+## make pup_breeding file for MARSS
+Phoca.Pup.Breed <- dplyr::filter(all_data, Age == "PUP" & Season == "PUPPING", ) #April 15 to May 15
 
-## remove Point Bonita and Duxbury since no pups and some duplicates in the dataset!
-top1.adult.breed <- subset(top1.adult.breed, Subsite != "DR" & Subsite != "PB")
-top1.pup.breed <- subset(top1.pup.breed, Subsite != "DR" & Subsite != "PB")
-## and for the trial runs, lets get rid of PRH
-#(Silas) should we add this back in ???
-top1.adult.breed <- dplyr::filter(top1.adult.breed, Subsite != "PR")
-top1.pup.breed <- dplyr::filter(top1.pup.breed, Subsite != "PR")
+top1.Phoca.Pup.Breed <- as_tibble(Phoca.Pup.Breed) %>% 
+  group_by(Year, Subsite) %>%
+  slice_max(Count, n = 1)
+top1.Phoca.Pup.Breed
 
-# make sure no duplicate rows
-top1.adult.breed <- dplyr::distinct(top1.adult.breed)
-top1.pup.breed <- dplyr::distinct(top1.pup.breed)
+plot.pup.breeding <- ggplot(top1.Phoca.Pup.Breed, aes(Year, Count)) + 
+  geom_point() + 
+  geom_smooth()
+plot.pup.breeding + facet_grid(. ~ Subsite)
+
+
+## make Adult_molting file
+Phoca.Adult.Molt <- dplyr::filter(all_data, Season == "MOLT" & Age == "ADULT") #after May 15
+
+top1.Phoca.Adult.Molt <- as_tibble(Phoca.Adult.Molt) %>% 
+  group_by(Year, Subsite, Age, Season) %>%
+  filter(Age != "PUP" | Season != "PUPPING") %>%
+  slice_max(Count, n = 1)
+top1.Phoca.Adult.Molt <- top1.Phoca.Adult.Molt %>% 
+  filter(Season == "MOLT")
+top1.Phoca.Adult.Molt
+
+
+
+#top1 master file (all data)
+top1_all_data <- all_data %>% 
+  group_by(Year, Subsite, Age, Season) %>%
+  slice_max(Count, n = 1) %>%
+  filter(Age != "PUP" | Season != "MOLT") #remove pups counted in early molting season
+top1_all_data
+
+
+#plot breeding, both age classes
+top.plot.breeding <- ggplot(data.breed, aes(Year, Count)) + 
+  geom_point() + 
+  geom_smooth() 
+top.plot.breeding + facet_grid(Age ~ Subsite)
+
+
+#plot molt, adults only
+top.plot.molting <- ggplot(top1.Phoca.Adult.Molt, aes(Year, Count)) + 
+  geom_point() + 
+  geom_smooth() 
+top.plot.molting + facet_wrap(. ~ Subsite)
+
+
+## remove Point Bonita, PRH, and Duxbury since no or few pups
+top1.Phoca.Adult.Breed <- subset(top1.Phoca.Adult.Breed, Subsite != "DR" & Subsite != "PB" & Subsite != "PRH")
+top1.Phoca.Pup.Breed <- subset(top1.Phoca.Pup.Breed, Subsite != "DR" & Subsite != "PB" & Subsite != "PRH")
+top1.Phoca.Adult.Molt <- subset(top1.Phoca.Adult.Molt, Subsite != "DR" & Subsite != "PB" & Subsite != "PRH")
+
+# remove extra columns
+top1.Phoca.Adult.Breed <- top1.Phoca.Adult.Breed[,c(1, 4, 5)]
+top1.Phoca.Pup.Breed <- top1.Phoca.Pup.Breed[,c(1, 4, 5)]
+top1.Phoca.Adult.Molt <- top1.Phoca.Adult.Molt[,c(1, 4, 5)]
 
 ## log all the counts, # log = ln in R
-top1.adult.breed$Count <- log(top1.adult.breed$Count) 
-top1.pup.breed$Count <- log(top1.pup.breed$Count)
+top1.Phoca.Adult.Breed$Count <- log(top1.Phoca.Adult.Breed$Count) 
+top1.Phoca.Pup.Breed$Count <- log(top1.Phoca.Pup.Breed$Count)
+top1.Phoca.Adult.Molt$Count <- log(top1.Phoca.Adult.Molt$Count)
+
+#get rid of duplicate rows
+top1.Phoca.Adult.Breed <- distinct(top1.Phoca.Adult.Breed)
+top1.Phoca.Pup.Breed <- distinct(top1.Phoca.Pup.Breed)
+top1.Phoca.Adult.Molt <- distinct(top1.Phoca.Adult.Molt)
 
 ## now need to make the data wide for MARSS
-top1.adult.breed.spread <- tidyr::spread(top1.adult.breed, Subsite, Count)
-top1.pup.breed.spread <- tidyr::spread(top1.pup.breed, Subsite, Count)
+top1.Phoca.Adult.Breed.spread <- top1.Phoca.Adult.Breed %>% 
+  pivot_wider(names_from = Subsite, values_from = Count)
 
-dat2 <- top1.adult.breed.spread ## for use in SealPopStructure Script
+top1.Phoca.Pup.Breed.spread <- top1.Phoca.Pup.Breed %>% 
+  pivot_wider(names_from = Subsite, values_from = Count)
+
+#not working yet !! Don't use
+top1.Phoca.Adult.Molt.spread <- top1.Phoca.Adult.Molt %>% 
+  pivot_wider(names_from = Subsite, values_from = Count)
+
+
+
+
+dat2 <- top1.Phoca.Adult.Breed.spread ## for use in SealPopStructure Script
 
 ## now use names in the basic MARSS code 
-dat <- t(top1.adult.breed.spread)
+dat <- t(top1.Phoca.Adult.Breed.spread)
 ## OR FOR PUPS
 ## dat <- t(top1.pup.breed.spread)
 
@@ -289,7 +311,7 @@ Q.model="diagonal and equal"
 B.Model="identity"
 kem4_ind1=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.Model),
                     control=list(maxit=1000, safe=TRUE)) 
-kem4_ind1$AIC #3.995799
+kem4_ind1$AIC 
 
 df_aic <- df_aic %>% add_row(model = "all ind 1", aic = kem4_ind1$AIC)
 
@@ -686,8 +708,8 @@ U.model="unequal"
 Q.model="diagonal and unequal"
 R.model="diagonal and unequal" 
 B.model= "identity"  
-kem3pop2 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model), control=list(maxit=5000, safe=TRUE))
-kem3pop2$AIC #6.304194
+kem3pop2 = MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model), control=list(maxit=2000, safe=TRUE))
+kem3pop2$AIC 
 
 beepr::beep(0)
 

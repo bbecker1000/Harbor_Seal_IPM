@@ -2,7 +2,7 @@
 library("readxl")
 library(dplyr)
 library(tidyverse)
-hseals <- read_excel("Data/1997_2019_Phocadata.xls")
+hseals <- read_excel("Data/1997_2022_Phocadata.xls")
 # drop extra cols, explained below
 hseals <- hseals[-c(3:4, 8:10)]
 
