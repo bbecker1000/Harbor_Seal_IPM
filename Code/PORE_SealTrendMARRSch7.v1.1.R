@@ -80,6 +80,10 @@ unique(all_data$Subsite)
 all_data$Subsite <- ifelse(all_data$Subsite == "PR", "PRH", all_data$Subsite)
 unique(all_data$Subsite)
 
+
+
+
+
 #top1 master file (all data)
 top1_all_data <- all_data %>% 
   group_by(Year, Subsite, Age) %>%
@@ -87,11 +91,13 @@ top1_all_data <- all_data %>%
   filter(Age != "PUP" | Season != "MOLT") #remove pups counted in early molting season
 top1_all_data
 
-top.plot <- ggplot(top1_all_data, aes(Year, Count)) + 
+top.plot <- ggplot(top1_all_data, aes(Year, log(Count))) + 
   geom_point() + 
   geom_smooth() + 
   geom_vline(xintercept = c(1988, 1994), lty = 3) +
-  scale_y_continuous(trans='log10') 
+  #scale_y_continuous(trans='log10') +
+  geom_vline(xintercept = 1994, lty = 3) 
+  
 top.plot + facet_grid(Age ~ Subsite)
 
 
@@ -105,7 +111,7 @@ top.plot + facet_grid(Age ~ Subsite)
 seasonal.plot <- plot.breeding <- ggplot(all_data, aes(Julian, Count, colour = Year)) + 
   geom_point() + 
   geom_smooth(aes(colour = Year))
-seasonal.plot + facet_grid(Age ~ Subsite)
+seasonal.plot + facet_grid(Year ~ Age)
 
 ## remove Point Bonita, PRH, and Duxbury since no or few pups
 all_data.MARSS <- subset(top1_all_data, Subsite != "DR" & Subsite != "PB" & Subsite != "PRH")
@@ -126,6 +132,10 @@ all_data.MARSS$Subsite_Age <- paste0(all_data.MARSS$Subsite, "_", all_data.MARSS
 #remove extra columns
 all_data.MARSS <- all_data.MARSS[,-c(2:3)]
 
+#use only data post 1997 ? ------------------------------------
+all_data.MARSS <- all_data.MARSS %>%
+                      filter(Year>1996)
+#--------------------------------------------------------------
 
 ## now need to make the data wide for MARSS
 all_data.MARSS.wide <- all_data.MARSS %>% 
@@ -140,6 +150,13 @@ dat2 <- all_data.MARSS.wide ## for use in SealPopStructure Script
 dat <- t(all_data.MARSS.wide)
 ## OR FOR PUPS
 ## dat <- t(top1.pup.breed.spread)
+
+#Transpose since MARSS needs time ACROSS columns
+years = dat[1,]     # remove years
+n = nrow(dat)-1
+dat = dat[2:nrow(dat),]
+legendnames = (unlist(dimnames(dat)[1]))
+
 
 
 ############# env data --------------------------------
@@ -177,8 +194,15 @@ plot(MEI$MEIv2_DEC_JAN, MEI$PDO_MAR  )
 # - whichever Coyote measure does better
 # - adding the anthropogenic positive and negatives?
 
+### Use data only > 1996? -----------------
+MEI <- MEI %>%
+  filter(Year>1996)
 
-# no coyote sightings at TB or TP so remove
+####--------------------------------------
+
+
+
+#
 Coyote_01 <- MEI[,c(7:11)]  
 small_c_Coyote_01 <- as.matrix(t(Coyote_01))
 
@@ -186,8 +210,13 @@ Coyote_Rate <- MEI[,c(12:16)]
 small_c_Coyote_Rate <- as.matrix(t(Coyote_Rate))
 
 
+#Matrix with coyote and PDO_MAR
 
+Coyote_01_PDO_MAR <- MEI[,c(7:11, 6)]
+small_c_Coyote_01_PDO_MAR <- as.matrix(t(Coyote_01_PDO_MAR))
 
+PDO_MAR <- MEI[,6]
+small_c_PDO_MAR <- as.matrix(t(PDO_MAR))
 
 
 
@@ -196,110 +225,32 @@ small_c_Coyote_Rate <- as.matrix(t(Coyote_Rate))
 ##########################################################################
 #Code to fit the single population model with i.i.d. errors
 #Read in data
-#Transpose since MARSS needs time ACROSS columns
-years = dat[1,]     # remove years
-n = nrow(dat)-1
-dat = dat[2:nrow(dat),]
-legendnames = (unlist(dimnames(dat)[1]))
+
 
 ########################################################################
 
 ## Parameter key ########
+## Z = design matrix = Spatial population structure
 ## R = observation errors          equal
-## U = growth parameter            unequal  
-## Z = design matrix 
-## Q = hidden state process        diagonal and equal
+## U = growth parameter            (un)equal, or matrix [Z x 1]
+## Q = hidden state process        diagonal and (un)equal
+#                                  equalvalcov or unconstrained
 ## B = effect of column on row     unequal (these are the interactions)
 
 #####################################################################
 
+
+
+
+
+
+
+
+
+
+
 df_aic <- data.frame(model=character(), aic=integer())
 
-###NOW TO MODELS ##########
-#estimate parameters
-Z.model = factor(c(rep(1, 15)))
-R.model = "diagonal and unequal" #error variance not the same
-kem_onepop = MARSS(dat, model=list(Z=Z.model, R=R.model))
-
-#make figure
-par(mfrow=c(1,1))
-matplot(years, t(dat),xlab="",ylab="index of log abundance",
-        pch=c("1","2","3","4","5"), ylim=c(3,9), bty="L")
-lines(years,kem_onepop$states-1.96*kem_onepop$states.se,type="l",
-      lwd=1,lty=2,col="red")
-lines(years,kem_onepop$states+1.96*kem_onepop$states.se,type="l",
-      lwd=1,lty=2,col="red")
-lines(years,kem_onepop$states,type="l",lwd=2)
-title("Observations and total population estimate",cex.main=.9)
-
-coef(kem_onepop, type="vector")  #show the estimated parameter elements as a vector
-coef(kem_onepop, type="matrix")$R
-#show estimated elements for each parameter matrix as a list
-#coef(kem_onepop) 
-
-kem_onepop$logLik   #show the log-likelihood
-kem_onepop$AIC  #show the AIC
-
-df_aic <- df_aic %>% add_row(model = "one pop - r unequal", aic = kem_onepop$AIC)
-
-#plot residuals, from 8.3 (page 99)
-plotdat = t(dat)
-matrix.of.biases = matrix(coef(kem_onepop, type="matrix")$A,
-                          nrow=nrow(plotdat),ncol=ncol(plotdat),byrow=T)
-xs = matrix(kem_onepop$states,
-            nrow=dim(plotdat)[1],ncol=dim(plotdat)[2],byrow=F)
-resids = plotdat-matrix.of.biases-xs
-par(mfrow=c(3, 5))
-for(i in 1:n){
-  plot(resids[!is.na(resids[,i]),i],ylab="residuals")
-  title(paste("One Population", legendnames[i]))
-}
-#bad residuals: BL, DP
-#good-ish residuals: DE, TB, TP(?)
-
-
-##########################################################
-### 8.2 A single well-mixed population with i.i.d. errors
-##########################################################
-#Code to fit the single population model with independent and equal errors
-#(silas) model is linear if R. model = "diagonal and equal" changed to unequal 6/6
-
-
-Z.model = factor(c(rep(1, 15)))
-R.model = "diagonal and equal" 
-kem2 = MARSS(dat, model=list(Z=Z.model, R=R.model))
-
-coef(kem2) #the estimated parameter elements
-kem2$logLik #log likelihood
-kem2$AIC  #AICs
-
-df_aic <- df_aic %>% add_row(model = "one pop - r equal", aic = kem2$AIC)
-
-
-#plot residuals from page 99
-plotdat = t(dat)
-matrix.of.biases = matrix(coef(kem2, type="matrix")$A,
-                          nrow=nrow(plotdat),ncol=ncol(plotdat),byrow=T)
-xs = matrix(kem2$states,
-            nrow=dim(plotdat)[1],ncol=dim(plotdat)[2],byrow=F)
-resids = plotdat-matrix.of.biases-xs
-par(mfrow=c(3,5))
-for(i in 1:n){
-  plot(resids[!is.na(resids[,i]),i],ylab="residuals")
-  title(paste("One Population", legendnames[i]))
-}
- ## BL and DP residuals look a bit problematic
- ## (Silas) I think most look somewhat problematic, maybe TB and TP are ok
-
-par(mfrow=c(1,1))
-
-###################################################
-### code chunk number 23: Cs2_Code4
-### Each population is independent
-
-#(silas) BL and DE clearly nonlinear but DP, TB, and TP aren't
-#(silas) is this because of the convergence problems??
-#(Silas) tried running with maxit=10000 and it didn't change the plots (except the confidence estimates for TB??)
 
 
 ###
@@ -421,9 +372,8 @@ df_aic <- df_aic %>% add_row(model = "Site ind 3 + NPGO", aic = kem4_ind3_NPGO$A
 df_aic
 
 
-#by site, unequal R, U, and B and Coyote
+#by site, Coyote_01
 #RT 10+ min
-#works, but not matching covariates to sites correctly.
 Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
 R.model="diagonal and unequal"
 U.model="unequal"
@@ -464,10 +414,13 @@ C.model=matrix(c("BL_1","OTH","OTH","OTH","OTH",
 
 kem4_ind3_Coyote=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
                                        C = C.model,
+
                                        c = small_c_Coyote_01),
+
                      control=list(maxit=5000, safe=TRUE, trace = 1)) 
 beepr::beep(0)
 kem4_ind3_Coyote$AIC 
+
 
 plot(kem4_ind3_Coyote, plot.type="model.resids.ytT")
 
@@ -483,23 +436,32 @@ coef(kem4_ind3_Coyote, type="matrix")$Q
 coef(kem4_ind3_Coyote, type="matrix")$U
 coef(kem4_ind3_Coyote, type="matrix")$B
 
-ggplot2::autoplot(kem4_ind3_Coyote, plot.type = "xtT") 
-
+ggplot2::autoplot(kem4_ind3_Coyote)#, plot.type = "xtT") 
+  
+  
+plot(kem4_ind3_Coyote, plot.type="fitted.ytT") +
+  scale_x_continuous()
 
 #Plot showing abundance change since time series start
+#convert to ggplot
 par(mfrow = c(1,1))
 matplot(years, 
         t(kem4_ind3_Coyote$states-kem4_ind3_Coyote$states[,1]), 
         xlab="Year", ylab="abundance index",
         type="l",lwd=2,col="black")
-legend("topleft",c("BL","DE", "DP","TB", "TP"),lwd=2,lty=c(1:3),bty="n")
+legend("topleft",c("BL","DE", "DP","TB", "TP"),lwd=2,lty=c(1:5),bty="n")
 
 
 
 tidy(kem4_ind3_Coyote)
+CIs <- MARSSparamCIs(kem4_ind3_Coyote)
+CIs
+
 
 df_aic <- df_aic %>% add_row(model = "Site ind 5 pops + Coyote", aic = kem4_ind3_Coyote$AIC)
 df_aic
+
+
 
 ## coyote continuous
 Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
@@ -547,7 +509,7 @@ kem4_ind3_Coyote_rate=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R
 beepr::beep(0)
 kem4_ind3_Coyote_rate$AIC 
 
-plot(kem4_ind3_Coyote_rate), plot.type="model.resids.ytT")
+plot(kem4_ind3_Coyote, plot.type="fitted.ytT")
 
 best.fit=fits[min.AICc][[1]]
 par(mfrow = c(1,1))
@@ -569,6 +531,157 @@ df_aic <- df_aic %>% add_row(model = "Site ind 5 pops + Coyote_rate", aic = kem4
 df_aic
 
 
+################ small_c_Coyote_01_PDO_MAR
+#by site, Coyote_01
+#RT 6 min
+Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="equalvarcov" #diagonal and equal"
+B.model="diagonal and unequal"
+
+# 6 min RT
+
+C.model=matrix(list("BL_1",0,0,0,0,
+                    0,"DE_1",0,0,0,
+                    0,0,"DP_1",0,0,
+                    0,0,0,0,0,
+                    0,0,0,0,0,
+                    "PDO","PDO","PDO","PDO","PDO"),
+               nrow = 6, ncol = 5,
+               byrow = TRUE)
+
+
+
+
+
+kem4_ind3_Coyote_01_PDO_MAR=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                       C = C.model,
+                                       c = small_c_Coyote_01_PDO_MAR),
+                       
+                       control=list(maxit=5000, safe=TRUE, trace = 1)) 
+beepr::beep(0)
+kem4_ind3_Coyote_01_PDO_MAR$AIC 
+
+autoplot(kem4_ind3_Coyote_01_PDO_MAR)
+plot(kem4_ind3_Coyote_01_PDO_MAR, plot.type="fitted.ytT")
+
+
+
+
+
+CIs <- MARSSparamCIs(kem4_ind3_Coyote_01_PDO_MAR, alpha = 0.11)
+CIs
+
+coef(kem4_ind3_Coyote_01_PDO_MAR, type="matrix")$R
+coef(kem4_ind3_Coyote_01_PDO_MAR, type="matrix")$Q
+coef(kem4_ind3_Coyote_01_PDO_MAR, type="matrix")$U
+coef(kem4_ind3_Coyote_01_PDO_MAR, type="matrix")$B
+
+ggplot2::autoplot(kem4_ind3_Coyote_01_PDO_MAR)#, plot.type = "xtT") 
+
+
+plot(kem4_ind3_Coyote_01_PDO_MAR, plot.type="fitted.ytT") +
+  scale_x_continuous()
+
+#Plot showing abundance change since time series start
+#convert to ggplot
+par(mfrow = c(1,1))
+matplot(years, 
+        t(kem4_ind3_Coyote_01_PDO_MAR$states-kem4_ind3_Coyote_01_PDO_MAR$states[,1]), 
+        xlab="Year", ylab="abundance index",
+        type="l",lwd=2,col="black")
+legend("topleft",c("BL","DE", "DP","TB", "TP"),lwd=2,lty=c(1:5),bty="n")
+
+
+
+tidy(kem4_ind3_Coyote_01_PDO_MAR)
+
+
+df_aic <- df_aic %>% add_row(model = "Site ind 5 pops + Coyote + PDO", aic = kem4_ind3_Coyote_01_PDO_MAR$AIC)
+df_aic
+
+
+
+###############-------------
+################ small_c_PDO_MAR
+#by site, 
+#RT 6 min
+Z.model=factor(c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5))
+R.model="diagonal and unequal"
+U.model="unequal"
+Q.model="diagonal and equal"
+B.model="diagonal and unequal"
+C.model=matrix(c(#"BL_1","OTH","OTH","OTH","OTH",
+                 #"OTH","DE_1","OTH","OTH","OTH",
+                 #"OTH","OTH","DP_1","OTH","OTH",
+                 #"OTH","OTH","OTH","OTH","OTH",
+                 #"OTH","OTH","OTH","OTH","OTH",
+                 "PDO","PDO","PDO","PDO","PDO"),
+               nrow = 1, ncol = 5,
+               byrow = TRUE)
+
+kem4_ind3_PDO_MAR=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                                  C = C.model,
+                                                  c = small_c_PDO_MAR),
+                                  
+                                  control=list(maxit=5000, safe=TRUE, trace = 1)) 
+beepr::beep(0)
+
+kem4_ind3_PDO_MAR$AIC 
+
+plot(kem4_ind3_PDO_MAR, plot.type="fitted.ytT")
+
+CIs <- MARSSparamCIs(kem4_ind3_PDO_MAR)
+CIs
+
+coef(kem4_ind3_PDO_MAR, type="matrix")$R
+coef(kem4_ind3_PDO_MAR, type="matrix")$Q
+coef(kem4_ind3_PDO_MAR, type="matrix")$U
+coef(kem4_ind3_PDO_MAR, type="matrix")$B
+
+ggplot2::autoplot(kem4_ind3_PDO_MAR)#, plot.type = "xtT") 
+
+
+plot(kem4_ind3_PDO_MAR, plot.type="fitted.ytT")
+
+#Plot showing abundance change since time series start
+#convert to ggplot
+par(mfrow = c(1,1))
+matplot(years, 
+        t(kem4_ind3_PDO_MAR$states)-kem4_ind3_PDO_MAR$states[,1]), 
+        xlab="Year", ylab="abundance index",
+        type="l",lwd=2,col="black")
+legend("topleft",c("BL","DE", "DP","TB", "TP"),lwd=2,lty=c(1:5),bty="n")
+
+# try with ggplot
+
+d <- as_tibble(t(kem4_ind3_PDO_MAR$states-kem4_ind3_PDO_MAR$states[,8]))
+#add header names
+names(d)[c(1:5)] <- c("BL", "DE", "DP", "TB", "TP")
+d <- as_tibble(cbind(years,d))
+
+d2 <- d %>% pivot_longer(cols = c(2:6), names_to = "Subsite", values_to = "log_est")
+  
+  
+
+ggplot(d2, aes(x = years, y = log_est, color = Subsite)) +
+  geom_line(linewidth = 1) +
+  xlim(1982, 2022) +
+  ylim(-1, 1.7)
+
+
+
+
+tidy(kem4_ind3_PDO_MAR)
+
+
+df_aic <- df_aic %>% add_row(model = "Site ind 5 pops + PDO", aic = kem4_ind3_PDO_MAR$AIC)
+df_aic
+
+
+
+###############-------------
 
 
 
@@ -582,25 +695,25 @@ U.model="unequal"
 Q.model="diagonal and equal"
 B.model="diagonal and unequal"
 # if Z is 1:15
-C.model=matrix(c("BL_1","OTH","OTH","OTH","OTH",
-                 "BL_1","OTH","OTH","OTH","OTH",
-                 "BL_1","OTH","OTH","OTH","OTH",
+C.model=matrix(list("BL_1",0,0,0,0,
+                 "BL_1",0,0,0,0,
+                 "BL_1",0,0,0,0,
 
-                 "OTH","DE_1","OTH","OTH","OTH",
-                 "OTH","DE_1","OTH","OTH","OTH",
-                 "OTH","DE_1","OTH","OTH","OTH",
+                 0,"DE_1",0,0,0,
+                 0,"DE_1",0,0,0,
+                 0,"DE_1",0,0,0,
 
-                 "OTH","OTH","DP_1","OTH","OTH",
-                 "OTH","OTH","DP_1","OTH","OTH",
-                 "OTH","OTH","DP_1","OTH","OTH",
+                 0,0,"DP_1",0,0,
+                 0,0,"DP_1",0,0,
+                 0,0,"DP_1",0,0,
 
-                 "OTH","OTH","OTH","OTH","OTH",
-                 "OTH","OTH","OTH","OTH","OTH",
-                 "OTH","OTH","OTH","OTH","OTH",
+                 0,0,0,0,0,
+                 0,0,0,0,0,
+                 0,0,0,0,0,
 
-                 "OTH","OTH","OTH","OTH","OTH",
-                 "OTH","OTH","OTH","OTH","OTH",
-                 "OTH","OTH","OTH","OTH","OTH"),
+                 0,0,0,0,0,
+                 0,0,0,0,0,
+                 0,0,0,0,0),
               nrow = 15, ncol = 5,
               byrow = TRUE)
 
@@ -637,20 +750,20 @@ R.model="diagonal and unequal"
 U.model="unequal"
 Q.model="diagonal and equal"
 B.model="diagonal and unequal"#"unequal"
-C.model=matrix(c("BL_B","OTH","OTH","OTH","OTH",
-                 "BL_M","OTH","OTH","OTH","OTH",
+C.model=matrix(c("BL_B","OTH","OTH","OTH","OTH", #1
+                 "BL_M","OTH","OTH","OTH","OTH", #2
                  
-                 "OTH","DE_B","OTH","OTH","OTH",
-                 "OTH","DE_M","OTH","OTH","OTH",
+                 "OTH","DE_B","OTH","OTH","OTH", #3
+                 "OTH","DE_M","OTH","OTH","OTH", #4
                  
-                 "OTH","OTH","DP_B","OTH","OTH",
-                 "OTH","OTH","DP_M","OTH","OTH",
+                 "OTH","OTH","DP_B","OTH","OTH", #5
+                 "OTH","OTH","DP_M","OTH","OTH", #6
                  
-                 "OTH","OTH","OTH","OTH","OTH",
-                 "OTH","OTH","OTH","OTH","OTH",
+                 "OTH","OTH","OTH","OTH","OTH",  #7
+                 "OTH","OTH","OTH","OTH","OTH",  #8
                  
-                 "OTH","OTH","OTH","OTH","OTH",
-                 "OTH","OTH","OTH","OTH","OTH"),
+                 "OTH","OTH","OTH","OTH","OTH",  #9
+                 "OTH","OTH","OTH","OTH","OTH"), #10
                nrow = 10, ncol = 5,
                byrow = TRUE)
 kem4_MoltInd.coyote=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
@@ -665,67 +778,58 @@ beepr::beep(0)
 kem4_MoltInd.coyote$AIC 
 
 df_aic <- df_aic %>% add_row(model = "Molt ind coyote", aic = kem4_MoltInd.coyote$AIC)
-
+autoplot(kem4_MoltInd.coyote)
 
 ###############
 
 ######
 # Pups unrelated to breeding adults and molt season at each site
+# coyote
 # RT = 12 min
 Z.model=factor(c(1,1,2,3,3,4,5,5,6,7,7,8,9,9,10))
-R.model="diagonal and unequal"
-U.model="unequal"
-Q.model="diagonal and equal"
+R.model="diagonal and equal"
+U.model="unequal"   #growth rates same for each z
+#U.model=matrix(c("u1", "u2", "u3", "u4", "u5", "u6", "u7", "u8", "u9", "u10"
+#                 ), 10, 1)
+Q.model="equalvarcov"
 B.model="diagonal and unequal"#"unequal"
-C.model=matrix(c("BL_A","OTH","OTH","OTH","OTH",
-                 "BL_P","OTH","OTH","OTH","OTH",
+C.model=matrix(list("BL_A",0,0,0,0,
+                 "BL_P",0,0,0,0,
                  
-                 "OTH","DE_A","OTH","OTH","OTH",
-                 "OTH","DE_P","OTH","OTH","OTH",
+                 0,"DE_A",0,0,0,
+                 0,"DE_P",0,0,0,
                  
-                 "OTH","OTH","DP_A","OTH","OTH",
-                 "OTH","OTH","DP_P","OTH","OTH",
+                 0,0,"DP_A",0,0,
+                 0,0,"DP_P",0,0,
                  
-                 "OTH","OTH","OTH","OTH","OTH",
-                 "OTH","OTH","OTH","OTH","OTH",
+                 0,0,0,0,0,
+                 0,0,0,0,0,
                  
-                 "OTH","OTH","OTH","OTH","OTH",
-                 "OTH","OTH","OTH","OTH","OTH"),
+                 0,0,0,0,0,
+                 0,0,0,0,0),
                nrow = 10, ncol = 5,
                byrow = TRUE)
-kem4_Pup_Ind.coyote=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+kem4_Pup_Ind.coyote.1997_2022=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
                                           C = C.model,
-                                          c = small_c),
+                                          c = small_c_Coyote_01),
                           control=list(maxit=5000, safe=TRUE)) 
 
-CIs <- MARSSparamCIs(kem4_Pup_Ind.coyote)
+CIs <- MARSSparamCIs(kem4_Pup_Ind.coyote.1997_2022)
 CIs
 
 beepr::beep(0)
-kem4_Pup_Ind.coyote$AIC 
+kem4_Pup_Ind.coyote.1997_2022$AIC 
 
-df_aic <- df_aic %>% add_row(model = "Pup ind coyote", aic = kem4_Pup_Ind.coyote$AIC)
+autoplot(kem4_Pup_Ind.coyote.1997_2022, plot.type = "fitted.ytT") + ylim(3.5,7.5)
+
+plot(kem4_Pup_Ind.coyote.1997_2022, plot.type = "fitted.ytT")
+
+
+df_aic <- df_aic %>% add_row(model = "Pup ind coyote", aic = kem4_Pup_Ind.coyote.1997_2022$AIC)
 df_aic
 
 ###############
 
-
-
-
-
-
-
-#same as first but this time R is equal
-Z.model=factor(c(1,2,3,4,5))
-R.model="diagonal and equal"
-U.model="unequal"
-Q.model="diagonal and equal"
-B.model="identity"
-kem4_ind7=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model),
-                control=list(maxit=1000, safe=TRUE)) 
-kem4_ind7$AIC # 4.137058
-
-df_aic <- df_aic %>% add_row(model = "all ind 7", aic = kem4_ind7$AIC)
 
 ## Ocean vs Bay
 Z.model=factor(c(1,1,1,1,1,1,2,2,2,1,1,1,2,2,2))
@@ -768,4 +872,135 @@ df_aic
 
 
 ##############
+
+## PDO only effects pups 
+## R: diagonal and unequal
+## COyote effects both age classes
+## RT = 13 min
+Z.model=factor(c(1,1,2,3,3,4,5,5,6,7,7,8,9,9,10))
+R.model="diagonal and unequal"  # Observation errors   "equal" better than "unequal"
+U.model="unequal"               # Growth Parameter       
+Q.model="diagonal and equal"    # hidden state process   #equalvarcov,  unconstrained
+B.model="diagonal and unequal"  # effect of column on row 
+
+C.model=matrix(list("BL_A",0,0,0,0,"PDO_A", 
+                 "BL_P",0,0,0,0,"PDO_P",
+                 
+                 0,"DE_A",0,0,0,"PDO_A",
+                 0,"DE_P",0,0,0,"PDO_P",
+                 
+                 0,0,"DP_A",0,0,"PDO_A",
+                 0,0,"DP_P",0,0,"PDO_P",
+                 
+                 0,0,0,0,0,"PDO_A",
+                 0,0,0,0,0,"PDO_P",
+                 
+                 0,0,0,0,0,"PDO_A",
+                 0,0,0,0,0,"PDO_P"
+                 
+                 ),
+               nrow = 10, ncol = 6,
+               byrow = TRUE)
+
+kem4_Pup_Ind.coyote_PDO=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                          C = C.model,
+                                          c = small_c_Coyote_01_PDO_MAR),
+                          control=list(maxit=5000, safe=TRUE)) 
+
+CIs <- MARSSparamCIs(kem4_Pup_Ind.coyote_PDO)
+CIs
+
+beepr::beep(0)
+kem4_Pup_Ind.coyote_PDO$AIC 
+
+df_aic <- df_aic %>% add_row(model = "Pup ind coyote + PDO + R.unequal", aic = kem4_Pup_Ind.coyote_PDO$AIC)
+df_aic
+
+# try with ggplot
+
+ggplot2::autoplot(kem4_Pup_Ind.coyote_PDO)#, plot.type = "xtT")
+
+
+d <- as_tibble(t(kem4_ind3_PDO_MAR$states-kem4_ind3_PDO_MAR$states[,8]))
+#add header names
+names(d)[c(1:5)] <- c("BL", "DE", "DP", "TB", "TP")
+d <- as_tibble(cbind(years,d))
+
+d2 <- d %>% pivot_longer(cols = c(2:6), names_to = "Subsite", values_to = "log_est")
+
+
+
+ggplot(d2, aes(x = years, y = log_est, color = Subsite)) +
+  geom_line(linewidth = 1) +
+  xlim(1982, 2022) +
+  ylim(-1, 1.7)
+
+
+
+
+## PDO only effects pups 
+## R: diagonal and EQUAL
+## COyote effects both age classes
+## RT = >12 min
+Z.model=factor(c(1,1,2,3,3,4,5,5,6,7,7,8,9,9,10))
+R.model="diagonal and equal"  # Observation errors   diagonal and unequal
+U.model="unequal"               # Growth Parameter       
+Q.model="diagonal and equal"    # hidden state process   #equalvarcov,  unconstrained
+B.model="diagonal and unequal"  # effect of column on row 
+# C.model=matrix(c("BL_A","OTH","OTH","OTH","OTH","PDO_A", 
+#                  "BL_P","OTH","OTH","OTH","OTH","PDO_P",
+#                  
+#                  "OTH","DE_A","OTH","OTH","OTH","PDO_A",
+#                  "OTH","DE_P","OTH","OTH","OTH","PDO_P",
+#                  
+#                  "OTH","OTH","DP_A","OTH","OTH","PDO_A",
+#                  "OTH","OTH","DP_P","OTH","OTH","PDO_P",
+#                  
+#                  "OTH","OTH","OTH","OTH","OTH","PDO_A",
+#                  "OTH","OTH","OTH","OTH","OTH","PDO_P",
+#                  
+#                  "OTH","OTH","OTH","OTH","OTH","PDO_A",
+#                  "OTH","OTH","OTH","OTH","OTH","PDO_P"),
+#                nrow = 10, ncol = 6,
+#                byrow = TRUE)
+
+C.model=matrix(c("BL_A",0,0,0,0, 
+                 "BL_P",0,0,0,0,
+                 
+                 0,"DE_A",0,0,0,
+                 0,"DE_P",0,0,0,
+                 
+                 0,0,"DP_A",0,0,
+                 0,0,"DP_P",0,0,
+                 
+                 0,0,0,0,0,
+                 0,0,0,0,0,
+                 
+                 0,0,0,0,0,
+                 0,0,0,0,0,
+                 
+                 "PDO_A","PDO_A","PDO_A","PDO_A","PDO_A",
+                 "PDO_P","PDO_P","PDO_P","PDO_P","PDO_P"
+                 ),
+               nrow = 12, ncol = 5,
+               byrow = TRUE)
+
+kem4_Pup_Ind.coyote_PDO_r.equal=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+                                                      C = C.model,
+                                                      c = small_c_Coyote_01_PDO_MAR),
+                                      control=list(maxit=5000, safe=TRUE)) 
+
+CIs <- MARSSparamCIs(kem4_Pup_Ind.coyote_PDO_r.equal)
+CIs
+
+beepr::beep(0)
+kem4_Pup_Ind.coyote_PDO_r.equal$AIC 
+
+df_aic <- df_aic %>% add_row(model = "Pup ind coyote + PDO + R.equal", aic = kem4_Pup_Ind.coyote_PDO_r.equal$AIC)
+df_aic
+
+ggplot2::autoplot(kem4_Pup_Ind.coyote_PDO_r.equal)
+
+
+
 
