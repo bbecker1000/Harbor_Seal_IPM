@@ -1907,7 +1907,7 @@ autoplot(BESTMODEL, plot.type = "xtT") + # xtT
 
 #BESTMODEL <- m.MOLT_IND_SITE_MOCI.equal_B_diag_uneq
 
-CIs <- MARSSparamCIs(BESTMODEL, alpha = 0.11)  #crashes if in results # start 420
+CIs <- MARSSparamCIs(BESTMODEL, alpha = 0.2)  #crashes if in results # start 420
 
 #CIs <- MARSSparamCIs(BESTMODEL, alpha = 0.11, hessian.fun = "fdHess")  #runs if few NAs, about 60 min
 
@@ -1972,7 +1972,7 @@ ggplot(d5, aes(x = years, y = log_est, group = Subsite_Season, color = Subsite))
 ####----plot overall pop size for each age class summing sites
 
 d.tot <- as_tibble(t(exp(BESTMODEL$states)))  #exp to original scale
-d.tot.se <- as_tibble(t(exp(BESTMODEL$states.se))) #exp to original scale
+d.tot.se <- as_tibble(t(BESTMODEL$states.se)) #exp to original scale
 #add header names
 
 names(d.tot)[c(1:12)] <- c("BL_Breed", "BL_Molt", #"BL_Pup",
@@ -2001,9 +2001,9 @@ Molt.tot <- d.tot %>%
   dplyr::reframe(Molt = rowSums(across(c(BL_Molt, DE_Molt, DP_Molt, PRH_Molt, TB_Molt, TP_Molt))))
 
 Breed.tot.se <- d.tot.se %>%
-  dplyr::reframe(Breed.se = rowSums(across(c(BL_Breed, DE_Breed, DP_Breed, PRH_Breed, TB_Breed, TP_Breed))))
+  dplyr::reframe(Breed.se = rowSums(across(c(BL_Breed, DE_Breed, DP_Breed, PRH_Breed, TB_Breed, TP_Breed)))/6) #get mean
 Molt.tot.se <- d.tot.se %>%
-  dplyr::reframe(Molt.se = rowSums(across(c(BL_Molt, DE_Molt, DP_Molt, PRH_Molt, TB_Molt, TP_Molt))))
+  dplyr::reframe(Molt.se = rowSums(across(c(BL_Molt, DE_Molt, DP_Molt, PRH_Molt, TB_Molt, TP_Molt)))/6) #get mean
 
 
 #put in a single table
@@ -2021,14 +2021,14 @@ d.Breed.Molt.se <- d.Breed.Molt.se[,3] #remove season and year
 
 d4 <- as_tibble(cbind(d.Breed.Molt.tot,d.Breed.Molt.se))
 
-#add groupings for site and molt
 
+#total pop plot with ses
 ggplot(d4, aes(x = years, y = estimate, color = Season)) +
   #geom_line(aes(linetype = Season), size = 1.25) +
   geom_point(size = 2) + 
   geom_line(linewidth = 1.1) +
-  geom_ribbon(aes(ymin = estimate-SE, ymax = estimate+SE),  
-              alpha = 0.2, colour = NA) +
+  geom_ribbon(aes(ymin = estimate-SE*estimate, ymax = estimate+SE*estimate, fill = Season),  
+              alpha = 0.2, color = NA) +
   #geom_hline(yintercept = c(-1,0,1), lty = 2) +
   xlim(1982, 2022) +
   ylim(0, 5000) + 
@@ -2063,10 +2063,11 @@ ggplot(coef.data, aes(term, estimate, color = Season, shape = Season)) +
   theme(legend.position = c(0.2, 0.2)) + 
   #ylim(-1.25, 0.25) +
 
-  # scale_x_discrete(name ="Covariate",
-  #                  labels=c("Coyote BL","Coyote BL","Coyote DE", "Coyote DE",
-  #                           "Coyote DP","Coyote DP", "MOCI", "MOCI"), 
-  #                  limits=rev(levels(coef.data$term))) +
+  scale_x_discrete(name ="Covariate",
+                    labels=c("Coyote BL breed","Coyote BL molt","Coyote DE breed", "Coyote DE molt",
+                             "Coyote DP breed","Coyote DP molt", 
+                             "UI breed", "UI lag breed", "UI lag molt", "UI molt"), 
+                    limits=rev(levels(coef.data$term))) +
   geom_hline(yintercept = 0, lty = 2) +
   theme_sjplot(base_size = 18)
 
@@ -2149,31 +2150,40 @@ Q.corr
 ##foreward 5 years
 # must add c data
 # lets say coyote at DE and DP and warm PDO
-#  
+
+summary(t(small_c_Coyote_3yr_UI_UI_lag))
+
+
+
 # example A
-c_forecast=matrix(c(0,0,0,0,0,0,0,0,0,0,
-                    0,0,0,0,0,0,0,0,0,0, #1,1,1,1,1,  Contrast with Y/N coyote
-                    0,0,0,0,0,0,0,0,0,0, #1,1,1,1,1,
-             0,0,0,0,0,0,0,0,0,0, #1,1,1,1,1,
-             0,0,0,0,0,0,0,0,0,0, #1,1,1,1,1,
-             0,0,0,0,0,0,0,0,0,0, #1,1,1,1,1,
-             1,1,1,1,1,1,1,1,1,1), #PDO
-nrow = 7, ncol = 10,
+#no coyotes, good upwelling
+c_forecast=matrix(c(0,0,0,0,0,  0,0,0,0,0,
+                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,  Contrast with Y/N coyote
+                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
+                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
+                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
+                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
+                    2,1,2,2,2,  2,2,3,3,0, #UI
+                  0,2,1,0,2,-2,  -1,0,2,2), #UI lag
+             
+nrow = 8, ncol = 10,
 byrow = TRUE)
 
 # example B
-c_forecast=matrix(c(0,0,0,0,0,1,1,1,1,1,  #BL
+# more coyotes, less upwelling
+c_forecast=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
                     1,1,1,1,1,1,1,1,1,1,  #DE
-                    0,1,1,0,1,1,0,0,1,1,  #DP
-                    0,0,0,0,0,0,0,0,0,0,  #PRH
+                    -0.8,1,1,-0.8,1,1,-0.8,-0.8,1,1,  #DP
+                    -0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,  #PRH
                     1,1,1,1,1,1,1,1,1,1,  #TB
-                    0,0,0,0,0,1,1,1,1,1,  #TP 
-                    2,1,1,1,0,0,-1,1,2,1), #PDO
-                  nrow = 7, ncol = 10,
+                    -0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #TP 
+                    0,-2,-2,0,0,-1,-1,-1,-1,0, #UI
+                  -1,0,-2,-2,0,0,-1,-1,-1,-1), #UI lag
+                  nrow = 8, ncol = 10,
                   byrow = TRUE)
 
 
-c_new <- cbind(small_c_Coyote_01_PDO_MAR, c_forecast)
+c_new <- cbind(small_c_Coyote_3yr_UI_UI_lag, c_forecast)
 
 forecast1 <- predict(BESTMODEL, n.ahead = 10, interval = "prediction", 
                      nsim = 100,
@@ -2197,6 +2207,9 @@ ggplot(forecast1_plot_data, aes(t+1981, estimate)) +
   xlab("Year") + 
   ylab("Seals") +
   facet_wrap(.~.rownames)
+
+
+
 
 
 autoplot(forecast1) +
