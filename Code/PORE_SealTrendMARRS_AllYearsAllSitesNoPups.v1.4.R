@@ -5,6 +5,271 @@ library(dplyr)
 library(tidyverse)
 library(sjPlot) #used at end for 1 plot theme
 
+<<<<<<< HEAD
+=======
+##%######################################################%##
+#                                                          #
+####                   data wrangling                   ####
+#                                                          #
+##%######################################################%##
+
+#2023-12-21
+#ALL SITES ALL YEARS !!
+
+
+
+## get PRNS data
+Phoca <- read_excel("Data/1997_2022_Phocadata.xls")
+
+Phoca <- Phoca[-c(3:4, 8:10)]
+
+#older data
+hseal_max_1975_1999 <- read_excel("Data/1975-1999_max_counts.xlsx")
+
+hseal_max_1975_1999$Age <- ifelse(hseal_max_1975_1999$Season =="MOLTING", "MOLTING", hseal_max_1975_1999$Age)
+
+hseal_max_1975_1999_long <- hseal_max_1975_1999 %>% 
+  pivot_longer(!c(Year, Age, Season), names_to = "Subsite", values_to = "Count")
+hseal_max_1975_1999_long
+
+# remove pre-1996 data since in the modern data file
+hseal_max_1975_1995_long <- hseal_max_1975_1999_long %>%
+  filter(Year < 1996)
+
+
+
+## need some year and julian date fields to plot by year and day of year
+library(lubridate)
+## tell lubridate the format
+Phoca$Date2 <- ymd(Phoca$Date) #separates out month,day and year
+## add year column for faceting plots
+Phoca$Year <- year(Phoca$Date2)
+## get Julian Date (yday) for within year dates
+Phoca$Julian <- yday(Phoca$Date2)
+
+#rename adults during molting season "MOLTING"
+Phoca$Age <- ifelse(Phoca$Julian > 135, "MOLTING", Phoca$Age)
+Phoca$Season <- ifelse(Phoca$Julian <= 135, "PUPPING", "MOLTING")
+
+
+
+## Looks like need to remove Dead adult and deadpup
+library(plyr)
+library(dplyr)
+
+Phoca <- filter(Phoca, Age != "DEADPUP" & Age != "DEADADULT")
+unique(Phoca$Age)
+
+
+## and need to convert HPUP (typo in database!) to PUP
+Phoca$Age[Phoca$Age == "HPUP"] <- "PUP"
+Phoca$Yearf <- as.factor(Phoca$Year)
+
+
+#now put files together
+Phoca
+hseal_max_1975_1995_long
+
+all_data <- bind_rows(hseal_max_1975_1995_long, Phoca)
+
+
+
+all_data$Yearf <- as.factor(all_data$Year)
+all_data
+
+# Change PR to PRH
+unique(all_data$Subsite)
+
+all_data$Subsite <- ifelse(all_data$Subsite == "PR", "PRH", all_data$Subsite)
+unique(all_data$Subsite)
+
+#top1 master file (all data)
+top1_all_data <- all_data %>% 
+  group_by(Year, Subsite, Age) %>%
+  slice_max(Count, n = 1) %>%
+  filter(Age != "PUP" | Season != "MOLTING") #remove pups counted in early molting season
+top1_all_data
+
+top.plot <- ggplot(top1_all_data,
+                   aes(Year, Count)) + 
+  geom_point() + 
+  geom_smooth() + 
+  geom_vline(xintercept = c(1988, 1994), lty = 3) +
+  ylab("Max Count") +
+  #scale_y_continuous(trans='log10') +
+  geom_vline(xintercept = 1994, lty = 3) +
+  theme_gray(base_size = 14)
+  
+top.plot + facet_grid(Age ~ Subsite)
+
+
+
+## now within year plots to look at breeding and molting season peaks
+
+#Phoca.Adult <- dplyr::filter(Phoca, Age == "ADULT")
+
+seasonal.plot <- ggplot(all_data, aes(Julian, Count, color = Yearf)) + 
+  geom_point() + 
+  geom_smooth(aes(colour = Yearf))
+seasonal.plot + facet_grid(Subsite ~ Age)
+
+#remove Point Bonita and Duxbury PUP data since no or few pups
+all_data.MARSS <- subset(top1_all_data, Age != "PUP") # | Subsite != "DR" & Subsite != "PB" & Subsite != "PRH")
+
+#remove Point Bonita and Duxbury PUP data since no or few pups and shorter time series
+all_data.MARSS <- subset(all_data.MARSS, Subsite != "DR" & Subsite != "PB")
+
+#Year 1 only has bolinas data so delete 
+#all sites start in 1982...so use that
+all_data.MARSS <- subset(all_data.MARSS, Year > 1981)
+
+
+
+# unique(all_data.MARSS$Subsite)
+
+# remove extra columns
+all_data.MARSS <- all_data.MARSS[,c(1, 2, 4,5)]
+
+## log all the counts, # log = ln in R
+all_data.MARSS$Count <- log(all_data.MARSS$Count) 
+
+# check no duplicate rows
+all_data.MARSS <- distinct(all_data.MARSS)
+
+#make new age-subsite column
+all_data.MARSS$Subsite_Age <- paste0(all_data.MARSS$Subsite, "_", all_data.MARSS$Age)
+
+#remove extra columns
+all_data.MARSS <- all_data.MARSS[,-c(2:3)]
+
+# #use only data post 1997 ? ------------------------------------
+# all_data.MARSS <- all_data.MARSS %>%
+#                       filter(Year>1997) # if filter 1996, then no BL molt so order off.
+# #--------------------------------------------------------------
+
+## now need to make the data wide for MARSS
+all_data.MARSS.wide <- all_data.MARSS %>% 
+  pivot_wider(names_from = Subsite_Age, values_from = Count)
+
+
+
+
+dat2 <- all_data.MARSS.wide ## for use in SealPopStructure Script
+
+## now use names in the basic MARSS code 
+dat <- t(all_data.MARSS.wide)
+## OR FOR PUPS
+## dat <- t(top1.pup.breed.spread)
+
+#Transpose since MARSS needs time ACROSS columns
+years = dat[1,]     # remove years
+n = nrow(dat)-1
+dat = dat[2:nrow(dat),]
+legendnames = (unlist(dimnames(dat)[1]))
+
+
+
+############# env data --------------------------------
+
+# MEI file has several ocean indices and coyote data
+MEI <- read_excel("Data/MEI.xlsx")
+show(MEI)
+
+
+
+### Use data only > 1996? -----------------
+# MEI <- MEI %>%
+#   filter(Year>1997)
+
+####--------------------------------------
+MEI$MOCI_JFM_NC <- as.numeric(MEI$MOCI_JFM_NC)
+MEI$BEUTI_FEB_APR_37N_39N <- as.numeric(MEI$BEUTI_FEB_APR_37N_39N)
+
+#View(MEI)
+##cut to sealData time series
+
+MEI <- MEI %>% filter(Year < 2023 & Year > 1981)
+
+#ESeal at DP in 2003 and 2004.  Count as a coyote disturbance
+MEI$Coyote_DP <- ifelse(MEI$Year == 2003, 1, MEI$Coyote_DP)
+MEI$Coyote_DP <- ifelse(MEI$Year == 2004, 1, MEI$Coyote_DP)
+
+#if NPGO
+#NPGO <- MEI[,c(1,3)]
+## make NPGO a vector
+#NPGO <- NPGO[,2]
+#if Coyote
+
+
+# plot(MEI$NPGO_MAR, MEI$NPGO_JAN )
+# plot(MEI$NPGO_MAR, MEI$MOCI_JFM_NC )
+# plot(MEI$PDO_MAR, MEI$MOCI_JFM_NC )
+# plot(MEI$Year, MEI$PDO_MAR)
+# plot(MEI$MEIv2_DEC_JAN, MEI$NPGO_MAR)
+# cor.test(MEI$PDO_MAR, as.numeric(MEI$MOCI_JFM_NC))
+# # cor = 0.79 (0.6-0.9) P < 0.001
+# # So let's use PDO_MAR as our env covariate.'
+# plot(MEI$PDO_MAR, MEI$NPGO_MAR  )
+# plot(MEI$MEIv2_DEC_JAN, MEI$PDO_MAR  )
+# plot(MEI$MOCI_JFM_NC, MEI$BEUTI_FEB_APR_37N_39N  )
+# plot(MEI$Year, MEI$MOCI_JFM_NC)
+
+# MARSS recommends start with more covariates and go smaller.
+# create covariates for 
+# - coyote Y/N + PDO_MAR
+# - coyote count + PDO_MAR
+# - PDO_MAR
+# - whichever Coyote measure does better
+# - adding the anthropogenic positive and negatives?
+
+
+
+
+
+#
+Coyote_01 <- MEI[,c(7:11)]  
+small_c_Coyote_01 <- as.matrix(t(Coyote_01))
+
+Coyote_Rate <- MEI[,c(12:16)] 
+small_c_Coyote_Rate <- as.matrix(t(Coyote_Rate))
+
+
+#Matrix with coyote and PDO_MAR
+
+Coyote_01_PDO_MAR <- MEI[,c(7:11, 6)]
+## zeros for DR, PB, PRH
+#Coyote_01_PDO_MAR$Coyote_DR <- 0
+#Coyote_01_PDO_MAR$Coyote_PB <- 0
+Coyote_01_PDO_MAR$Coyote_PRH <- 0
+
+Coyote_01_PDO_MAR <- Coyote_01_PDO_MAR[,c(1:3, 7, 4:6)]
+small_c_Coyote_01_PDO_MAR <- as.matrix(t(Coyote_01_PDO_MAR))
+
+PDO_MAR <- MEI[,6]
+small_c_PDO_MAR <- as.matrix(t(PDO_MAR))
+
+
+#Matrix with coyote and MOCI
+
+Coyote_01_MOCI <- MEI[,c(7:11, 5)]
+small_c_Coyote_01_MOCI <- as.matrix(t(Coyote_01_MOCI))  ## coyote 01 generally much better than coyote rate 
+
+Coyote_rate_MOCI <- MEI[,c(12:16, 5)]
+small_c_Coyote_rate_MOCI <- as.matrix(t(Coyote_rate_MOCI))
+
+Coyote_01_BEUTI <- MEI[,c(7:11, 17)]
+small_c_Coyote_01_BEUTI <- as.matrix(t(Coyote_01_BEUTI)) 
+
+
+
+MOCI <- MEI[,5]
+small_c_MOCI <- as.matrix(t(MOCI))
+
+
+
+
+
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 ########################################################################
 
 ## Parameter key ########
@@ -592,6 +857,20 @@ t0 <- Sys.time()
 
 Z.model=factor(c(1:12))  # 6 sites x 2 age classes
 R.model="diagonal and equal" # #zero since (need x0) focusing on B  else  "diagonal and equal"
+<<<<<<< HEAD
+=======
+# x0.model=matrix(c(3.6, 4.4,# 1.7,  #BL  # estimated from first data point in time series at each site_age combo
+#                   5.5, 6, # 3,       #DE
+#                   5.3, 6, # 4.5,    #DP
+#                   #2.5, 2.5,# 2,  # DR
+#                   #3, 3, # 2,      # PB
+#                   3, 3, # 2,      #PRH
+#                   5, 5.5, # 4.5,   #TB
+#                   6.1, 6.4), # 4.8), #TP
+#                 nrow = 12, ncol = 1,
+#                 byrow = TRUE)
+
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 U.model="equal"
 Q.model="diagonal and equal"   #near zero add control
 
@@ -682,6 +961,20 @@ R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equ
 U.model="equal"
 Q.model="equalvarcov"   #near zero add control
 B.model="equalvarcov"  # > 90 min
+<<<<<<< HEAD
+=======
+# x0.model=matrix(c(3.6, 4.4,# 1.7,  #BL  # estimated from first data point in time series at each site_age combo
+#                   5.5, 6, # 3,       #DE
+#                   5.3, 6, # 4.5,    #DP
+#                   #2.5, 2.5,# 2,  # DR
+#                   #3, 3, # 2,      # PB
+#                   3, 3, # 2,      #PRH
+#                   5, 5.5, # 4.5,   #TB
+#                   6.1, 6.4), # 4.8), #TP
+#                 nrow = 12, ncol = 1,
+#                 byrow = TRUE)
+
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 C.model=matrix(              list("BL_A",0,0,0,0,0,"PDO_A",
                                   "BL_M",0,0,0,0,0,"PDO_M",
                                   #  "BL_P",0,0,0,0," PDO_P",
@@ -757,11 +1050,29 @@ Ut[, , 1:ceiling(TT / 2)] <- U1
 t0 <- Sys.time()
 
 Z.model=factor(c(1:12))  # 6 sites x 2 age classes
+<<<<<<< HEAD
 R.model <- diag(0.01, 12) #known observation error variance
+=======
+R.model <- diag(0.1, 12) #known observation error variance
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 #R.model="equal"  #zero since focusing on B  else  "diagonal and equal"
 U.model=Ut  #Select from above
 Q.model="equalvarcov" #"diagonal and equal"   #near zero add control
 B.model="unconstrained"  # > 90 min
+<<<<<<< HEAD
+=======
+# x0.model=matrix(c(3.6, 4.4,# 1.7,  #BL  # estimated from first data point in time series at each site_age combo
+#                   5.5, 6, # 3,       #DE
+#                   5.3, 6, # 4.5,    #DP
+#                   #2.5, 2.5,# 2,  # DR
+#                   #3, 3, # 2,      # PB
+#                   3, 3, # 2,      #PRH
+#                   5, 5.5, # 4.5,   #TB
+#                   6.1, 6.4), # 4.8), #TP
+#                 nrow = 12, ncol = 1,
+#                 byrow = TRUE)
+
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 C.model=matrix(              list("BL_A",0,0,0,0,0,"PDO_A",
                                   "BL_M",0,0,0,0,0,"PDO_M",
                                   #  "BL_P",0,0,0,0," PDO_P",
@@ -804,7 +1115,11 @@ m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix=MARSS(dat, model=list(Z=Z.model, U
 df_aic <- df_aic %>% add_row(model = "Model_1_I - m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix", aic = m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix$AIC)
 df_aic
 beepr::beep()
+<<<<<<< HEAD
 save(m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix, file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix.RData")
+=======
+save(m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix, file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix")
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 #load(file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix.RData")
 
 #end time
@@ -832,12 +1147,31 @@ Ut[, , 1:ceiling(TT / 2)] <- U1
 t0 <- Sys.time()
 
 Z.model=factor(c(1:12))  # 6 sites x 2 age classes
+<<<<<<< HEAD
 #Z.model=factor(rep(1, 12))
 R.model <- diag(0.05, 12) #known observation error variance
 R.model="diagonal and equal"
 U.model=Ut  #Select from above
 Q.model="equalvarcov"#"diagonal and equal"   #near zero add control
 B.model="equalvarcov"#unconstrained"  # > 90 min
+=======
+R.model <- diag(0.1, 12) #known observation error variance
+#R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equal"
+U.model=Ut  #Select from above
+Q.model="diagonal and equal"   #near zero add control
+B.model="unconstrained"  # > 90 min
+# x0.model=matrix(c(3.6, 4.4,# 1.7,  #BL  # estimated from first data point in time series at each site_age combo
+#                   5.5, 6, # 3,       #DE
+#                   5.3, 6, # 4.5,    #DP
+#                   #2.5, 2.5,# 2,  # DR
+#                   #3, 3, # 2,      # PB
+#                   3, 3, # 2,      #PRH
+#                   5, 5.5, # 4.5,   #TB
+#                   6.1, 6.4), # 4.8), #TP
+#                 nrow = 12, ncol = 1,
+#                 byrow = TRUE)
+
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 C.model=matrix(              list("BL_A",0,0,0,0,0,"PDO_A",
                                   "BL_M",0,0,0,0,0,"PDO_M",
                                   #  "BL_P",0,0,0,0," PDO_P",
@@ -869,7 +1203,11 @@ C.model=matrix(              list("BL_A",0,0,0,0,0,"PDO_A",
 ),
 nrow = 12, ncol = 7,
 byrow = TRUE)
+<<<<<<< HEAD
 m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+=======
+m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
                                                               C = C.model,
                                                               #x0 = x0.model, 
                                                               tinitx=1, 
@@ -877,17 +1215,26 @@ m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site=MARSS(dat, model=list(Z=Z.mode
                                               control=list(maxit=5000, safe=TRUE, 
                                                            trace = 0, allow.degen=TRUE)) 
 
+<<<<<<< HEAD
 df_aic <- df_aic %>% add_row(model = "Model_1_J - m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site", aic = m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site$AIC)
 df_aic
 beepr::beep()
 save(m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site, file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site.RData")
 #load(file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site.RData")
+=======
+df_aic <- df_aic %>% add_row(model = "Model_1_J - m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site", aic = m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site$AIC)
+df_aic
+beepr::beep()
+save(m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site, file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site.RData")
+#load(file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site.RData")
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 
 #end time
 t1 <- Sys.time()
 #Runtime
 t1-t0
 
+<<<<<<< HEAD
 
 #####__________________
 
@@ -1072,6 +1419,8 @@ t1-t0
 
 
 
+=======
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 # END H1 ------------------------------------------------------------
 
 
@@ -1092,11 +1441,18 @@ Ut[, , 1:ceiling(TT / 2)] <- U1
 t0 <- Sys.time()
 
 Z.model=factor(c(1:12))  # 6 sites x 2 age classes
+<<<<<<< HEAD
 #R.model <- diag(0.05, 12) #known observation error variance
 R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equal"
 U.model=Ut  #Select from above
 Q.model="equalvarcov"#"diagonal and equal"   #near zero add control
 B.model="identity"#unconstrained"  # > 90 min
+=======
+R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equal"
+U.model=Ut  #Select from above
+Q.model="diagonal and equal"   #near zero add control
+B.model="unconstrained"  # > 90 min
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 # x0.model=matrix(c(3.6, 4.4,# 1.7,  #BL  # estimated from first data point in time series at each site_age combo
 #                   5.5, 6, # 3,       #DE
 #                   5.3, 6, # 4.5,    #DP
@@ -1144,7 +1500,11 @@ m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_3Site=MARSS(dat, model=list(Z=Z.model, U
                                                                    #x0 = x0.model, 
                                                                    tinitx=1, 
                                                                    c = small_c_Coyote_01_PDO_MAR),
+<<<<<<< HEAD
                                                    control=list(maxit=5000, safe=TRUE, 
+=======
+                                                   control=list(maxit=7000, safe=TRUE, 
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
                                                                 trace = 0, allow.degen=TRUE)) 
 
 df_aic <- df_aic %>% add_row(model = "Model_1_K - m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_3Site", aic = m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_3Site$AIC)
@@ -1179,11 +1539,18 @@ Ut[, , 1:ceiling(TT / 2)] <- U1
 t0 <- Sys.time()
 
 Z.model=factor(c(1:12))  # 6 sites x 2 age classes
+<<<<<<< HEAD
 #R.model <- diag(0.05, 12) #known observation error variance
 R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equal"
 U.model=Ut  #Select from above
 Q.model="equalvarcov"#"diagonal and equal"   #near zero add control
 B.model="identity"#unconstrained"  # > 90 min
+=======
+R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equal"
+U.model=Ut  #Select from above
+Q.model="diagonal and equal"   #near zero add control
+B.model="unconstrained"  # > 90 min
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 # x0.model=matrix(c(3.6, 4.4,# 1.7,  #BL  # estimated from first data point in time series at each site_age combo
 #                   5.5, 6, # 3,       #DE
 #                   5.3, 6, # 4.5,    #DP
@@ -1246,6 +1613,7 @@ t1 <- Sys.time()
 t1-t0
 
 
+<<<<<<< HEAD
 ###--------------------
 #2024-02-12
 
@@ -1296,6 +1664,12 @@ t1-t0
 # Model plots -------------------------------------
 #############################
 BESTMODEL <- m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_1pop # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
+=======
+#############################
+# Model plots -------------------------------------
+#############################
+BESTMODEL <- m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 
 autoplot(BESTMODEL)
 
@@ -1308,7 +1682,11 @@ autoplot(BESTMODEL, plot.type = "xtT") + # xtT
 # plot temporal change from starting values
 
 #BESTMODEL <- m.MOLT_IND_SITE_MOCI.equal_B_diag_uneq
+<<<<<<< HEAD
 CIs <- MARSSparamCIs(BESTMODEL, alpha = 0.11)  #\
+=======
+CIs <- MARSSparamCIs(BESTMODEL, alpha = 0.11)  #crashes if in results # start 420
+>>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 #CIs <- MARSSparamCIs(BESTMODEL, alpha = 0.11, hessian.fun = "fdHess")  #runs if few NAs, about 60 min
 
 CIs
