@@ -977,8 +977,7 @@ R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equ
 U.model="equal"
 Q.model="equalvarcov"   #near zero add control
 B.model="equalvarcov"  # > 90 min
-<<<<<<< HEAD
-=======
+
 # x0.model=matrix(c(3.6, 4.4,# 1.7,  #BL  # estimated from first data point in time series at each site_age combo
 #                   5.5, 6, # 3,       #DE
 #                   5.3, 6, # 4.5,    #DP
@@ -990,7 +989,6 @@ B.model="equalvarcov"  # > 90 min
 #                 nrow = 12, ncol = 1,
 #                 byrow = TRUE)
 
->>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 C.model=matrix(              list("BL_A",0,0,0,0,0,"PDO_A",
                                   "BL_M",0,0,0,0,0,"PDO_M",
                                   #  "BL_P",0,0,0,0," PDO_P",
@@ -1703,16 +1701,16 @@ B.model="identity" # unconstrained"  > 90 min
 #                 byrow = TRUE)
 
 
-C.model=matrix(              list("BL_A",0,0,0,0,0,"UI_A","UI_lag_A",  #adding UI and UI_lag
-                                  "BL_M",0,0,0,0,0,"UI_M","UI_lag_M",
+C.model=matrix(              list("BL_A",0,0,0,0,0,"UI_A","UI_A_lag",  #adding UI and UI_lag
+                                  "BL_M",0,0,0,0,0,"UI_M","UI_M_lag",
                                   #  "BL_P",0,0,0,0," PDO_P",
                                   
-                                  0,"DE_A",0,0,0,0,"UI_A","UI_lag_A",
-                                  0,"DE_M",0,0,0,0,"UI_M","UI_lag_M",
+                                  0,"DE_A",0,0,0,0,"UI_A","UI_A_lag",
+                                  0,"DE_M",0,0,0,0,"UI_M","UI_M_lag",
                                   #   0,"DE_P",0,0,0," PDO_P",
                                   
-                                  0,0,"DP_A",0,0,0,"UI_A","UI_lag_A",
-                                  0,0,"DP_M",0,0,0,"UI_M","UI_lag_M",
+                                  0,0,"DP_A",0,0,0,"UI_A","UI_A_lag",
+                                  0,0,"DP_M",0,0,0,"UI_M","UI_M_lag",
                                   #   0,0,"DP_P",0,0," PDO_P",
                                   
                                   # 0,0,0,0,0,0,0,0,"PDO_A",
@@ -1723,14 +1721,14 @@ C.model=matrix(              list("BL_A",0,0,0,0,0,"UI_A","UI_lag_A",  #adding U
                                   # 0,0,0,0,0,0,0,0,"PDO_M",
                                   #   0,0,0,0,0," PDO_P"
                                   
-                                  0,0,0,0,0,0,"UI_A", "UI_lag_A",        #PRH
-                                  0,0,0,0,0,0,"UI_M", "UI_lag_M",
+                                  0,0,0,0,0,0,"UI_A", "UI_A_lag",        #PRH
+                                  0,0,0,0,0,0,"UI_M", "UI_M_lag",
                                   
-                                  0,0,0,0,0,0,"UI_A", "UI_lag_A",       #TB
-                                  0,0,0,0,0,0,"UI_M", "UI_lag_M",
+                                  0,0,0,0,0,0,"UI_A", "UI_A_lag",       #TB
+                                  0,0,0,0,0,0,"UI_M", "UI_M_lag",
                                   
-                                  0,0,0,0,0,0,"UI_A", "UI_lag_A",       #TP
-                                  0,0,0,0,0,0,"UI_M", "UI_lag_M"
+                                  0,0,0,0,0,0,"UI_A", "UI_A_lag",       #TP
+                                  0,0,0,0,0,0,"UI_M", "UI_M_lag"
 ),
 nrow = 12, ncol = 8,
 byrow = TRUE)
@@ -1784,7 +1782,7 @@ t0 <- Sys.time()
 
 Z.model=factor(c(1:12))  # 6 sites x 2 age classes
 
-R.model <-  "diagonal and unequal" #known observation error variance
+R.model <-  "diagonal and unequal" # observation error variance
 
 # R.model <- diag(0.01, 12) #known observation error variance
 
@@ -1889,10 +1887,6 @@ t1-t0
 #############################
 BESTMODEL <- m.Ind_Molt_Adult_Coyote_UI_B_PRH_1U_TV_R_fix #m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
 
-#############################
-# Model plots -------------------------------------
-#############################
-BESTMODEL <- m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_R_fix # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
 
 
 autoplot(BESTMODEL)
@@ -1907,7 +1901,7 @@ autoplot(BESTMODEL, plot.type = "xtT") + # xtT
 
 #BESTMODEL <- m.MOLT_IND_SITE_MOCI.equal_B_diag_uneq
 
-CIs <- MARSSparamCIs(BESTMODEL, alpha = 0.2)  #crashes if in results # start 420
+CIs <- MARSSparamCIs(BESTMODEL, alpha = 0.11)  #crashes if in results # start 420
 
 #CIs <- MARSSparamCIs(BESTMODEL, alpha = 0.11, hessian.fun = "fdHess")  #runs if few NAs, about 60 min
 
@@ -2037,12 +2031,6 @@ ggplot(d4, aes(x = years, y = estimate, color = Season)) +
   xlab("Year") 
 
 
-
-
-
-
-
-
 ####-----plot covariate effects
 
 coef.data <- tidy(CIs)
@@ -2053,9 +2041,7 @@ coef.data <- coef.data %>%
 
 coef.data$Season <- ifelse(str_detect(coef.data$term, "_A"), "Breeding Adults", 
                            ifelse(str_detect(coef.data$term, "_M"), "Molting", "Pups"))
-#coef.data$Covariate <- ifelse(str_detect(coef.data$term, "MOCI"), "MOCI", "Coyote")
-coef.data$Covariate <- ifelse(str_detect(coef.data$term, "UI"), "UI", "Coyote")
-  
+
 ggplot(coef.data, aes(term, estimate, color = Season, shape = Season)) +
 
   geom_pointrange(aes(ymin = conf.low, ymax = conf.up), size = 0.8) +
@@ -2088,8 +2074,8 @@ coef(BESTMODEL, type="matrix")$R  # observation errors
 coef(BESTMODEL, type="matrix")$Q  # hidden state process
 (coef(BESTMODEL, type="matrix")$U)  # growth | su
 
-exp(0.2389865)
-exp(0.205)
+exp(0.2644765)
+exp(0.237)
 
 B <- coef(BESTMODEL, type="matrix")$B  # effect of column on row
 
@@ -2206,7 +2192,7 @@ ggplot(forecast1_plot_data, aes(t+1981, estimate)) +
   geom_vline(xintercept = 2003.5, linetype = 2) + #show TV timepoint
   xlab("Year") + 
   ylab("Seals") +
-  facet_wrap(.~.rownames)
+  facet_wrap(.~.rownames, ncol = 2)
 
 
 

@@ -107,22 +107,25 @@ Hypotheses for adult-molt time series  1982 present
 
 2024-01-16
 
-1. Growth rate by time
-2. insert lag effect for PDO from previous fall (embryo implant) --> 2024-05 --> using Upwelling instead from previous spring)
-3. add coyote leg effect from previous year or cumulative years with coyotes = 3 year sum of presence/abselce 
-4. add 2003 eseal to coyote disturbance(with and without)  (ADDED to PRESENT = 1)
-5. Make sure future pop growth not too optimistic
+1. Growth rate by time - DONE
+2. insert lag effect for PDO from previous fall (embryo implant) (DONE --> 2024-05 --> using Upwelling instead from previous spring)
+3. add coyote leg effect from previous year or cumulative years with coyotes DONE = 3 year sum of presence/abselce 
+4. add 2003 eseal to coyote disturbance(with and without)  (ADDED to PRESENT = 1) = DONE
+5. Make sure future pop growth not too optimistic  =I THINK DONE
 6. NOAA appreciates if molt helps predict breeding season - measures how in sync
 7. corr plot    
-  A. group sites close together --> BL, DE, DP and TP, TB            ####STARTED 2024-02-06
+  A. group sites close together --> BL, DE, DP and TP, TB            ####STARTED 2024-02-06   DONE
     i. can include or exclude PRH try both ways
   C. include DR and PB in model if BL, DE, DP, TP, TB over time vs DR, PN, PRH
   D. 
 
 
 2024-05-26
-1. adding general UI Mar_MAY for 39N, including lag  - use as main covariate
-2. upwelling data from here: https://oceanwatch.pfeg.noaa.gov/products/PFELData/upwell/monthly/upanoms.mon
+1. adding general UI Mar_MAY for 39N, including lag  - use as main covariate  - DONE
+  A. upwelling data from here: https://oceanwatch.pfeg.noaa.gov/products/PFELData/upwell/monthly/upanoms.mon
+
+TODO: put onto bbecker1000 repo
+
 
 
 
