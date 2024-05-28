@@ -1166,7 +1166,7 @@ R.model="diagonal and equal"
 U.model=Ut  #Select from above
 Q.model="equalvarcov"#"diagonal and equal"   #near zero add control
 B.model="equalvarcov"#unconstrained"  # > 90 min
-=======
+
 R.model <- diag(0.1, 12) #known observation error variance
 #R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equal"
 U.model=Ut  #Select from above
@@ -1183,7 +1183,6 @@ B.model="unconstrained"  # > 90 min
 #                 nrow = 12, ncol = 1,
 #                 byrow = TRUE)
 
->>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
 C.model=matrix(              list("BL_A",0,0,0,0,0,"PDO_A",
                                   "BL_M",0,0,0,0,0,"PDO_M",
                                   #  "BL_P",0,0,0,0," PDO_P",
@@ -1215,11 +1214,9 @@ C.model=matrix(              list("BL_A",0,0,0,0,0,"PDO_A",
 ),
 nrow = 12, ncol = 7,
 byrow = TRUE)
-<<<<<<< HEAD
 m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
-=======
+
 m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site=MARSS(dat, model=list(Z=Z.model, U=U.model, Q=Q.model, R=R.model, B=B.model,
->>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
                                                               C = C.model,
                                                               #x0 = x0.model, 
                                                               tinitx=1, 
@@ -1232,13 +1229,13 @@ df_aic
 beepr::beep()
 save(m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site, file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site.RData")
 #load(file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site.RData")
-=======
+
 df_aic <- df_aic %>% add_row(model = "Model_1_J - m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site", aic = m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site$AIC)
 df_aic
 beepr::beep()
 save(m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site, file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site.RData")
 #load(file = "Output/m.Ind_Molt_Adult_Coyote_PDO_B_unc_1U_TV_Site.RData")
->>>>>>> 9f3ae972c3d6bdc8c30283f3e165a6ef9ef929a0
+
 
 #end time
 t1 <- Sys.time()
