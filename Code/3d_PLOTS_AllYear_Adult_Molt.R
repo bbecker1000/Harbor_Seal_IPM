@@ -4,7 +4,7 @@
 #############################
 # Model plots -------------------------------------
 #############################
-BESTMODEL <- m.Ind_Molt_Adult_Coyote_UI_B_PRH_1U_TV_R_fix #m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
+BESTMODEL <- m06.ut.All #m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
 
 
 
@@ -140,14 +140,94 @@ ggplot(d4, aes(x = years, y = estimate, color = Season)) +
   #geom_line(aes(linetype = Season), size = 1.25) +
   geom_point(size = 2) + 
   geom_line(linewidth = 1.1) +
-  geom_ribbon(aes(ymin = estimate-SE*estimate, ymax = estimate+SE*estimate, fill = Season),  
+  # CI at 90% use SE = 1.645, 80% = 1.28
+  geom_ribbon(aes(ymin = estimate-1.28*SE*estimate, ymax = estimate+1.28*SE*estimate, fill = Season),  
               alpha = 0.2, color = NA) +
   #geom_hline(yintercept = c(-1,0,1), lty = 2) +
   xlim(1982, 2022) +
-  ylim(0, 5000) + 
+  ylim(0, 5500) + 
   theme_minimal(base_size = 20) +
   ylab("Estimated abundance") +
   xlab("Year") 
+
+
+
+## change over time ---
+
+# get data
+## calculate percentage change in total pop from 1982-2003 and 2004-2022
+
+#column names
+new_names <- c("STARTPOP", "ENDPOP", "STARTSE", "ENDSE")
+
+Change_1983_2003_Breed <- d4 %>% filter(years == 1983 | years == 2003) %>%
+  filter(Season == "Breed") %>%
+  pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE)) %>%
+  set_names(new_names)
+  
+## calculate percentage change in total pop from 1982-2003 and 2004-2022
+Change_2004_2022_Breed <- d4 %>% filter(years == 2004 | years == 2022) %>%
+  filter(Season == "Breed") %>%
+  pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE)) %>%
+  set_names(new_names)
+
+Change_1983_2003_Molt <- d4 %>% filter(years == 1983 | years == 2003) %>%
+  filter(Season == "Molt") %>%
+  pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
+  set_names(new_names)
+
+## calculate percentage change in total pop from 1982-2003 and 2004-2022
+Change_2004_2022_Molt <- d4 %>% filter(years == 2004 | years == 2022) %>%
+  filter(Season == "Molt") %>%
+  pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
+  set_names(new_names)
+
+## calculate percentage change in total pop from 1982-2003 and 2004-2022
+Change_1983_2022_Breed <- d4 %>% filter(years == 1983 | years == 2022) %>%
+  filter(Season == "Breed") %>%
+  pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
+  set_names(new_names)
+
+## calculate percentage change in total pop from 1982-2003 and 2004-2022
+Change_1983_2022_Molt <- d4 %>% filter(years == 1983 | years == 2022) %>%
+  filter(Season == "Molt") %>%
+  pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
+  set_names(new_names)
+
+change.df <- bind_rows(Change_1983_2003_Breed, Change_2004_2022_Breed,Change_1983_2003_Molt,
+          Change_2004_2022_Molt, Change_1983_2022_Breed, Change_1983_2022_Molt)
+
+
+change.df$Season <- c("Breed", "Breed", "Molt", "Molt", "Breed", "Molt")
+change.df$Range <- c("1983-2003", "2004-2022", "1983-2003", "2004-2022", "1983-2022", "1983-2022")
+change.df$Duration <- c(20, 18, 20, 18, 39,39)
+change.df
+
+# Plot for percentage changes
+
+change.df$Change <- (change.df$ENDPOP-change.df$STARTPOP)/change.df$STARTPOP
+change.df$Change.lo <-  ((change.df$ENDPOP-change.df$ENDSE*change.df$ENDPOP)-
+                           (change.df$STARTPOP-change.df$STARTSE*change.df$STARTPOP))/
+                              (change.df$STARTPOP-change.df$STARTSE*change.df$STARTPOP)
+change.df$Change.hi  <-  ((change.df$ENDPOP+change.df$ENDSE*change.df$ENDPOP)-
+                            (change.df$STARTPOP+change.df$STARTSE*change.df$STARTPOP))/
+                               (change.df$STARTPOP+change.df$STARTSE*change.df$STARTPOP)
+change.df$Label <- as.character(paste(change.df$Season, change.df$Range, sep = " "))
+
+
+dodge <- position_dodge(width=0.5)  
+
+ggplot(change.df, aes(x=factor(Range, levels = c("1983-2003", "2004-2022", "1983-2022")),
+                               y = Change, color = Season)) +
+  geom_pointrange(aes(ymin=Change.lo, ymax=Change.hi), size = .3, position = dodge) + 
+  geom_hline(yintercept=0, linetype=2) +
+  xlab("Year Range") + 
+  ylab("Percent change") +
+  theme_classic(base_size = 18) +
+  theme(legend.title=element_blank(),
+        legend.position = c(0.8, 0.8))
+
+
 
 
 ####-----plot covariate effects
@@ -203,7 +283,7 @@ library("corrplot")
 #Scale to get to -1 to +1
 max(B)
 min(B)
-B <- B/abs(min(B))
+B <- B/abs(max(B))
 
 #or scale with floor ceiling.
 
@@ -277,8 +357,8 @@ c_forecast=matrix(c(0,0,0,0,0,  0,0,0,0,0,
 # example B
 # more coyotes, less upwelling
 c_forecast=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
-                    1,1,1,1,1,1,1,1,1,1,  #DE
-                    -0.8,1,1,-0.8,1,1,-0.8,-0.8,1,1,  #DP
+                    2,2,2,2,2,2,2,2,2,2,  #DE
+                    2,2,2,2,2,2,2,2,2,2,   #DP
                     -0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,  #PRH
                     1,1,1,1,1,1,1,1,1,1,  #TB
                     -0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #TP 
@@ -312,9 +392,6 @@ ggplot(forecast1_plot_data, aes(t+1981, estimate)) +
   xlab("Year") + 
   ylab("Seals") +
   facet_wrap(.~.rownames, ncol = 2)
-
-
-
 
 
 autoplot(forecast1) +
