@@ -115,8 +115,8 @@ Hypotheses for adult-molt time series  1982 present
 6. NOAA appreciates if molt helps predict breeding season - measures how in sync
 7. corr plot    
   A. group sites close together --> BL, DE, DP and TP, TB            ####STARTED 2024-02-06   DONE
-    i. can include or exclude PRH try both ways
-  C. include DR and PB in model if BL, DE, DP, TP, TB over time vs DR, PN, PRH
+    i. can include or exclude PRH try both ways  INCLUDED
+  C. include DR and PB in model if BL, DE, DP, TP, TB over time vs DR, PN, PRH  DONE
   D. 
 
 
@@ -125,6 +125,18 @@ Hypotheses for adult-molt time series  1982 present
   A. upwelling data from here: https://oceanwatch.pfeg.noaa.gov/products/PFELData/upwell/monthly/upanoms.mon
 
 TODO: put onto bbecker1000 repo
+
+2024-05-29
+Ben and Sarah A.
+1. Determine the effect of column on row is within year OR year t to year t+1?
+2. SARAH COMMENTS
+  A. Add Human Disturbance
+  B. Add Water Temperature (SST) April-June for pup feeding.
+  C. Consider MOCI - 
+  D. BEUTI - biologically effective upwelling index
+  
+
+
 
 
 

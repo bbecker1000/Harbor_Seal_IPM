@@ -107,7 +107,7 @@ names(d.tot.se)[c(1:18)] <- c("BL_Breed", "BL_Molt", "BL_Pup",
                               # "DR_Breed", "DR_Molt", #"DR_Pup",
                               #  "PB_Breed", "PB_Molt" #"PB_Pup"
 )
-)
+
 
 #sum all molt and breeding sites by year
 Breed.tot <- d.tot %>%
