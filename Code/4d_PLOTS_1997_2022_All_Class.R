@@ -295,7 +295,7 @@ ggplot(aes(fct_reorder(Labels, estimate), estimate, shape = Season, color = Sign
   geom_hline(yintercept = 0, lty = 2) +
   #scale_x_discrete( labels = coef.data$Labels) + 
   xlab(NULL) +
-  theme_classic(base_size = 18)
+  theme_sjplot2(base_size = 18)
 
 
 ########################################################################
@@ -331,6 +331,9 @@ min(B)
 #B <- ifelse(B > 3, 3, B)
 #B <- ifelse(B < -3, -3, B)
 
+#replace o with NA
+B[B==0]<-NA
+
 
 
 dimnames(B) <- list(c("BL Adult", "BL Molt", "BL Pup",
@@ -350,7 +353,10 @@ dimnames(B) <- list(c("BL Adult", "BL Molt", "BL Pup",
                       "TB Adult", "TB Molt", "TB Pup",
                       "TP Adult", "TP Molt", "TP Pup"))
 par(mfrow = c(1,1))
-corrplot(B, method="color", is.corr = FALSE, bg = "green")
+corrplot(B, method="color", is.corr = FALSE, rect.col = "gray", 
+         outline = TRUE,
+         addgrid.col = "gray", tl.col = "black",
+         na.label = ".", na.label.col = "gray")
 
 ## Process correlation between sites --------
 #recover q.matrix p 115-116
@@ -376,9 +382,13 @@ Q.corr
 # must add c data
 # lets say coyote at DE and DP and warm PDO
 
-summary(t(small_c_Coyote_3yr_UI_UI_lag))
+summary(t(small_c_Coyote_3yr_MOCI_MOCI_lag))
 
-
+# try 4 scenarios
+#  A  Coyote increase, normal MOCI
+#  A  Coyote increase, Poor MOCI
+#  A  Coyote removal, normal MOCI
+#  A  Coyote removal, Poor MOCI
 
 # example A
 #no coyotes, good upwelling
@@ -388,10 +398,10 @@ c_forecast=matrix(c(0,0,0,0,0,  0,0,0,0,0,
                     0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
                     0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
                     0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
-                    2,1,2,2,2,  2,2,3,3,0, #UI
-                    0,2,1,0,2,-2,  -1,0,2,2), #UI lag
-                  
-                  nrow = 8, ncol = 10,
+                    -1,-1,-2,0,-2,  0,1,2,-1,-2, #MOCI
+                    0,2,1,0,2, -2,-1,0,2,2,  #MOCI lag
+                    0,0,0,0,0,  0,0,0,0,0), #eSeal
+                  nrow = 9, ncol = 10,
                   byrow = TRUE)
 
 # example B
@@ -402,13 +412,14 @@ c_forecast=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
                     -0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,  #PRH
                     1,1,1,1,1,1,1,1,1,1,  #TB
                     -0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #TP 
-                    0,-2,-2,0,0,-1,-1,-1,-1,0, #UI
-                    -1,0,-2,-2,0,0,-1,-1,-1,-1), #UI lag
-                  nrow = 8, ncol = 10,
+                    0,2,2,0,0,1,1,-2,-1,2, #MOCI
+                    -1,0,-2,-2,0,0,-1,-1,-1,-1, #MOCI lag
+                    0,0,0,0,0,  0,0,0,0,0), #eSeal), 
+                  nrow = 9, ncol = 10,
                   byrow = TRUE)
 
 
-c_new <- cbind(small_c_Coyote_3yr_UI_UI_lag, c_forecast)
+c_new <- cbind(small_c_Coyote_3yr_MOCI_MOCI_lag, c_forecast)
 
 forecast1 <- predict(BESTMODEL, n.ahead = 10, interval = "prediction", 
                      nsim = 100,
