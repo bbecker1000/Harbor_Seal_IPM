@@ -7,7 +7,14 @@
 ############# env data --------------------------------
 
 # MEI file has several ocean indices and coyote data
-MEI <- read_excel("Data/MEI.xlsx")
+MEI <- read_excel("Data/MEI.xlsx", col_types = c("numeric", 
+                                                 "numeric", "numeric", "numeric", "numeric", 
+                                                 "numeric", "numeric", "numeric", "numeric", 
+                                                 "numeric", "numeric", "numeric", "numeric", 
+                                                 "numeric", "numeric", "numeric", "numeric", 
+                                                 "numeric", "numeric", "numeric", "numeric", 
+                                                 "numeric", "numeric", "numeric", "numeric", 
+                                                 "numeric", "numeric"))
 show(MEI)
 
 
@@ -16,9 +23,6 @@ show(MEI)
 # MEI <- MEI %>%
 #   filter(Year>1997)
 
-####--------------------------------------
-MEI$MOCI_JFM_NC <- as.numeric(MEI$MOCI_JFM_NC)
-MEI$BEUTI_FEB_APR_37N_39N <- as.numeric(MEI$BEUTI_FEB_APR_37N_39N)
 
 #View(MEI)
 ##cut to sealData time series
@@ -55,3 +59,46 @@ small_c_Coyote_3yr_UI_UI_lag$Coyote_3yr_TP <- 0
 
 small_c_Coyote_3yr_UI_UI_lag <- small_c_Coyote_3yr_UI_UI_lag[,c(1:3, 6:8, 4:5)]
 small_c_Coyote_3yr_UI_UI_lag <- as.matrix(t(small_c_Coyote_3yr_UI_UI_lag)) # 
+
+
+
+####Matrix with coyote_3yr and MOCI and MOCI-lag
+
+small_c_Coyote_3yr_MOCI_MOCI_lag <-tibble(MEI[,c(20:22, 5,26, 27)]) #scale for the covariate plots!
+small_c_Coyote_3yr_MOCI_MOCI_lag <- scale(small_c_Coyote_3yr_MOCI_MOCI_lag)
+small_c_Coyote_3yr_MOCI_MOCI_lag <- as_tibble(small_c_Coyote_3yr_MOCI_MOCI_lag)
+
+## zeros for DR, PB, PRH
+small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_3yr_PRH <- 0
+small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_3yr_TB <- 0
+small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_3yr_TP <- 0
+
+
+small_c_Coyote_3yr_MOCI_MOCI_lag <- small_c_Coyote_3yr_MOCI_MOCI_lag[,c(1:3, 7:9, 4:5, 6)]
+small_c_Coyote_3yr_MOCI_MOCI_lag <- as.matrix(t(small_c_Coyote_3yr_MOCI_MOCI_lag)) # 
+
+
+
+###Matrix with coyote_3yr and BEAUTI and BEAUTI-lag
+
+small_c_Coyote_3yr_BEUTI_BEUTI_lag <-tibble(MEI[,c(20:22, 17, 25)]) #scale for the covariate plots!
+small_c_Coyote_3yr_BEUTI_BEUTI_lag <- scale(small_c_Coyote_3yr_BEUTI_BEUTI_lag)
+small_c_Coyote_3yr_BEUTI_BEUTI_lag <- as_tibble(small_c_Coyote_3yr_BEUTI_BEUTI_lag)
+
+## zeros for DR, PB, PRH
+small_c_Coyote_3yr_BEUTI_BEUTI_lag$Coyote_3yr_PRH <- 0
+small_c_Coyote_3yr_BEUTI_BEUTI_lag$Coyote_3yr_TB <- 0
+small_c_Coyote_3yr_BEUTI_BEUTI_lag$Coyote_3yr_TP <- 0
+
+
+small_c_Coyote_3yr_BEUTI_BEUTI_lag <- small_c_Coyote_3yr_BEUTI_BEUTI_lag[,c(1:3, 6:8, 4:5)]
+small_c_Coyote_3yr_BEUTI_BEUTI_lag <- as.matrix(t(small_c_Coyote_3yr_BEUTI_BEUTI_lag)) # 
+
+
+
+
+
+
+
+
+

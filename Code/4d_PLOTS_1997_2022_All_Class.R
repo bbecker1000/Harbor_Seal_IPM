@@ -4,7 +4,7 @@
 #############################
 # Model plots -------------------------------------
 #############################
-BESTMODEL <- m.1997.2022.06.ut.All #m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
+BESTMODEL <- m.1997.2022.06.ut.All.MOCI.ES # m.1997.2022.06.ut.All.MOCI #m.1997.2022.06.ut.All #m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
 
 
 
@@ -268,25 +268,34 @@ coef.data <- coef.data %>%
   filter(str_detect(term, "^C."))
 
 coef.data$Season <- ifelse(str_detect(coef.data$term, "_A"), "Breeding Adults", 
-                           ifelse(str_detect(coef.data$term, "_M"), "Molting", "Pups"))
+                           ifelse(str_detect(coef.data$term, "_M"), "Molting", 
+                              ifelse(str_detect(coef.data$term, "_P"), "Pups", "All")))
 
-ggplot(coef.data, aes(term, estimate, color = Season, shape = Season)) +
-  
+coef.data$Significant <- ifelse(coef.data$conf.up < 0, "Negative", 
+                           ifelse(coef.data$conf.low > 0, "Positive", "Neutral"))
+
+coef.data$Labels <- c("Coyote BL breed","Coyote BL molt","Coyote BL pup",
+                        "Coyote DE breed", "Coyote DE molt","Coyote DE pup",
+                        "Coyote DP breed","Coyote DP molt", "Coyote DP pup",
+                        "MOCI breed",  
+                        "MOCI molt", 
+                        "MOCI pup", 
+                      "MOCI lag breed",
+                      "MOCI lag molt",
+                      "MOCI lag pup",
+                      "eSeal DP-DE-PRH")
+
+coef.data %>% 
+ggplot(aes(fct_reorder(Labels, estimate), estimate, shape = Season, color = Significant)) +
   geom_pointrange(aes(ymin = conf.low, ymax = conf.up), size = 0.8) +
   coord_flip() +
   theme(legend.position = c(0.2, 0.2)) + 
-  #ylim(-1.25, 0.25) +
-  
-  scale_x_discrete(name ="Covariate",
-                   labels=c("Coyote BL breed","Coyote BL molt","Coyote BL pup",
-                            "Coyote DE breed", "Coyote DE molt","Coyote DE pup",
-                            "Coyote DP breed","Coyote DP molt", "Coyote DP pup",
-                            "UI breed",  "UI lag breed", 
-                            "UI molt", "UI lag molt",  
-                            "UI pup", "UI lag pup"),
-                   limits=rev(levels(coef.data$term))) +
+  scale_color_manual(values=c("red", "#999999", "#56B4E9")) +
+  scale_shape_manual(values=c(15, 16, 17, 1)) +
   geom_hline(yintercept = 0, lty = 2) +
-  theme_sjplot(base_size = 18)
+  #scale_x_discrete( labels = coef.data$Labels) + 
+  xlab(NULL) +
+  theme_classic(base_size = 18)
 
 
 ########################################################################
@@ -305,8 +314,8 @@ coef(BESTMODEL, type="matrix")$R  # observation errors
 coef(BESTMODEL, type="matrix")$Q  # hidden state process
 (coef(BESTMODEL, type="matrix")$U)  # growth | su
 
-exp(0.2644765)
-exp(0.237)
+exp(0.0395)
+exp(0.5959683)
 
 B <- coef(BESTMODEL, type="matrix")$B  # effect of column on row
 
@@ -341,7 +350,7 @@ dimnames(B) <- list(c("BL Adult", "BL Molt", "BL Pup",
                       "TB Adult", "TB Molt", "TB Pup",
                       "TP Adult", "TP Molt", "TP Pup"))
 par(mfrow = c(1,1))
-corrplot(B, method="color", is.corr = FALSE)
+corrplot(B, method="color", is.corr = FALSE, bg = "green")
 
 ## Process correlation between sites --------
 #recover q.matrix p 115-116

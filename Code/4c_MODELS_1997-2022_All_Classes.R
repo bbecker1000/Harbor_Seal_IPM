@@ -51,31 +51,38 @@ Q1.model="diagonal and equal"
 #adult effect molt = AM
 #A / B / C / D are within zone interactions by breed or molt
 
+# 2024-06-04
+# Add to the network matrix.
+#    Hypotheses to add to matrix.
+#      A. TB-TP  "D"--> DONE
+#      B. DE-DP  "G" --> DONE
+#      C. BL-DP   "F"  --> but try rerunning with "F" also in the BL--> DP effect
+
                      #A M P        #A M P   #A M P  #A  M  P #A  M  P  #A  M  P
 
-B.model=matrix(list("AA",0,0,         "A",0,0,   "A",0,0,  0,0,0,   0,0,0,  0,0,0,  #A #BL
-                    "AM","MM",0,      0,"A",0,   0,"A",0,  0,0,0,   0,0,0,  0,0,0,  #M
-                    "AP",0,"PP",      0,0,"A",   0,0,"A",  0,0,0,   0,0,0,  0,0,0,  #P
+B.model=matrix(list("AA",0,0,     "A",0,0,    "F",0,0,  0,0,0,   0,0,0,  0,0,0,  #A #BL
+                    "AM","MM",0,  0,"A",0,    0,"F",0,  0,0,0,   0,0,0,  0,0,0,  #M
+                    "AP",0,"PP",  0,0,"A",    0,0,"F",  0,0,0,   0,0,0,  0,0,0,  #P
                     
-                    "A",0,0,  "AA",0,0,      "A",0,0,  "A",0,0,    0,0,0,  0,0,0, #DE
-                    0,"A",0,  "AM","MM",0,   0,"A",0,  0,"A",0,    0,0,0,  0,0,0,
-                    0,0,"A",  "AP",0,"PP",      0,0,"A",  0,0,"A",    0,0,0,  0,0,0,
+                    "A",0,0,      "AA",0,0,        "G",0,0,  0,0,0,    0,0,0,  0,0,0, #DE
+                    0,"A",0,      "AM","MM",0,     0,"G",0,  0,0,0,    0,0,0,  0,0,0,
+                    0,0,"A",      "AP",0,"PP",      0,0,"G",  0,0,0,    0,0,0,  0,0,0,
                     
-                    "A",0,0,  "A",0,0,   "AA",0,0,     "A",0,0,   0,0,0,  0,0,0,  #DP
-                    0,"A",0,  0,"A",0,   "AM","MM",0,  0,"A",0,   0,0,0,  0,0,0,
-                    0,0,"A",  0,0,"A",   "AP",0,"PP",  0,0,"A",    0,0,0,  0,0,0,
+                    "F",0,0,      "G",0,0,    "AA",0,0,     "A",0,0,   0,0,0,  0,0,0,  #DP
+                    0,"F",0,      0,"G",0,    "AM","MM",0,  0,"A",0,   0,0,0,  0,0,0,
+                    0,0,"F",      0,0,"G",    "AP",0,"PP",  0,0,"A",    0,0,0,  0,0,0,
                     
-                    "B",0,0,  "B",0,0,   "B",0,0,  "AA",0,0,      "C",0,0,  "C",0,0,  #PRH
-                    0,"B",0,  0,"B",0,    0,"B",0,  "AM","MM",0,   0,"C",0,  0,"C",0,
-                    0,0,"B",   0,0,"B",   0,0,"B",  "AP",0,"PP",   0,0,"C",  0,0,"C",
+                    "B",0,0,      "B",0,0,   "B",0,0,  "AA",0,0,      "E",0,0,  "C",0,0,  #PRH
+                    0,"B",0,      0,"B",0,    0,"B",0,  "AM","MM",0,   0,"E",0,  0,"C",0,
+                    0,0,"B",      0,0,"B",   0,0,"B",  "AP",0,"PP",   0,0,"E",  0,0,"C",
                     
-                    0,0,0,   0,0,0,     0,0,0,   "D",0,0,   "AA",0,0,      "D",0,0,  #TB
-                    0,0,0,   0,0,0,     0,0,0,   0,"D",0,   "AM","MM",0,   0,"D",0,
-                    0,0,0,   0,0,0,     0,0,0,   0,0,"D",   "AP",0,"PP",   0,0,"D",  
+                    0,0,0,       0,0,0,     0,0,0,   "E",0,0,   "AA",0,0,      "D",0,0,  #TB
+                    0,0,0,       0,0,0,     0,0,0,   0,"E",0,   "AM","MM",0,   0,"D",0,
+                    0,0,0,       0,0,0,     0,0,0,   0,0,"E",   "AP",0,"PP",   0,0,"D",  
                     
-                    0,0,0,   0,0,0,     0,0,0,   0,0,0,    "D",0,0,   "AA",0,0,  #TP
-                    0,0,0,   0,0,0,     0,0,0,   0,0,0,    0,"D",0,   "AM","MM",0,
-                    0,0,0,   0,0,0,     0,0,0,   0,0,0,    0,0,"D",   "AP",0,"PP"),
+                    0,0,0,       0,0,0,     0,0,0,   0,0,0,    "D",0,0,   "AA",0,0,  #TP
+                    0,0,0,       0,0,0,     0,0,0,   0,0,0,    0,"D",0,   "AM","MM",0,
+                    0,0,0,       0,0,0,     0,0,0,   0,0,0,    0,0,"D",   "AP",0,"PP"),
                
                nrow = 18, ncol = 18,
                byrow = TRUE)
@@ -194,17 +201,17 @@ R.model <- diag(0.05, 12) #known observation error variance
 R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equal"
 
 ## C model matrix for UI
-C.model.UI=matrix(list("BL_A",0,0,0,0,0,  "UI_A","UI_A_lag",  #adding UI and UI_lag
-                       "BL_M",0,0,0,0,0,  "UI_M","UI_M_lag",
-                       "BL_P",0,0,0,0,0,  "UI_P","UI_P_lag",
+C.model.UI=matrix(list("BL_A",0,0,0,0,0,  "UI_A","UI_A_lag", 0, #adding UI and UI_lag
+                       "BL_M",0,0,0,0,0,  "UI_M","UI_M_lag", 0,
+                       "BL_P",0,0,0,0,0,  "UI_P","UI_P_lag", 0,
                                   
-                       0,"DE_A",0,0,0,0,  "UI_A","UI_A_lag",
-                       0,"DE_M",0,0,0,0,  "UI_M","UI_M_lag",
-                       0,"DE_P",0,0,0,0,  "UI_P","UI_P_lag",
+                       0,"DE_A",0,0,0,0,  "UI_A","UI_A_lag","ES",
+                       0,"DE_M",0,0,0,0,  "UI_M","UI_M_lag","ES",
+                       0,"DE_P",0,0,0,0,  "UI_P","UI_P_lag","ES",
                           
-                       0,0,"DP_A",0,0,0,  "UI_A","UI_A_lag",
-                       0,0,"DP_M",0,0,0,  "UI_M","UI_M_lag",
-                       0,0,"DP_P",0,0,0,  "UI_P","UI_P_lag",
+                       0,0,"DP_A",0,0,0,  "UI_A","UI_A_lag","ES",
+                       0,0,"DP_M",0,0,0,  "UI_M","UI_M_lag","ES",
+                       0,0,"DP_P",0,0,0,  "UI_P","UI_P_lag","ES",
                                   
                     # 0,0,0,0,0,0,0,0,"PDO_A",
                     # 0,0,0,0,0,0,0,0,"PDO_M",       #DR
@@ -214,19 +221,19 @@ C.model.UI=matrix(list("BL_A",0,0,0,0,0,  "UI_A","UI_A_lag",  #adding UI and UI_
                     # 0,0,0,0,0,0,0,0,"PDO_M",
                     #   0,0,0,0,0," PDO_P"
                                   
-                       0,0,0,0,0,0,  "UI_A", "UI_A_lag",       #PRH
-                       0,0,0,0,0,0,  "UI_M", "UI_M_lag",
-                       0,0,0,0,0,0,  "UI_P", "UI_P_lag",
+                       0,0,0,0,0,0,  "UI_A", "UI_A_lag", "ES",      #PRH
+                       0,0,0,0,0,0,  "UI_M", "UI_M_lag", "ES",
+                       0,0,0,0,0,0,  "UI_P", "UI_P_lag", "ES",
                                 
-                       0,0,0,0,0,0,  "UI_A", "UI_A_lag",       #TB
-                       0,0,0,0,0,0,  "UI_M", "UI_M_lag",
-                       0,0,0,0,0,0,  "UI_P", "UI_P_lag",
+                       0,0,0,0,0,0,  "UI_A", "UI_A_lag", 0,     #TB
+                       0,0,0,0,0,0,  "UI_M", "UI_M_lag", 0,
+                       0,0,0,0,0,0,  "UI_P", "UI_P_lag", 0,
                                   
-                       0,0,0,0,0,0,  "UI_A", "UI_A_lag",       #TP
-                       0,0,0,0,0,0,  "UI_M", "UI_M_lag",
-                       0,0,0,0,0,0,  "UI_P", "UI_P_lag"
+                       0,0,0,0,0,0,  "UI_A", "UI_A_lag", 0,    #TP
+                       0,0,0,0,0,0,  "UI_M", "UI_M_lag", 0,
+                       0,0,0,0,0,0,  "UI_P", "UI_P_lag", 0
 ),
-nrow = 18, ncol = 8,
+nrow = 18, ncol = 9,
 byrow = TRUE)
 
 # C model for PDO (no lag)
@@ -495,8 +502,79 @@ save(m.1997.2022.09.Ut.4.Site.Class, file = "Output/m.1997.2022.09.Ut.4.Site.Cla
 
 
 
+####----
+## adding MOCI MODEL
+
+##m.1997.2022.06 - Ut.All
+t0 <- Sys.time()
+m.1997.2022.06.ut.All.MOCI=MARSS(dat, model=list(
+  Z=factor(c(1:18)), 
+  U=Ut.All, 
+  R=diag(0.025, 18),
+  Q="diagonal and equal",
+  B=B.model,
+  C=C.model.UI,
+  #x0 = x0.model, 
+  tinitx=1, 
+  c = small_c_Coyote_3yr_MOCI_MOCI_lag),
+  control=list(maxit=5000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
+
+df_aic <- df_aic %>% add_row(model = "m.1997.2022.06.ut.All.MOCI", aic = m.1997.2022.06.ut.All.MOCI$AIC)
+df_aic
+beepr::beep()
+t1 <- Sys.time()
+t1-t0 #run time 11 min sec.
+save(m.1997.2022.06.ut.All.MOCI, file = "Output/m.1997.2022.06.ut.All.MOCI.RData")
+#load(file = "Output/m.1997.2022.06.ut.All.MOCI.RData")
 
 
+##m.1997.2022.06.ut.All.MOCI.ES  11 min
+t0 <- Sys.time()
+m.1997.2022.06.ut.All.MOCI.ES=MARSS(dat, model=list(
+  Z=factor(c(1:18)), 
+  U=Ut.All, 
+  R=diag(0.025, 18),
+  Q="diagonal and equal",
+  B=B.model,
+  C=C.model.UI,
+  #x0 = x0.model, 
+  tinitx=1, 
+  c = small_c_Coyote_3yr_MOCI_MOCI_lag),
+  control=list(maxit=5000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
+
+df_aic <- df_aic %>% add_row(model = "m.1997.2022.06.ut.All.MOCI.ES", aic = m.1997.2022.06.ut.All.MOCI.ES$AIC)
+df_aic
+beepr::beep()
+t1 <- Sys.time()
+t1-t0 #run time 60 sec.
+save(m.1997.2022.06.ut.All.MOCI.ES, file = "Output/m.1997.2022.06.ut.All.MOCI.ES.RData")
+#load(file = "Output/m.1997.2022.06.ut.All.MOCI.RData")
+
+
+
+
+##m.1997.2022.06 - Ut.All
+## MOCI has much better AIC than BEUTI  (32 AIC units)
+t0 <- Sys.time()
+m.1997.2022.06.ut.All.BUETI=MARSS(dat, model=list(
+  Z=factor(c(1:18)), 
+  U=Ut.All, 
+  R=diag(0.025, 18),
+  Q="diagonal and equal",
+  B=B.model,
+  C=C.model.UI,
+  #x0 = x0.model, 
+  tinitx=1, 
+  c = small_c_Coyote_3yr_BEUTI_BEUTI_lag),
+  control=list(maxit=5000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
+
+df_aic <- df_aic %>% add_row(model = "m.1997.2022.06.ut.All.BUETI", aic = m.1997.2022.06.ut.All.BUETI$AIC)
+df_aic
+beepr::beep()
+t1 <- Sys.time()
+t1-t0 #run time 1.6 min
+save(m.1997.2022.06.ut.All.BUETI, file = "Output/m.1997.2022.06.ut.All.BUETI.RData")
+#load(file = "Output/m.1997.2022.06.ut.All.BUETI.RData")
 
 
 
