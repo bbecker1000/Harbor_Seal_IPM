@@ -4,7 +4,8 @@
 #############################
 # Model plots -------------------------------------
 #############################
-BESTMODEL <- m.1997.2022.06.ut.All.MOCI.ES # m.1997.2022.06.ut.All.MOCI #m.1997.2022.06.ut.All #m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
+BESTMODEL <- m.1997.2023.06.ut.Site.Class.MOCI.ES 
+#m.1997.2022.06.ut.All.MOCI.ES # m.1997.2022.06.ut.All.MOCI #m.1997.2022.06.ut.All #m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
 
 
 
@@ -171,8 +172,8 @@ Change_1997_2004_Breed <- d4 %>% filter(years == 1997 | years == 2004) %>%
   pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE)) %>%
   set_names(new_names)
   
-## calculate percentage change in total pop from 1982-2003 and 2004-2022
-Change_2004_2022_Breed <- d4 %>% filter(years == 2004 | years == 2022) %>%
+## calculate percentage change in total pop from 1982-2003 and 2004-2023
+Change_2004_2023_Breed <- d4 %>% filter(years == 2004 | years == 2023) %>%
   filter(Season == "Breed") %>%
   pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE)) %>%
   set_names(new_names)
@@ -182,8 +183,8 @@ Change_1997_2004_Molt <- d4 %>% filter(years == 1997 | years == 2004) %>%
   pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
   set_names(new_names)
 
-## calculate percentage change in total pop from 1982-2003 and 2004-2022
-Change_2004_2022_Molt <- d4 %>% filter(years == 2004 | years == 2022) %>%
+## calculate percentage change in total pop from 1982-2003 and 2004-2023
+Change_2004_2023_Molt <- d4 %>% filter(years == 2004 | years == 2023) %>%
   filter(Season == "Molt") %>%
   pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
   set_names(new_names)
@@ -193,39 +194,39 @@ Change_1997_2004_Pup <- d4 %>% filter(years == 1997 | years == 2004) %>%
   pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
   set_names(new_names)
 
-## calculate percentage change in total pop from 1982-2003 and 2004-2022
-Change_2004_2022_Pup <- d4 %>% filter(years == 2004 | years == 2022) %>%
+## calculate percentage change in total pop from 1982-2003 and 2004-2023
+Change_2004_2023_Pup <- d4 %>% filter(years == 2004 | years == 2023) %>%
   filter(Season == "Pup") %>%
   pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
   set_names(new_names)
 
-## calculate percentage change in total pop from 1982-2003 and 2004-2022
-Change_1997_2022_Breed <- d4 %>% filter(years == 1997 | years == 2022) %>%
+## calculate percentage change in total pop from 1982-2003 and 2004-2023
+Change_1997_2023_Breed <- d4 %>% filter(years == 1997 | years == 2023) %>%
   filter(Season == "Breed") %>%
   pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
   set_names(new_names)
 
-## calculate percentage change in total pop from 1982-2003 and 2004-2022
-Change_1997_2022_Molt <- d4 %>% filter(years == 1997 | years == 2022) %>%
+## calculate percentage change in total pop from 1982-2003 and 2004-2023
+Change_1997_2023_Molt <- d4 %>% filter(years == 1997 | years == 2023) %>%
   filter(Season == "Molt") %>%
   pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
   set_names(new_names)
 
-## calculate percentage change in total pop from 1982-2003 and 2004-2022
-Change_1997_2022_Pup <- d4 %>% filter(years == 1997 | years == 2022) %>%
+## calculate percentage change in total pop from 1982-2003 and 2004-2023
+Change_1997_2023_Pup <- d4 %>% filter(years == 1997 | years == 2023) %>%
   filter(Season == "Pup") %>%
   pivot_wider(names_from = c(years,Season), values_from = c(estimate, SE))%>%
   set_names(new_names)
 
 
-change.df <- bind_rows(Change_1997_2004_Breed, Change_2004_2022_Breed,
-                       Change_1997_2004_Molt,  Change_2004_2022_Molt, 
-                       Change_1997_2004_Pup,  Change_2004_2022_Pup, 
-                       Change_1997_2022_Breed, Change_1997_2022_Molt, Change_1997_2022_Pup)
+change.df <- bind_rows(Change_1997_2004_Breed, Change_2004_2023_Breed,
+                       Change_1997_2004_Molt,  Change_2004_2023_Molt, 
+                       Change_1997_2004_Pup,  Change_2004_2023_Pup, 
+                       Change_1997_2023_Breed, Change_1997_2023_Molt, Change_1997_2023_Pup)
 
 
 change.df$Season <- c("Breed", "Breed", "Molt", "Molt", "Pup", "Pup", "Breed", "Molt", "Pup")
-change.df$Range <- c("1997-2004", "2004-2022", "1997-2004", "2004-2022", "1997-2004", "2004-2022","1997-2022", "1997-2022", "1997-2022" )
+change.df$Range <- c("1997-2004", "2004-2023", "1997-2004", "2004-2023", "1997-2004", "2004-2023","1997-2023", "1997-2023", "1997-2023" )
 change.df$Duration <- c(7, 18, 
                         7, 18, 
                         7, 18, 
@@ -246,7 +247,7 @@ change.df$Label <- as.character(paste(change.df$Season, change.df$Range, sep = "
 
 dodge <- position_dodge(width=0.5)  
 
-ggplot(change.df, aes(x=factor(Range, levels = c("1997-2004", "2004-2022", "1997-2022")),
+ggplot(change.df, aes(x=factor(Range, levels = c("1997-2004", "2004-2023", "1997-2023")),
                                y = Change, color = Season)) +
   geom_pointrange(aes(ymin=Change.lo, ymax=Change.hi), size = .3, position = dodge) + 
   geom_hline(yintercept=0, linetype=2) +
@@ -280,9 +281,12 @@ coef.data$Labels <- c("Coyote BL breed","Coyote BL molt","Coyote BL pup",
                         "MOCI breed",  
                         "MOCI molt", 
                         "MOCI pup", 
-                      "MOCI lag breed",
-                      "MOCI lag molt",
-                      "MOCI lag pup",
+                      "MOCI AMJ lag breed",
+                      "MOCI AMJ lag molt",
+                      "MOCI AMJ lag pup",
+                      "MOCI OND lag breed",
+                      "MOCI OND lag molt",
+                      "MOCI OND lag pup",
                       "eSeal DP-DE-PRH")
 
 coef.data %>% 
@@ -324,7 +328,7 @@ library("corrplot")
 #Scale to get to -1 to +1
 max(B)
 min(B)
-#B <- B/abs(max(B))
+B <- B/abs(max(B))
 
 #or scale with floor ceiling.
 
@@ -399,9 +403,10 @@ c_forecast=matrix(c(0,0,0,0,0,  0,0,0,0,0,
                     0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
                     0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
                     -1,-1,-2,0,-2,  0,1,2,-1,-2, #MOCI
-                    0,2,1,0,2, -2,-1,0,2,2,  #MOCI lag
+                    0,2,1,0,2, -2,-1,0,2,2,  #MOCI AMJ lag
+                    0,2,1,0,2, -2,-1,0,2,2,  #MOCI OMD lag
                     0,0,0,0,0,  0,0,0,0,0), #eSeal
-                  nrow = 9, ncol = 10,
+                  nrow = 10, ncol = 10,
                   byrow = TRUE)
 
 # example B
@@ -410,12 +415,13 @@ c_forecast=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
                     2,2,2,2,2,2,2,2,2,2,  #DE
                     2,2,2,2,2,2,2,2,2,2,   #DP
                     -0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,  #PRH
-                    1,1,1,1,1,1,1,1,1,1,  #TB
+                    0,0,0,0,0,  0,0,0,0,0,  #TB
                     -0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #TP 
                     0,2,2,0,0,1,1,-2,-1,2, #MOCI
-                    -1,0,-2,-2,0,0,-1,-1,-1,-1, #MOCI lag
+                    -1,0,-2,-2,0,0,-1,-1,-1,-1, #MOCI AMJ lag
+                    0,2,1,0,2, -2,-1,0,2,2,  #MOCI OMD lag
                     0,0,0,0,0,  0,0,0,0,0), #eSeal), 
-                  nrow = 9, ncol = 10,
+                  nrow = 10, ncol = 10,
                   byrow = TRUE)
 
 
