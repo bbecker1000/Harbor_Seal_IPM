@@ -1,4 +1,4 @@
-#4b covariate prep for 1997-2022
+#4b covariate prep for 1997-2023
 # all classes
 
 # env data prep for all years
@@ -14,7 +14,7 @@ MEI <- read_excel("Data/MEI.xlsx", col_types = c("numeric",
                                                  "numeric", "numeric", "numeric", "numeric", 
                                                  "numeric", "numeric", "numeric", "numeric", 
                                                  "numeric", "numeric", "numeric", "numeric", 
-                                                 "numeric", "numeric"))
+                                                 "numeric", "numeric", "numeric"))
 show(MEI)
 
 
@@ -27,7 +27,7 @@ show(MEI)
 #View(MEI)
 ##cut to sealData time series
 
-MEI <- MEI %>% filter(Year < 2023 & Year > 1996)
+MEI <- MEI %>% filter(Year < 2024 & Year > 1996)
 
 #ESeal at DP in 2003 and 2004.  Count as a coyote disturbance
 MEI$Coyote_DP <- ifelse(MEI$Year == 2003, 1, MEI$Coyote_DP)
@@ -62,9 +62,9 @@ small_c_Coyote_3yr_UI_UI_lag <- as.matrix(t(small_c_Coyote_3yr_UI_UI_lag)) #
 
 
 
-####Matrix with coyote_3yr and MOCI and MOCI-lag
+####Matrix with coyote_3yr and MOCI and MOCI-lags
 
-small_c_Coyote_3yr_MOCI_MOCI_lag <-tibble(MEI[,c(20:22, 5,26, 27)]) #scale for the covariate plots!
+small_c_Coyote_3yr_MOCI_MOCI_lag <-tibble(MEI[,c(20:22, 5,26, 27, 28)]) #scale for the covariate plots!
 small_c_Coyote_3yr_MOCI_MOCI_lag <- scale(small_c_Coyote_3yr_MOCI_MOCI_lag)
 small_c_Coyote_3yr_MOCI_MOCI_lag <- as_tibble(small_c_Coyote_3yr_MOCI_MOCI_lag)
 
@@ -74,7 +74,7 @@ small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_3yr_TB <- 0
 small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_3yr_TP <- 0
 
 
-small_c_Coyote_3yr_MOCI_MOCI_lag <- small_c_Coyote_3yr_MOCI_MOCI_lag[,c(1:3, 7:9, 4:5, 6)]
+small_c_Coyote_3yr_MOCI_MOCI_lag <- small_c_Coyote_3yr_MOCI_MOCI_lag[,c(1:3, 8:10, 4:5, 7, 6)]
 small_c_Coyote_3yr_MOCI_MOCI_lag <- as.matrix(t(small_c_Coyote_3yr_MOCI_MOCI_lag)) # 
 
 

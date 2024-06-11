@@ -59,6 +59,7 @@ Q1.model="diagonal and equal"
 #      C. BL-DP   "F"  --> but try rerunning with "F" also in the BL--> DP effect
 
                      #A M P        #A M P   #A M P  #A  M  P #A  M  P  #A  M  P
+# fixed DP-BL matric 2024-06-07
 
 B.model=matrix(list("AA",0,0,     "A",0,0,    "F",0,0,  0,0,0,   0,0,0,  0,0,0,  #A #BL
                     "AM","MM",0,  0,"A",0,    0,"F",0,  0,0,0,   0,0,0,  0,0,0,  #M
@@ -68,9 +69,9 @@ B.model=matrix(list("AA",0,0,     "A",0,0,    "F",0,0,  0,0,0,   0,0,0,  0,0,0, 
                     0,"A",0,      "AM","MM",0,     0,"G",0,  0,0,0,    0,0,0,  0,0,0,
                     0,0,"A",      "AP",0,"PP",      0,0,"G",  0,0,0,    0,0,0,  0,0,0,
                     
-                    "F",0,0,      "G",0,0,    "AA",0,0,     "A",0,0,   0,0,0,  0,0,0,  #DP
-                    0,"F",0,      0,"G",0,    "AM","MM",0,  0,"A",0,   0,0,0,  0,0,0,
-                    0,0,"F",      0,0,"G",    "AP",0,"PP",  0,0,"A",    0,0,0,  0,0,0,
+                    0,0,0,      "G",0,0,    "AA",0,0,     "A",0,0,   0,0,0,  0,0,0,  #DP
+                    0,0,0,      0,"G",0,    "AM","MM",0,  0,"A",0,   0,0,0,  0,0,0,
+                    0,0,0,      0,0,"G",    "AP",0,"PP",  0,0,"A",    0,0,0,  0,0,0,
                     
                     "B",0,0,      "B",0,0,   "B",0,0,  "AA",0,0,      "E",0,0,  "C",0,0,  #PRH
                     0,"B",0,      0,"B",0,    0,"B",0,  "AM","MM",0,   0,"E",0,  0,"C",0,
@@ -160,18 +161,19 @@ TT <- dim(dat)[2]
 Ut.Site[, , 1:ceiling(TT / 4)] <- U1    #t1 through 2004
 
 #timevarying u by site and class
+#adults and molt time vary at 2004, pups do not vary
 U1 <- matrix(c("t1_BL_A","t1_BL_M","t1_BL_P",
                "t1_DE_A","t1_DE_M","t1_DE_P",
                "t1_DP_A","t1_DP_M","t1_DP_P",
                "t1_PRH_A","t1_PRH_M","t1_PRH_P",
                "t1_TB_A","t1_TB_M","t1_TB_P",
                "t1_TP_A","t1_TP_M","t1_TP_P"),18, 1)
-U2 <- matrix(c("t2_BL_A","t2_BL_M","t2_BL_P",
-               "t2_DE_A","t2_DE_M","t2_DE_P",
-               "t2_DP_A","t2_DP_M","t2_DP_P",
-               "t2_PRH_A","t2_PRH_M","t2_PRH_P",
-               "t2_TB_A","t2_TB_M","t2_TB_P",
-               "t2_TP_A","t2_TP_M","t2_TP_P"),18, 1)
+U2 <- matrix(c("t2_BL_A","t2_BL_M","t1_BL_P",
+               "t2_DE_A","t2_DE_M","t1_DE_P",
+               "t2_DP_A","t2_DP_M","t1_DP_P",
+               "t2_PRH_A","t2_PRH_M","t1_PRH_P",
+               "t2_TB_A","t2_TB_M","t1_TB_P",
+               "t2_TP_A","t2_TP_M","t1_TP_P"),18, 1)
 Ut.Site.Class <- array(U2, dim = c(dim(U1), dim(dat)[2]))
 TT <- dim(dat)[2]
 Ut.Site.Class[, , 1:ceiling(TT / 4)] <- U1 #t1 through 2003
@@ -201,17 +203,17 @@ R.model <- diag(0.05, 12) #known observation error variance
 R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equal"
 
 ## C model matrix for UI
-C.model.UI=matrix(list("BL_A",0,0,0,0,0,  "UI_A","UI_A_lag", 0, #adding UI and UI_lag
-                       "BL_M",0,0,0,0,0,  "UI_M","UI_M_lag", 0,
-                       "BL_P",0,0,0,0,0,  "UI_P","UI_P_lag", 0,
+C.model.MOCI=matrix(list("BL_A",0,0,0,0,0,"MOCI_A","MOCI_AMJ_A_lag", "MOCI_OND_A_lag", 0, #adding MOCI and MOCI_lag
+                       "BL_M",0,0,0,0,0,  "MOCI_M","MOCI_AMJ_M_lag", "MOCI_OND_M_lag", 0,
+                       "BL_P",0,0,0,0,0,  "MOCI_P","MOCI_AMJ_P_lag", "MOCI_OND_P_lag", 0,
                                   
-                       0,"DE_A",0,0,0,0,  "UI_A","UI_A_lag","ES",
-                       0,"DE_M",0,0,0,0,  "UI_M","UI_M_lag","ES",
-                       0,"DE_P",0,0,0,0,  "UI_P","UI_P_lag","ES",
-                          
-                       0,0,"DP_A",0,0,0,  "UI_A","UI_A_lag","ES",
-                       0,0,"DP_M",0,0,0,  "UI_M","UI_M_lag","ES",
-                       0,0,"DP_P",0,0,0,  "UI_P","UI_P_lag","ES",
+                       0,"DE_A",0,0,0,0,  "MOCI_A","MOCI_AMJ_A_lag", "MOCI_OND_A_lag", "ES",
+                       0,"DE_M",0,0,0,0,  "MOCI_M","MOCI_AMJ_M_lag", "MOCI_OND_M_lag", "ES",
+                       0,"DE_P",0,0,0,0,  "MOCI_P","MOCI_AMJ_P_lag", "MOCI_OND_P_lag", "ES",
+                        
+                       0,0,"DP_A",0,0,0,  "MOCI_A","MOCI_AMJ_A_lag", "MOCI_OND_A_lag", "ES",
+                       0,0,"DP_M",0,0,0,  "MOCI_M","MOCI_AMJ_M_lag", "MOCI_OND_M_lag", "ES",
+                       0,0,"DP_P",0,0,0,  "MOCI_P","MOCI_AMJ_P_lag", "MOCI_OND_P_lag", "ES",
                                   
                     # 0,0,0,0,0,0,0,0,"PDO_A",
                     # 0,0,0,0,0,0,0,0,"PDO_M",       #DR
@@ -221,19 +223,19 @@ C.model.UI=matrix(list("BL_A",0,0,0,0,0,  "UI_A","UI_A_lag", 0, #adding UI and U
                     # 0,0,0,0,0,0,0,0,"PDO_M",
                     #   0,0,0,0,0," PDO_P"
                                   
-                       0,0,0,0,0,0,  "UI_A", "UI_A_lag", "ES",      #PRH
-                       0,0,0,0,0,0,  "UI_M", "UI_M_lag", "ES",
-                       0,0,0,0,0,0,  "UI_P", "UI_P_lag", "ES",
+                       0,0,0,0,0,0,  "MOCI_A", "MOCI_AMJ_A_lag", "MOCI_OND_A_lag", "ES",      #PRH
+                       0,0,0,0,0,0,  "MOCI_M", "MOCI_AMJ_M_lag", "MOCI_OND_M_lag", "ES",
+                       0,0,0,0,0,0,  "MOCI_P", "MOCI_AMJ_P_lag", "MOCI_OND_P_lag", "ES",
                                 
-                       0,0,0,0,0,0,  "UI_A", "UI_A_lag", 0,     #TB
-                       0,0,0,0,0,0,  "UI_M", "UI_M_lag", 0,
-                       0,0,0,0,0,0,  "UI_P", "UI_P_lag", 0,
+                       0,0,0,0,0,0,  "MOCI_A", "MOCI_AMJ_A_lag", "MOCI_OND_A_lag", 0,     #TB
+                       0,0,0,0,0,0,  "MOCI_M", "MOCI_AMJ_M_lag", "MOCI_OND_M_lag", 0,
+                       0,0,0,0,0,0,  "MOCI_P", "MOCI_AMJ_P_lag", "MOCI_OND_P_lag", 0,
                                   
-                       0,0,0,0,0,0,  "UI_A", "UI_A_lag", 0,    #TP
-                       0,0,0,0,0,0,  "UI_M", "UI_M_lag", 0,
-                       0,0,0,0,0,0,  "UI_P", "UI_P_lag", 0
+                       0,0,0,0,0,0,  "MOCI_A", "MOCI_AMJ_A_lag", "MOCI_OND_A_lag", 0,    #TP
+                       0,0,0,0,0,0,  "MOCI_M", "MOCI_AMJ_M_lag", "MOCI_OND_M_lag", 0,
+                       0,0,0,0,0,0,  "MOCI_P", "MOCI_AMJ_P_lag", "MOCI_OND_P_lag", 0
 ),
-nrow = 18, ncol = 9,
+nrow = 18, ncol = 10,
 byrow = TRUE)
 
 # C model for PDO (no lag)
@@ -528,27 +530,53 @@ save(m.1997.2022.06.ut.All.MOCI, file = "Output/m.1997.2022.06.ut.All.MOCI.RData
 #load(file = "Output/m.1997.2022.06.ut.All.MOCI.RData")
 
 
-##m.1997.2022.06.ut.All.MOCI.ES  11 min
+##m.1997.2023.06.ut.All.MOCI.ES  11 min
+## time vary all classes same
 t0 <- Sys.time()
-m.1997.2022.06.ut.All.MOCI.ES=MARSS(dat, model=list(
+m.1997.2023.06.ut.All.MOCI.ES=MARSS(dat, model=list(
   Z=factor(c(1:18)), 
   U=Ut.All, 
   R=diag(0.025, 18),
   Q="diagonal and equal",
   B=B.model,
-  C=C.model.UI,
+  C=C.model.MOCI,
   #x0 = x0.model, 
   tinitx=1, 
   c = small_c_Coyote_3yr_MOCI_MOCI_lag),
   control=list(maxit=5000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
 
-df_aic <- df_aic %>% add_row(model = "m.1997.2022.06.ut.All.MOCI.ES", aic = m.1997.2022.06.ut.All.MOCI.ES$AIC)
+df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.All.MOCI.ES", aic = m.1997.2023.06.ut.All.MOCI.ES$AIC)
 df_aic
 beepr::beep()
 t1 <- Sys.time()
 t1-t0 #run time 60 sec.
-save(m.1997.2022.06.ut.All.MOCI.ES, file = "Output/m.1997.2022.06.ut.All.MOCI.ES.RData")
+save(m.1997.2023.06.ut.All.MOCI.ES, file = "Output/m.1997.2023.06.ut.All.MOCI.ES.RData")
 #load(file = "Output/m.1997.2022.06.ut.All.MOCI.RData")
+
+
+##m.1997.2023.06.ut.All.MOCI.ES  
+# time vary adult and molt,  not pup
+# 22 min
+t0 <- Sys.time()
+m.1997.2023.06.ut.Site.Class.MOCI.ES=MARSS(dat, model=list(
+  Z=factor(c(1:18)), 
+  U=Ut.Site.Class, 
+  R=diag(0.025, 18),
+  Q="diagonal and equal",
+  B=B.model,
+  C=C.model.MOCI,
+  #x0 = x0.model, 
+  tinitx=1, 
+  c = small_c_Coyote_3yr_MOCI_MOCI_lag),
+  control=list(maxit=7500, safe=TRUE, trace = 0, allow.degen=TRUE)) 
+
+df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Site.Class.MOCI.ES", aic = m.1997.2023.06.ut.Site.Class.MOCI.ES$AIC)
+df_aic
+beepr::beep()
+t1 <- Sys.time()
+t1-t0
+save(m.1997.2023.06.ut.Site.Class.MOCI.ES, file = "Output/m.1997.2023.06.ut.Site.Class.MOCI.ES.RData")
+
 
 
 
