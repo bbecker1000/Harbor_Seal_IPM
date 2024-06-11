@@ -530,7 +530,7 @@ save(m.1997.2022.06.ut.All.MOCI, file = "Output/m.1997.2022.06.ut.All.MOCI.RData
 #load(file = "Output/m.1997.2022.06.ut.All.MOCI.RData")
 
 
-##m.1997.2023.06.ut.All.MOCI.ES  11 min
+##m.1997.2023.06.ut.All.MOCI.ES  4.8 sec !!
 ## time vary all classes same
 t0 <- Sys.time()
 m.1997.2023.06.ut.All.MOCI.ES=MARSS(dat, model=list(

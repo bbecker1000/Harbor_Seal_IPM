@@ -4,9 +4,9 @@
 #############################
 # Model plots -------------------------------------
 #############################
-BESTMODEL <- m.1997.2023.06.ut.Site.Class.MOCI.ES 
+BESTMODEL <- m.1997.2023.06.ut.Site.Class.MOCI.ES # makes most sense AIC 80 points lower
+#BESTMODEL <- m.1997.2023.06.ut.All.MOCI.ES # restricts trends... unrealistic
 #m.1997.2022.06.ut.All.MOCI.ES # m.1997.2022.06.ut.All.MOCI #m.1997.2022.06.ut.All #m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
-
 
 
 autoplot(BESTMODEL)
@@ -227,10 +227,10 @@ change.df <- bind_rows(Change_1997_2004_Breed, Change_2004_2023_Breed,
 
 change.df$Season <- c("Breed", "Breed", "Molt", "Molt", "Pup", "Pup", "Breed", "Molt", "Pup")
 change.df$Range <- c("1997-2004", "2004-2023", "1997-2004", "2004-2023", "1997-2004", "2004-2023","1997-2023", "1997-2023", "1997-2023" )
-change.df$Duration <- c(7, 18, 
-                        7, 18, 
-                        7, 18, 
-                        25,25, 25)
+change.df$Duration <- c(7, 19, 
+                        7, 19, 
+                        7, 19, 
+                        26,26, 26)
 change.df
 
 # Plot for percentage changes
@@ -289,8 +289,12 @@ coef.data$Labels <- c("Coyote BL breed","Coyote BL molt","Coyote BL pup",
                       "MOCI OND lag pup",
                       "eSeal DP-DE-PRH")
 
+
+
+
 coef.data %>% 
 ggplot(aes(fct_reorder(Labels, estimate), estimate, shape = Season, color = Significant)) +
+#ggplot(aes(term, estimate, shape = Season, color = Significant)) +
   geom_pointrange(aes(ymin = conf.low, ymax = conf.up), size = 0.8) +
   coord_flip() +
   theme(legend.position = c(0.2, 0.2)) + 
@@ -318,8 +322,6 @@ coef(BESTMODEL, type="matrix")$R  # observation errors
 coef(BESTMODEL, type="matrix")$Q  # hidden state process
 (coef(BESTMODEL, type="matrix")$U)  # growth | su
 
-exp(0.0395)
-exp(0.5959683)
 
 B <- coef(BESTMODEL, type="matrix")$B  # effect of column on row
 
@@ -373,7 +375,7 @@ h <- diag(1 / sqrt(diag(Q.unc)))
 Q.corr <- h %*% Q.unc %*% h
 
 ## get Z.model from appropriate model
-Z.model=factor(1:12) 
+Z.model=factor(1:18) 
 
 rownames(Q.corr) <- unique(Z.model)
 colnames(Q.corr) <- unique(Z.model)
@@ -396,31 +398,31 @@ summary(t(small_c_Coyote_3yr_MOCI_MOCI_lag))
 
 # example A
 #no coyotes, good upwelling
-c_forecast=matrix(c(0,0,0,0,0,  0,0,0,0,0,
-                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,  Contrast with Y/N coyote
-                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
-                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
-                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
-                    0,0,0,0,0,  0,0,0,0,0, #1,1,1,1,1,
+c_forecast=matrix(c(rep(0, times = 10),
+                    rep(0, times = 10), #1,1,1,1,1,  Contrast with Y/N coyote
+                    rep(0, times = 10), #1,1,1,1,1,
+                    rep(0, times = 10), #1,1,1,1,1,
+                    rep(0, times = 10), #1,1,1,1,1,
+                    rep(0, times = 10), #1,1,1,1,1,
                     -1,-1,-2,0,-2,  0,1,2,-1,-2, #MOCI
                     0,2,1,0,2, -2,-1,0,2,2,  #MOCI AMJ lag
                     0,2,1,0,2, -2,-1,0,2,2,  #MOCI OMD lag
-                    0,0,0,0,0,  0,0,0,0,0), #eSeal
+                    rep(0, times = 10)), #eSeal
                   nrow = 10, ncol = 10,
                   byrow = TRUE)
 
 # example B
 # more coyotes, less upwelling
 c_forecast=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
-                    2,2,2,2,2,2,2,2,2,2,  #DE
-                    2,2,2,2,2,2,2,2,2,2,   #DP
-                    -0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,  #PRH
-                    0,0,0,0,0,  0,0,0,0,0,  #TB
+                    rep(1.2, times = 10),    #DE
+                    rep(2.5, times = 10),    #DP
+                    rep(-0.8, times = 10),   #PRH
+                    rep(0, times = 10),      #TB
                     -0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #TP 
                     0,2,2,0,0,1,1,-2,-1,2, #MOCI
                     -1,0,-2,-2,0,0,-1,-1,-1,-1, #MOCI AMJ lag
                     0,2,1,0,2, -2,-1,0,2,2,  #MOCI OMD lag
-                    0,0,0,0,0,  0,0,0,0,0), #eSeal), 
+                    rep(0, times = 10)),  #eSeal), 
                   nrow = 10, ncol = 10,
                   byrow = TRUE)
 
