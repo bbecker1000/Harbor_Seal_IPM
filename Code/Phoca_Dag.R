@@ -24,6 +24,9 @@ DAG_PHOCA <- dagitty("dag{
   Year -> POPULATION ;
   Oceanography -> Prey -> Adult -> Pup -> POPULATION ;
   Oceanography -> Prey -> Pup -> POPULATION ;
+  eSeal -> Prey -> Pup ;
+  eSeal -> Prey -> Adult ;
+  eSeal -> Prey -> Molt ;
   Site -> Coyote -> Pup -> POPULATION ;
   Site -> Pup -> POPULATION;
   Site -> Adult -> POPULATION;
@@ -42,10 +45,14 @@ DAG_PHOCA <- dagitty("dag{
   Molt [exposure] ;
   POPULATION [outcome] ;
   Prey [unobserved] ;
+  eSeal [exposure] ;
   
   
 
 }")
+
+## 2024-06-11
+## add sharks and eSeals (and Orca)?-
 
 ## add in zone?
 par(mfrow = c(1,1))

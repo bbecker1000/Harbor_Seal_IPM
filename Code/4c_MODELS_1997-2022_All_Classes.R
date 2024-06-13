@@ -160,7 +160,26 @@ Ut.Site <- array(U2, dim = c(dim(U1), dim(dat)[2]))
 TT <- dim(dat)[2]
 Ut.Site[, , 1:ceiling(TT / 4)] <- U1    #t1 through 2004
 
-#timevarying u by site and class
+#timevarying u by class
+#adults and molt time vary at 2004, pups do not vary
+U1 <- matrix(c("t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P"),18, 1)
+U2 <- matrix(c("t2_A","t2_M","t1_P",
+               "t2_A","t2_M","t1_P",
+               "t2_A","t2_M","t1_P",
+               "t2_A","t2_M","t1_P",
+               "t2_A","t2_M","t1_P",
+               "t2_A","t2_M","t1_P"),18, 1)
+Ut.Class <- array(U2, dim = c(dim(U1), dim(dat)[2]))
+TT <- dim(dat)[2]
+Ut.Class[, , 1:ceiling(TT / 4)] <- U1 #t1 through 2003
+
+
+#timevarying u by class
 #adults and molt time vary at 2004, pups do not vary
 U1 <- matrix(c("t1_BL_A","t1_BL_M","t1_BL_P",
                "t1_DE_A","t1_DE_M","t1_DE_P",
@@ -177,6 +196,8 @@ U2 <- matrix(c("t2_BL_A","t2_BL_M","t1_BL_P",
 Ut.Site.Class <- array(U2, dim = c(dim(U1), dim(dat)[2]))
 TT <- dim(dat)[2]
 Ut.Site.Class[, , 1:ceiling(TT / 4)] <- U1 #t1 through 2003
+
+
 
 #timevarying u by 4 sites
 #Many warnings on early runs
@@ -551,12 +572,12 @@ beepr::beep()
 t1 <- Sys.time()
 t1-t0 #run time 60 sec.
 save(m.1997.2023.06.ut.All.MOCI.ES, file = "Output/m.1997.2023.06.ut.All.MOCI.ES.RData")
-#load(file = "Output/m.1997.2022.06.ut.All.MOCI.RData")
+#load(file = "Output/m.1997.2023.06.ut.All.MOCI.ES.RData")
 
 
 ##m.1997.2023.06.ut.All.MOCI.ES  
 # time vary adult and molt,  not pup
-# 22 min
+# 31 min
 t0 <- Sys.time()
 m.1997.2023.06.ut.Site.Class.MOCI.ES=MARSS(dat, model=list(
   Z=factor(c(1:18)), 
@@ -576,7 +597,37 @@ beepr::beep()
 t1 <- Sys.time()
 t1-t0
 save(m.1997.2023.06.ut.Site.Class.MOCI.ES, file = "Output/m.1997.2023.06.ut.Site.Class.MOCI.ES.RData")
+#load(file = "Output/m.1997.2023.06.ut.Site.Class.MOCI.ES.RData")
 
+
+
+##m.1997.2023.06.ut.All.MOCI.ES  
+# time vary adult and molt,  not pup
+# no site u diffs
+# 
+t0 <- Sys.time()
+m.1997.2023.06.ut.Class.MOCI.ES=MARSS(dat, model=list(
+  Z=factor(c(1:18)), 
+  U=Ut.Class, 
+  R=diag(0.025, 18),
+  Q="diagonal and equal",
+  B=B.model,
+  C=C.model.MOCI,
+  #x0 = x0.model, 
+  tinitx=1, 
+  c = small_c_Coyote_3yr_MOCI_MOCI_lag),
+  control=list(maxit=7500, safe=TRUE, trace = 0, allow.degen=TRUE)) 
+
+df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Class.MOCI.ES", aic = m.1997.2023.06.ut.Class.MOCI.ES$AIC)
+df_aic
+beepr::beep()
+t1 <- Sys.time()
+t1-t0
+save(m.1997.2023.06.ut.Class.MOCI.ES, file = "Output/m.1997.2023.06.ut.Class.MOCI.ES.RData")
+#load(file = "Output/m.1997.2023.06.ut.Class.MOCI.ES.RData")
+
+
+Ut.Class
 
 
 

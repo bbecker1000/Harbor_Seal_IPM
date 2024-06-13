@@ -4,7 +4,10 @@
 #############################
 # Model plots -------------------------------------
 #############################
-BESTMODEL <- m.1997.2023.06.ut.Site.Class.MOCI.ES # makes most sense AIC 80 points lower
+BESTMODEL <- m.1997.2023.06.ut.Class.MOCI.ES 
+# m.1997.2023.06.ut.Site.Class.MOCI.ES 
+# m.1997.2023.06.ut.Class.MOCI.ES
+#  
 #BESTMODEL <- m.1997.2023.06.ut.All.MOCI.ES # restricts trends... unrealistic
 #m.1997.2022.06.ut.All.MOCI.ES # m.1997.2022.06.ut.All.MOCI #m.1997.2022.06.ut.All #m.Ind_Molt_Adult_Coyote_PDO_B_equalcov_1U_TV_Site # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U_R0 # # m.1pop_Molt_Adult_Coyote_PDO_B_custom_1U# m.1pop_Molt_Adult_Coyote_PDO_B_unc_2U #m.1pop_Coyote_PDO_Xo_fixed_B_unc_tinitx_1 #m.1pop_Coyote_PDO_Xo_fixed_B_unc# m.1pop_Coyote_PDO_B_unc #   m.1pop_Coyote_PDO_B_unc   m.5pop_Coyote_PDO_B_unc
 
@@ -76,7 +79,7 @@ ggplot(d5, aes(x = years, y = log_est, group = Subsite_Season, color = Subsite))
   geom_ribbon(aes(ymin = log_est-log_se, ymax = log_est+log_se),  
               alpha = 0.2, colour = NA) +
   geom_hline(yintercept = c(-1,0,1), lty = 2) +
-  xlim(1997, 2022) +
+  xlim(1997, 2023) +
   ylim(-1.5, 2) + 
   theme_minimal(base_size = 20) +
   ylab("index of log abundance (N-No)") +
@@ -151,7 +154,7 @@ ggplot(d4, aes(x = years, y = estimate, color = Season)) +
   geom_ribbon(aes(ymin = estimate-1.28*SE*estimate, ymax = estimate+1.28*SE*estimate, fill = Season),  
               alpha = 0.2, color = NA) +
   #geom_hline(yintercept = c(-1,0,1), lty = 2) +
-  xlim(1997, 2022) +
+  xlim(1997, 2023) +
   ylim(0, 5500) + 
   theme_classic(base_size = 20) +
   ylab("Estimated abundance") +
@@ -414,14 +417,14 @@ c_forecast=matrix(c(rep(0, times = 10),
 # example B
 # more coyotes, less upwelling
 c_forecast=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
-                    rep(1.2, times = 10),    #DE
-                    rep(2.5, times = 10),    #DP
-                    rep(-0.8, times = 10),   #PRH
+                    rep(3.02, times = 10),    #DE
+                    rep(2.62, times = 10),    #DP
+                    rep(0, times = 10),   #PRH
                     rep(0, times = 10),      #TB
-                    -0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #TP 
-                    0,2,2,0,0,1,1,-2,-1,2, #MOCI
-                    -1,0,-2,-2,0,0,-1,-1,-1,-1, #MOCI AMJ lag
-                    0,2,1,0,2, -2,-1,0,2,2,  #MOCI OMD lag
+                    rep(0, times = 10),      #TP 
+                    0,2,2,0,0,1,1,-2,0,2, # Warm MOCI
+                    1,0,2,-1,0,0,1,-1,1,0, #MOCI AMJ lag
+                    1,0,2,-1,0,0,1,-1,1,0, #MOCI OMD lag
                     rep(0, times = 10)),  #eSeal), 
                   nrow = 10, ncol = 10,
                   byrow = TRUE)

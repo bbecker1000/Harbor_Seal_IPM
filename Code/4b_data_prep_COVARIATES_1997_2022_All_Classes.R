@@ -33,6 +33,11 @@ MEI <- MEI %>% filter(Year < 2024 & Year > 1996)
 MEI$Coyote_DP <- ifelse(MEI$Year == 2003, 1, MEI$Coyote_DP)
 MEI$Coyote_DP <- ifelse(MEI$Year == 2004, 1, MEI$Coyote_DP)
 
+#Convert the COyote rate values to 3 year weighted means for memory effect.
+# 20:30:50 for years t-2, t-1 and t
+
+
+
 
 #
 Coyote_01 <- MEI[,c(7:11)]  
@@ -64,14 +69,14 @@ small_c_Coyote_3yr_UI_UI_lag <- as.matrix(t(small_c_Coyote_3yr_UI_UI_lag)) #
 
 ####Matrix with coyote_3yr and MOCI and MOCI-lags
 
-small_c_Coyote_3yr_MOCI_MOCI_lag <-tibble(MEI[,c(20:22, 5,26, 27, 28)]) #scale for the covariate plots!
+small_c_Coyote_3yr_MOCI_MOCI_lag <-tibble(MEI[,c(7:9, 5,26, 27, 28)]) #scale for the covariate plots!
 small_c_Coyote_3yr_MOCI_MOCI_lag <- scale(small_c_Coyote_3yr_MOCI_MOCI_lag)
 small_c_Coyote_3yr_MOCI_MOCI_lag <- as_tibble(small_c_Coyote_3yr_MOCI_MOCI_lag)
 
 ## zeros for DR, PB, PRH
-small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_3yr_PRH <- 0
-small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_3yr_TB <- 0
-small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_3yr_TP <- 0
+small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_PRH_3yr <- 0
+small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_TB_3yr <- 0
+small_c_Coyote_3yr_MOCI_MOCI_lag$Coyote_TP_3yr <- 0
 
 
 small_c_Coyote_3yr_MOCI_MOCI_lag <- small_c_Coyote_3yr_MOCI_MOCI_lag[,c(1:3, 8:10, 4:5, 7, 6)]
