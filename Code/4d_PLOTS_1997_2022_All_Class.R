@@ -408,11 +408,33 @@ c_forecast=matrix(c(rep(0, times = 10),
                     rep(0, times = 10), #1,1,1,1,1,
                     rep(0, times = 10), #1,1,1,1,1,
                     -1,-1,-2,0,-2,  0,1,2,-1,-2, #MOCI
-                    0,2,1,0,2, -2,-1,0,2,2,  #MOCI AMJ lag
-                    0,2,1,0,2, -2,-1,0,2,2,  #MOCI OMD lag
+                    0,-2,1,0,2, -2,-1,0,2,2,  #MOCI AMJ lag
+                    0,2,-1,0,-2, -2,-1,0,2,-2,  #MOCI OMD lag
                     rep(0, times = 10)), #eSeal
                   nrow = 10, ncol = 10,
                   byrow = TRUE)
+
+
+#TODO:
+c_new <- cbind(small_c_Coyote_3yr_MOCI_MOCI_lag, c_forecast)
+
+forecast1 <- predict(BESTMODEL, n.ahead = 10, interval = "prediction", 
+                     nsim = 100,
+                     newdata = list(c = c_forecast))
+
+
+forecast1_plot_data <- forecast1$pred
+
+d.1 <- forecast1_plot_data[,1:2]
+d.2 <- exp(forecast1_plot_data[,3:9])
+forecast1_plot_data_good <- tibble(d.1, d.2)
+
+summary(forecast1_plot_data_good$t) #t max = 37
+
+filter(forecast1_plot_data_good
+
+#END TODO:
+
 
 # example B
 # more coyotes, less upwelling

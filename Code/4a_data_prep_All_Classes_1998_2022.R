@@ -34,6 +34,9 @@ Phoca$Year <- year(Phoca$Date2)
 ## get Julian Date (yday) for within year dates
 Phoca$Julian <- yday(Phoca$Date2)
 
+## Codde 2024-06-18
+# April 15 - May 20 for Breeding. For molt, it's just after June 10. 
+
 #rename adults during molting season "MOLTING"
 Phoca$Age <- ifelse(Phoca$Julian > 135, "MOLTING", Phoca$Age)
 Phoca$Season <- ifelse(Phoca$Julian <= 135, "PUPPING", "MOLTING")
