@@ -1,5 +1,5 @@
-# data prep for 1997-2022 years adults and molt
-
+# data prep for 1997-2023 years adults and molt
+                                            
 
 library("MARSS")
 library(ggplot2)
@@ -38,8 +38,8 @@ Phoca$Julian <- yday(Phoca$Date2)
 # April 15 - May 20 for Breeding. For molt, it's just after June 10. 
 
 #rename adults during molting season "MOLTING"
-Phoca$Age <- ifelse(Phoca$Julian > 135, "MOLTING", Phoca$Age)
-Phoca$Season <- ifelse(Phoca$Julian <= 135, "PUPPING", "MOLTING")
+Phoca$Age <- ifelse(Phoca$Julian > 160, "MOLTING", Phoca$Age) # June 10
+Phoca$Season <- ifelse(Phoca$Julian <= 140 & Phoca$Julian >= 105, "PUPPING", "MOLTING")
 
 
 

@@ -4,7 +4,8 @@
 #############################
 # Model plots -------------------------------------
 #############################
-BESTMODEL <- m.1997.2023.06.ut.Class.MOCI.ES 
+BESTMODEL <- m.1997.2023.06.ut.Class.MOCI.ES.dist 
+# m.1997.2023.06.ut.Class.MOCI.ES 
 # m.1997.2023.06.ut.Site.Class.MOCI.ES 
 # m.1997.2023.06.ut.Class.MOCI.ES
 #  
@@ -290,7 +291,34 @@ coef.data$Labels <- c("Coyote BL breed","Coyote BL molt","Coyote BL pup",
                       "MOCI OND lag breed",
                       "MOCI OND lag molt",
                       "MOCI OND lag pup",
-                      "eSeal DP-DE-PRH")
+                      "eSeal DP-DE-PRH",
+                      "Dist_BL",
+                      "Dist_DE",
+                      "Dist_DP",
+                      "Dist_PRH",
+                      "Dist_TB",
+                      "Dist_TP")
+
+coef.data$Labels <- c("COYOTE BL Adult","COYOTE BL molt","COYOTE BL pup",
+                      "COYOTE DE Adult", "COYOTE DE molt","COYOTE DE pup",
+                      "COYOTE DP Adult","COYOTE DP molt", "COYOTE DP pup",
+                      "MOCI breed",  
+                      "MOCI molt", 
+                      "MOCI pup", 
+                      "MOCI AMJ lag Adult",
+                      "MOCI AMJ lag molt",
+                      "MOCI AMJ lag pup",
+                      "MOCI OND lag Adult",
+                      "MOCI OND lag molt",
+                      "MOCI OND lag pup",
+                      "eSeal DP-DE-PRH",
+                      "DISTURB BL",
+                      "DISTURB DE",
+                      "DISTURB DP",
+                      "DISTURB PRH",
+                      "DISTURB TB",
+                      "DISTURB TP")
+
 
 
 
@@ -391,7 +419,7 @@ Q.corr
 # must add c data
 # lets say coyote at DE and DP and warm PDO
 
-summary(t(small_c_Coyote_3yr_MOCI_MOCI_lag))
+summary(t(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag))
 
 # try 4 scenarios
 #  A  Coyote increase, normal MOCI
@@ -401,44 +429,51 @@ summary(t(small_c_Coyote_3yr_MOCI_MOCI_lag))
 
 # example A
 #no coyotes, good upwelling
-c_forecast=matrix(c(rep(0, times = 10),
+c_forecast_GGG=matrix(c(rep(0, times = 10),
                     rep(0, times = 10), #1,1,1,1,1,  Contrast with Y/N coyote
                     rep(0, times = 10), #1,1,1,1,1,
                     rep(0, times = 10), #1,1,1,1,1,
                     rep(0, times = 10), #1,1,1,1,1,
                     rep(0, times = 10), #1,1,1,1,1,
-                    -1,-1,-2,0,-2,  0,1,2,-1,-2, #MOCI
-                    0,-2,1,0,2, -2,-1,0,2,2,  #MOCI AMJ lag
-                    0,2,-1,0,-2, -2,-1,0,2,-2,  #MOCI OMD lag
-                    rep(0, times = 10)), #eSeal
-                  nrow = 10, ncol = 10,
+                    -1,-1,-2,0,-2,  0,1,1,-1,-2, #MOCI
+                    0,-2,1,0,2, -2,-1,0,1,-1,  #MOCI AMJ lag
+                    0,2,-1,0,-2, -1,-1,0,1,-2,  #MOCI OMD lag
+                    rep(0, times = 10),  #  eSeal
+                    rep(-1, times = 10), # dist BL
+                    rep(-1, times = 10), # dist DE
+                    rep(-1, times = 10), # dist DP
+                    rep(-1, times = 10), # dist PRH
+                    rep(-1, times = 10), # dist TB
+                    rep(-1, times = 10)), # dist TP
+                    
+                  nrow = 16, ncol = 10,
                   byrow = TRUE)
 
 
 #TODO:
-c_new <- cbind(small_c_Coyote_3yr_MOCI_MOCI_lag, c_forecast)
+c_new_GGG <- cbind(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag, c_forecast_GGG)
 
-forecast1 <- predict(BESTMODEL, n.ahead = 10, interval = "prediction", 
+forecast_GGG <- predict(BESTMODEL, type="ytT", n.ahead = 10, interval = "prediction", 
                      nsim = 100,
-                     newdata = list(c = c_forecast))
+                     newdata = list(c = c_forecast_GGG))
 
 
-forecast1_plot_data <- forecast1$pred
+forecast_GGG_plot_data <- forecast_GGG$pred
 
-d.1 <- forecast1_plot_data[,1:2]
-d.2 <- exp(forecast1_plot_data[,3:9])
-forecast1_plot_data_good <- tibble(d.1, d.2)
+d.1 <- forecast_GGG_plot_data[,1:2]
+d.2 <- exp(forecast_GGG_plot_data[,3:9])
+forecast_GGG_plot_data <- tibble(d.1, d.2)
 
-summary(forecast1_plot_data_good$t) #t max = 37
-
-filter(forecast1_plot_data_good
+summary(forecast_GGG_plot_data$t) #t max = 37
+#just keep the forecasted data...also a function in predict , include = 0, that might work
+forecast_GGG_plot_data <- filter(forecast_GGG_plot_data, t > 37-10)
 
 #END TODO:
 
 
 # example B
 # more coyotes, less upwelling
-c_forecast=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
+c_forecast_BBB=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
                     rep(3.02, times = 10),    #DE
                     rep(2.62, times = 10),    #DP
                     rep(0, times = 10),   #PRH
@@ -447,32 +482,42 @@ c_forecast=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
                     0,2,2,0,0,1,1,-2,0,2, # Warm MOCI
                     1,0,2,-1,0,0,1,-1,1,0, #MOCI AMJ lag
                     1,0,2,-1,0,0,1,-1,1,0, #MOCI OMD lag
-                    rep(0, times = 10)),  #eSeal), 
-                  nrow = 10, ncol = 10,
+                    rep(0, times = 10),  #  eSeal
+                    rep(1, times = 10), # dist BL
+                    rep(1, times = 10), # dist DE
+                    rep(1, times = 10), # dist DP
+                    rep(1, times = 10), # dist PRH
+                    rep(1, times = 10), # dist TB
+                    rep(1, times = 10)), # dist TP),  #eSeal), 
+                  nrow = 16, ncol = 10,
                   byrow = TRUE)
 
 
-c_new <- cbind(small_c_Coyote_3yr_MOCI_MOCI_lag, c_forecast)
+c_new <- cbind(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag, c_forecast_BBB)
 
-forecast1 <- predict(BESTMODEL, n.ahead = 10, interval = "prediction", 
+forecast1_BBB <- predict(BESTMODEL, type="ytT", n.ahead = 10, interval = "prediction", 
                      nsim = 100,
-                     newdata = list(c = c_forecast))
+                     newdata = list(c = c_forecast_BBB))
 
 
-forecast1_plot_data <- forecast1$pred
+forecast1_BBB_plot_data <- forecast1_BBB$pred
 
-d.1 <- forecast1_plot_data[,1:2]
-d.2 <- exp(forecast1_plot_data[,3:9])
-forecast1_plot_data <- tibble(d.1, d.2)
+d.1 <- forecast1_BBB_plot_data[,1:2]
+d.2 <- exp(forecast1_BBB_plot_data[,3:9])
+forecast1_BBB_plot_data <- tibble(d.1, d.2)
 
-names(forecast1_plot_data)
+names(forecast1_BBB_plot_data)
 
-ggplot(forecast1_plot_data, aes(t+1996, estimate)) +
+ggplot(forecast1_BBB_plot_data, aes(t+1996, estimate)) +
   geom_line() +
   geom_ribbon(aes(ymin = `Lo 80`, ymax = `Hi 80`), alpha =0.2) + 
   geom_point(aes(t+1996, y), color = "blue4") + 
-  geom_vline(xintercept = 2022.5, linetype = 2, color = "blue4") + 
-  geom_vline(xintercept = 2004, linetype = 2) + #show TV timepoint
+  geom_vline(xintercept = 2023.5, linetype = 2) + 
+  geom_vline(xintercept = 2004, linetype = 2, color = "red3") + #show TV timepoint
+  geom_line(data = forecast_GGG_plot_data, 
+            aes(x = t+1996, y = estimate)) +
+  geom_ribbon(data = forecast_GGG_plot_data, 
+              aes(ymin = `Lo 80`, ymax = `Hi 80`), alpha =0.2, color = "blue4") + 
   xlab("Year") + 
   ylab("Seals") +
   facet_wrap(.~.rownames, ncol = 3)
