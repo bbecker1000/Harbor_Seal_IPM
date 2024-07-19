@@ -201,6 +201,7 @@ Smaller Bi,i means more density dependence.
 1. add human disturbace covariate by site.  SA -> all age classes effected the same, so single covariate.  But can try single age classes variable.
 2. Pup:Adult ratio and then what sort of model
   a. Not sure about covariates since already used in the MARSS model
+  b. let's just show graphically since already was modeled.
 3. Next meeting in July.
 
 
