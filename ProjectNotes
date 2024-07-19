@@ -198,14 +198,21 @@ Smaller Bi,i means more density dependence.
 3. hard to estimate U and B in same model...see if can run with steady state U?
 
 2024-06-18
-1. add human disturbace covariate by site.  SA -> all age classes effected the same, so single covariate.  But can try single age classes variable.
+1. add human disturbace covariate by site.  SA -> all age classes effected the same, so single covariate.  DONE But can try single age classes variable.
 2. Pup:Adult ratio and then what sort of model
   a. Not sure about covariates since already used in the MARSS model
   b. let's just show graphically since already was modeled.
 3. Next meeting in July.
 
-
-
+2024-06-23
+1. Models with human disturbance run well
+2. Currently just year of disturbance.  Should it be 3 year weighted like Coyote?
+3. scenarios for projections
+  A. good MOCI, low coyote, low dist
+  B. poor MOCI, low coyote, low dist
+  C. poor MOCI, High coyote, low dist
+  D. poor MOCI, Low coyote, High dist
+  C. poor MOCI, High coyote, High dist
 
    
    
