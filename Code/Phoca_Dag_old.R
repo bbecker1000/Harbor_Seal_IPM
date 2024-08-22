@@ -21,29 +21,39 @@ library(dagitty)
 set.seed(123)
 
 DAG_PHOCA <- dagitty("dag{ 
+  Year -> POPULATION ;
   Oceanography -> Prey -> Adult -> Pup;
-  Coyote -> Adult -> Pup ;
-  Adult -> Pup ;
-  Adult -> Molt ;
-  Disturbance -> Adult -> Pup;
+  Oceanography -> Prey -> Pup -> POPULATION ;
+  eSeal -> Prey -> Pup ;
+  eSeal -> Prey -> Adult ;
+  eSeal -> Prey -> Molt ;
+  Site -> Coyote -> Pup -> POPULATION ;
+  Site -> Pup -> POPULATION;
+  Site -> Adult -> POPULATION;
+  Site -> Coyote -> Adult -> POPULATION ;
+  Site -> Coyote -> Molt -> POPULATION ;
+  Adult -> Pup -> POPULATION;
+  Adult -> Molt -> POPULATION;
+  Disturbance -> Adult ;
   Disturbance -> Molt ;
   
   
   
-
+  Year [exposure] ;
+  Site [exposure] ;
   Oceanography [exposure] ;
   Coyote [exposure] ;
-  Adult [outcome] ;
-  Pup [outcome] ;
-  Molt [outcome] ;
+  Adult [exposure] ;
+  Pup [exposure] ;
+  Molt [exposure] ;
+  POPULATION [outcome] ;
   Prey [unobserved] ;
+  eSeal [exposure] ;
   Disturbance [exposure] ;
   
   
 
 }")
-
-
 
 ## 2024-06-11
 ## add sharks and eSeals (and Orca)?-
@@ -56,20 +66,28 @@ impliedConditionalIndependencies(DAG_PHOCA)
 
 
 # to pretty up the plot 
-coordinates(DAG_PHOCA) <- list(x=c(Coyote=2.5,
-                                   Oceanography=2.25,
-                                   Disturbance=2.75,
-                                   Pup=2.5,
-                                   Adult=2.5, 
-                                   Molt=2.75, 
-                                   Prey=2.25),
-                              y=c(Coyote=-4,
+coordinates(DAG_PHOCA) <- list(x=c(Year=2,
+                                   Site=2.5,
+                                   Coyote=3,
+                                   Oceanography=2,
+                                   Disturbance=2,
+                                   eSeal=3,
+                                   Pup=2,
+                                   Adult=3, 
+                                   Molt=4, 
+                                   POPULATION=3,
+                                   Prey=2),
+                              y=c(Year=-1,
+                                  Site=-4,
+                                  Coyote=-4,
                                   Oceanography=-4,
-                                  Disturbance=-4,
+                                  Disturbance=2,
                                   Pup=-2,
-                                  Adult=-3, 
+                                  eSeal=3,
+                                  Adult=-2, 
                                   Molt=-2, 
-                                  Prey=-3.5))
+                                  POPULATION=-1,
+                                  Prey=-3))
 plot(DAG_PHOCA)
 
 

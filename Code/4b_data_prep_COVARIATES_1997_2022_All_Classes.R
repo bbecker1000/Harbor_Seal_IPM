@@ -125,6 +125,12 @@ small_c_Coyote_3yr_MOCI_MOCI_Dist_lag$Coyote_TP_3yr <- 0
 small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <- small_c_Coyote_3yr_MOCI_MOCI_Dist_lag[,c(1:3, 14:16, 4:5, 7, 6, 8:13)]
 small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <- as.matrix(t(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag)) # 
 
+#2024-08-21
+#drop the eSeal_IMM from the model per Codde and Allen
+
+small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <- small_c_Coyote_3yr_MOCI_MOCI_Dist_lag[-10,]
+
+
 
 
 

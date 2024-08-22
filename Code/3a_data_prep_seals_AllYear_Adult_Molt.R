@@ -20,7 +20,7 @@ library(sjPlot) #used at end for 1 plot theme
 
 
 ## get PRNS data
-Phoca <- read_excel("Data/1997_2022_Phocadata.xls")
+Phoca <- read_excel("Data/1997_2023_Phocadata.xls")
 
 Phoca <- Phoca[-c(3:4, 8:10)]
 
@@ -110,10 +110,11 @@ top.plot + facet_grid(Age ~ Subsite)
 
 #Phoca.Adult <- dplyr::filter(Phoca, Age == "ADULT")
 
-seasonal.plot <- ggplot(all_data, aes(Julian, Count, color = Yearf)) + 
-  geom_point() + 
-  geom_smooth(aes(colour = Yearf))
-seasonal.plot + facet_grid(Subsite ~ Age)
+seasonal.plot <- ggplot(all_data, aes(Julian, Count, color = Age)) + 
+  geom_point(alpha = 0.1) + 
+  geom_smooth(aes(colour = Age)) +
+  ylab("Day of Year")
+seasonal.plot + facet_grid(.~Subsite)
 
 #remove Point Bonita and Duxbury PUP data since no or few pups
 all_data.MARSS <- subset(top1_all_data, Age != "PUP") # | Subsite != "DR" & Subsite != "PB" & Subsite != "PRH")

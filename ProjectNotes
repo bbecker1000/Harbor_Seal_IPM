@@ -194,7 +194,7 @@ SC: for MOCI
 the diagonals are (bi,i − 1) so subtract off 1 from the diagonals to get the effect of
 species i on itself. If the species are density-independent, then Bi,i would equal 1.
 Smaller Bi,i means more density dependence.
-2. B matrix is effect of t-1 on t.
+2. B matrix is effect of t-1 on t.  (from MARSS manual)
 3. hard to estimate U and B in same model...see if can run with steady state U?
 
 2024-06-18
@@ -207,14 +207,30 @@ Smaller Bi,i means more density dependence.
 2024-06-23
 1. Models with human disturbance run well
 2. Currently just year of disturbance.  Should it be 3 year weighted like Coyote?
-3. scenarios for projections
+3. scenarios for projections (see if can plot cleanly, or supplement?)
   A. good MOCI, low coyote, low dist
-  B. poor MOCI, low coyote, low dist
+  B. poor MOCI, low coyote, low dist  
   C. poor MOCI, High coyote, low dist
   D. poor MOCI, Low coyote, High dist
   C. poor MOCI, High coyote, High dist
+  D. **organize on the management leverage points (coyote, disturbance)
+  
+2024-07-19
+  A. add ratio plots - DONE
+  B. Create disturbance plots - DONE 
+  C. Plots for site independent effects: MOCI on PUP, MOCI OND pup, MOCI Molt
+  D. Update predict projections - 
+  
+2024-07-30
+A. include plot ratios for pre-1997 data.
+B. plot by site back to 1970s (model without all the covariates?)
+C. How do pup:adult ratios change over time?  (Long data series)
+D. After add the long-term data, calculate rates of change over time for overall and by site. 
 
-   
+2024-08-21
+A. removed eSeal covariate
+B. check that ratio being calculated correctly
+C. check why new model has some odd estimates for pop size.
    
    
    

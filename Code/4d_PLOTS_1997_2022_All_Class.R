@@ -4,7 +4,12 @@
 #############################
 # Model plots -------------------------------------
 #############################
-BESTMODEL <- m.1997.2023.06.ut.Class.MOCI.ES.dist 
+#BESTMODEL <- m.1997.2023.06.ut.Class.MOCI.dist
+BESTMODEL <-   m.1997.2023.06.ut.Class.MOCI.ES.dist  
+
+#BESTMODEL <-   m.1997.2023.06.ut.Class.All.MOCI.ES.dist
+
+
 # m.1997.2023.06.ut.Class.MOCI.ES 
 # m.1997.2023.06.ut.Site.Class.MOCI.ES 
 # m.1997.2023.06.ut.Class.MOCI.ES
@@ -16,7 +21,8 @@ BESTMODEL <- m.1997.2023.06.ut.Class.MOCI.ES.dist
 autoplot(BESTMODEL)
 
 autoplot(BESTMODEL, plot.type = "fitted.ytT") + # xtT
-  ylim(4,8) # xtT
+  ylim(3,8) +
+  ylab("estimate (log count)")# xtT
 
 autoplot(BESTMODEL, plot.type = "xtT") + # xtT
   ylim(3.1,7.6)
@@ -86,6 +92,95 @@ ggplot(d5, aes(x = years, y = log_est, group = Subsite_Season, color = Subsite))
   ylab("index of log abundance (N-No)") +
   xlab("Year") +
   facet_wrap(.~Season, ncol = 1)
+
+
+
+## plot pup:adult ratios using predicted values
+
+d <- as_tibble(t(BESTMODEL$states)) #-BESTMODEL$states[,1]))
+d.se <- as_tibble(t(BESTMODEL$states.se))
+#add header names
+names(d)[c(1:18)] <- c("BL_Breed", "BL_Molt", "BL_Pup",
+                       "DE_Breed", "DE_Molt", "DE_Pup",
+                       "DP_Breed", "DP_Molt", "DP_Pup",
+                       "PRH_Breed", "PRH_Molt", "PRH_Pup",
+                       "TB_Breed", "TB_Molt", "TB_Pup",
+                       "TP_Breed", "TP_Molt", "TP_Pup"
+                       # "DR_Breed", "DR_Molt", #"DR_Pup",
+                       #  "PB_Breed", "PB_Molt" #"PB_Pup"
+)
+
+names(d.se)[c(1:18)] <- c("BL_Breed", "BL_Molt", "BL_Pup",
+                          "DE_Breed", "DE_Molt", "DE_Pup",
+                          "DP_Breed", "DP_Molt", "DP_Pup",
+                          "PRH_Breed", "PRH_Molt", "PRH_Pup",
+                          "TB_Breed", "TB_Molt", "TB_Pup",
+                          "TP_Breed", "TP_Molt", "TP_Pup"
+                          # "DR_Breed", "DR_Molt", #"DR_Pup",
+                          #  "PB_Breed", "PB_Molt" #"PB_Pup"
+)
+
+
+d <- as_tibble(cbind(years,d))
+
+d2 <- d %>% pivot_longer(cols = c(2:19), names_to = "Subsite_Season", values_to = "log_est")
+d2.se <- d.se %>% pivot_longer(cols = c(1:18), names_to = "Subsite_Season", values_to = "log_est")
+d2.se <- d2.se[,2]
+colnames(d2.se)[1] = "log_se"
+
+d4 <- as_tibble(cbind(d2,d2.se))
+
+#add groupings for site and molt
+d5 <- d4 %>% separate_wider_delim(Subsite_Season, "_", names = c("Subsite", "Season"))
+d5$Subsite_Season <- paste0(d5$Subsite, "_", d5$Season)
+d5
+
+# remove molt
+d6 <- d5 %>% filter(Season != "Molt")
+d6 <- d6 %>% select(-Subsite_Season)
+
+# Create hi and lo ratios
+d7 <- d6 %>% pivot_wider(names_from = Season, values_from = c(log_est, log_se))
+d7$ratio <- d7$log_est_Pup / d7$log_est_Breed
+d7$ratio.lo <- (d7$log_est_Pup - (d7$log_est_Pup * d7$log_se_Pup * 1.68)) / 
+               (d7$log_est_Breed - (d7$log_est_Breed * d7$log_se_Breed * 1.68) )
+
+d7$ratio.hi <- (d7$log_est_Pup + (d7$log_est_Pup * d7$log_se_Pup * 1.68)) / 
+  (d7$log_est_Breed + (d7$log_est_Breed * d7$log_se_Breed * 1.68) )
+
+mean(d7$ratio)
+
+
+ggplot(d7, aes(x = years, y = ratio)) +
+  geom_point(size = 2) + 
+  geom_line(linewidth = 1.1) +
+  geom_ribbon(aes(ymin = ratio.lo, ymax = ratio.hi), alpha = 0.2, colour = NA) +
+  geom_hline(yintercept = 0.845, lty = 2) +
+  xlim(1997, 2023) +
+  ylim(0.6, 1.1) + 
+  theme_grey(base_size = 20) +
+  ylab("pups:adults") +
+  xlab("Year") +
+  facet_wrap(.~Subsite, ncol = 3)
+
+
+
+
+## plot disturbance rates through time
+ #from 4b
+HumanDisturbance.A <- HumanDisturbance %>% filter(SiteCode != "DR" & SiteCode != "PB")
+
+ggplot(HumanDisturbance.A, aes(x = Year, y = DistRate)) +
+  geom_point(size = 2) + 
+  geom_line(linewidth = 1.1) +
+  geom_hline(yintercept = mean(HumanDisturbance$DistRate), lty = 2) +
+  xlim(1997, 2023) +
+  #ylim(0, 1) + 
+  theme_grey(base_size = 20) +
+  ylab("Anthropogenic distrubance rate") +
+  xlab("Year") +
+  facet_wrap(.~SiteCode, ncol = 3)
+
 
 
 ####----plot overall pop size for each age class summing sites
@@ -253,7 +348,7 @@ dodge <- position_dodge(width=0.5)
 
 ggplot(change.df, aes(x=factor(Range, levels = c("1997-2004", "2004-2023", "1997-2023")),
                                y = Change, color = Season)) +
-  geom_pointrange(aes(ymin=Change.lo, ymax=Change.hi), size = .3, position = dodge) + 
+  geom_pointrange(aes(ymin=Change.lo, ymax=Change.hi), size = .5, position = dodge) + 
   geom_hline(yintercept=0, linetype=2) +
   xlab("Year Range") + 
   ylab("Percent change") +
@@ -434,16 +529,19 @@ c_forecast_GGG=matrix(c(rep(0, times = 10),
                     rep(0, times = 10), #1,1,1,1,1,
                     rep(0, times = 10), #1,1,1,1,1,
                     rep(0, times = 10), #1,1,1,1,1,
+                    
                     rep(0, times = 10), #1,1,1,1,1,
                     -1,-1,-2,0,-2,  0,1,1,-1,-2, #MOCI
                     0,-2,1,0,2, -2,-1,0,1,-1,  #MOCI AMJ lag
                     0,2,-1,0,-2, -1,-1,0,1,-2,  #MOCI OMD lag
                     rep(0, times = 10),  #  eSeal
+                    
                     rep(-1, times = 10), # dist BL
                     rep(-1, times = 10), # dist DE
                     rep(-1, times = 10), # dist DP
                     rep(-1, times = 10), # dist PRH
                     rep(-1, times = 10), # dist TB
+                    
                     rep(-1, times = 10)), # dist TP
                     
                   nrow = 16, ncol = 10,
@@ -478,16 +576,19 @@ c_forecast_BBB=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
                     rep(2.62, times = 10),    #DP
                     rep(0, times = 10),   #PRH
                     rep(0, times = 10),      #TB
+                    
                     rep(0, times = 10),      #TP 
                     0,2,2,0,0,1,1,-2,0,2, # Warm MOCI
                     1,0,2,-1,0,0,1,-1,1,0, #MOCI AMJ lag
                     1,0,2,-1,0,0,1,-1,1,0, #MOCI OMD lag
                     rep(0, times = 10),  #  eSeal
+                    
                     rep(1, times = 10), # dist BL
                     rep(1, times = 10), # dist DE
                     rep(1, times = 10), # dist DP
                     rep(1, times = 10), # dist PRH
                     rep(1, times = 10), # dist TB
+                    
                     rep(1, times = 10)), # dist TP),  #eSeal), 
                   nrow = 16, ncol = 10,
                   byrow = TRUE)
@@ -523,9 +624,22 @@ ggplot(forecast1_BBB_plot_data, aes(t+1996, estimate)) +
   facet_wrap(.~.rownames, ncol = 3)
 
 
-autoplot(forecast1) +
-  theme_grey(base_size = 18) +
-  #ylim(3,7.6) #+
-  scale_y_continuous(trans="exp")
+# autoplot(forecast1) +
+#   theme_grey(base_size = 18) +
+#   #ylim(3,7.6) #+
+#   scale_y_continuous(trans="exp")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -173,6 +173,26 @@ Ut.Class <- array(U2, dim = c(dim(U1), dim(dat)[2]))
 TT <- dim(dat)[2]
 Ut.Class[, , 1:ceiling(TT / 4)] <- U1 #t1 through 2003
 
+#timevarying u by class incl pups
+#adults, pups and molt time vary at 2004,
+U1 <- matrix(c("t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P",
+               "t1_A","t1_M","t1_P"),18, 1)
+U2 <- matrix(c("t2_A","t2_M","t2_P",
+               "t2_A","t2_M","t2_P",
+               "t2_A","t2_M","t2_P",
+               "t2_A","t2_M","t2_P",
+               "t2_A","t2_M","t2_P",
+               "t2_A","t2_M","t2_P"),18, 1)
+Ut.Class.all <- array(U2, dim = c(dim(U1), dim(dat)[2]))
+TT <- dim(dat)[2]
+Ut.Class.all[, , 1:ceiling(TT / 4)] <- U1 #t1 through 2003
+
+
+
 
 #timevarying u by class
 #adults and molt time vary at 2004, pups do not vary
@@ -219,18 +239,19 @@ R.model <- diag(0.05, 12) #known observation error variance
 R.model="diagonal and equal"  #zero since focusing on B  else  "diagonal and equal"
 
 ## C model matrix for UI
+## 2024-08-21 remove the eSeal_IMM
 C.model.MOCI=matrix(
-  list("BL_A",0,0,0,0,0,"MOCI_A","MOCI_AMJ_A_lag", "MOCI_OND_A_lag",   0,     "BL_Dist",0,0,0,0,0,
-       "BL_M",0,0,0,0,0,  "MOCI_M","MOCI_AMJ_M_lag", "MOCI_OND_M_lag", 0,     "BL_Dist",0,0,0,0,0,
-       "BL_P",0,0,0,0,0,  "MOCI_P","MOCI_AMJ_P_lag", "MOCI_OND_P_lag", 0,     "BL_Dist",0,0,0,0,0,
+  list("BL_A",0,0,0,0,0,  "MOCI_A","MOCI_AMJ_A_lag", "MOCI_OND_A_lag",  0,  "BL_Dist",0,0,0,0,0,
+       "BL_M",0,0,0,0,0,  "MOCI_M","MOCI_AMJ_M_lag", "MOCI_OND_M_lag",  0,  "BL_Dist",0,0,0,0,0,
+       "BL_P",0,0,0,0,0,  "MOCI_P","MOCI_AMJ_P_lag", "MOCI_OND_P_lag",  0,  "BL_Dist",0,0,0,0,0,
                                   
-       0,"DE_A",0,0,0,0,  "MOCI_A","MOCI_AMJ_A_lag", "MOCI_OND_A_lag", "ES",  0,"DE_Dist",0,0,0,0, 
-       0,"DE_M",0,0,0,0,  "MOCI_M","MOCI_AMJ_M_lag", "MOCI_OND_M_lag", "ES",  0,"DE_Dist",0,0,0,0,
-       0,"DE_P",0,0,0,0,  "MOCI_P","MOCI_AMJ_P_lag", "MOCI_OND_P_lag", "ES",  0,"DE_Dist",0,0,0,0,
+       0,"DE_A",0,0,0,0,  "MOCI_A","MOCI_AMJ_A_lag", "MOCI_OND_A_lag",  "ES",  0,"DE_Dist",0,0,0,0, 
+       0,"DE_M",0,0,0,0,  "MOCI_M","MOCI_AMJ_M_lag", "MOCI_OND_M_lag",  "ES",  0,"DE_Dist",0,0,0,0,
+       0,"DE_P",0,0,0,0,  "MOCI_P","MOCI_AMJ_P_lag", "MOCI_OND_P_lag",  "ES",  0,"DE_Dist",0,0,0,0,
                         
-       0,0,"DP_A",0,0,0,  "MOCI_A","MOCI_AMJ_A_lag", "MOCI_OND_A_lag", "ES",  0,0,"DP_Dist",0,0,0,
-       0,0,"DP_M",0,0,0,  "MOCI_M","MOCI_AMJ_M_lag", "MOCI_OND_M_lag", "ES",  0,0,"DP_Dist",0,0,0,
-       0,0,"DP_P",0,0,0,  "MOCI_P","MOCI_AMJ_P_lag", "MOCI_OND_P_lag", "ES",  0,0,"DP_Dist",0,0,0,
+       0,0,"DP_A",0,0,0,  "MOCI_A","MOCI_AMJ_A_lag", "MOCI_OND_A_lag", "ES",   0,0,"DP_Dist",0,0,0,
+       0,0,"DP_M",0,0,0,  "MOCI_M","MOCI_AMJ_M_lag", "MOCI_OND_M_lag", "ES",   0,0,"DP_Dist",0,0,0,
+       0,0,"DP_P",0,0,0,  "MOCI_P","MOCI_AMJ_P_lag", "MOCI_OND_P_lag", "ES",   0,0,"DP_Dist",0,0,0,
                                   
                     # 0,0,0,0,0,0,0,0,"PDO_A",
                     # 0,0,0,0,0,0,0,0,"PDO_M",       #DR
@@ -240,17 +261,17 @@ C.model.MOCI=matrix(
                     # 0,0,0,0,0,0,0,0,"PDO_M",
                     #   0,0,0,0,0," PDO_P"
                                   
-       0,0,0,0,0,0,  "MOCI_A", "MOCI_AMJ_A_lag", "MOCI_OND_A_lag", "ES",     0,0,0,"PRH_Dist",0,0, #PRH
-       0,0,0,0,0,0,  "MOCI_M", "MOCI_AMJ_M_lag", "MOCI_OND_M_lag", "ES",     0,0,0,"PRH_Dist",0,0,
-       0,0,0,0,0,0,  "MOCI_P", "MOCI_AMJ_P_lag", "MOCI_OND_P_lag", "ES",     0,0,0,"PRH_Dist",0,0,
+       0,0,0,0,0,0,  "MOCI_A", "MOCI_AMJ_A_lag", "MOCI_OND_A_lag",    "ES",   0,0,0,"PRH_Dist",0,0, #PRH
+       0,0,0,0,0,0,  "MOCI_M", "MOCI_AMJ_M_lag", "MOCI_OND_M_lag",    "ES",   0,0,0,"PRH_Dist",0,0,
+       0,0,0,0,0,0,  "MOCI_P", "MOCI_AMJ_P_lag", "MOCI_OND_P_lag",    "ES",   0,0,0,"PRH_Dist",0,0,
                                 
-       0,0,0,0,0,0,  "MOCI_A", "MOCI_AMJ_A_lag", "MOCI_OND_A_lag", 0,        0,0,0,0,"TB_Dist",0,#TB
-       0,0,0,0,0,0,  "MOCI_M", "MOCI_AMJ_M_lag", "MOCI_OND_M_lag", 0,        0,0,0,0,"TB_Dist",0,
-       0,0,0,0,0,0,  "MOCI_P", "MOCI_AMJ_P_lag", "MOCI_OND_P_lag", 0,        0,0,0,0,"TB_Dist",0,
+       0,0,0,0,0,0,  "MOCI_A", "MOCI_AMJ_A_lag", "MOCI_OND_A_lag",   0,    0,0,0,0,"TB_Dist",0,#TB
+       0,0,0,0,0,0,  "MOCI_M", "MOCI_AMJ_M_lag", "MOCI_OND_M_lag",   0,    0,0,0,0,"TB_Dist",0,
+       0,0,0,0,0,0,  "MOCI_P", "MOCI_AMJ_P_lag", "MOCI_OND_P_lag",   0,    0,0,0,0,"TB_Dist",0,
                                   
-       0,0,0,0,0,0,  "MOCI_A", "MOCI_AMJ_A_lag", "MOCI_OND_A_lag", 0,        0,0,0,0,0,"TP_Dist",#TP
-       0,0,0,0,0,0,  "MOCI_M", "MOCI_AMJ_M_lag", "MOCI_OND_M_lag", 0,        0,0,0,0,0,"TP_Dist",
-       0,0,0,0,0,0,  "MOCI_P", "MOCI_AMJ_P_lag", "MOCI_OND_P_lag", 0,        0,0,0,0,0,"TP_Dist"
+       0,0,0,0,0,0,  "MOCI_A", "MOCI_AMJ_A_lag", "MOCI_OND_A_lag",   0,    0,0,0,0,0,"TP_Dist",#TP
+       0,0,0,0,0,0,  "MOCI_M", "MOCI_AMJ_M_lag", "MOCI_OND_M_lag",   0,    0,0,0,0,0,"TP_Dist",
+       0,0,0,0,0,0,  "MOCI_P", "MOCI_AMJ_P_lag", "MOCI_OND_P_lag",   0,    0,0,0,0,0,"TP_Dist"
 ),
 nrow = 18, ncol = 16,
 byrow = TRUE)
@@ -313,10 +334,10 @@ m.1997.2022.06.ut.All.MOCI=MARSS(dat, model=list(
   R=diag(0.025, 18),
   Q="diagonal and equal",
   B=B.model,
-  C=C.model.UI,
+  C=C.model.MOCI,
   #x0 = x0.model, 
   tinitx=1, 
-  c = small_c_Coyote_3yr_MOCI_MOCI_lag),
+  c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
   control=list(maxit=5000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
 
 df_aic <- df_aic %>% add_row(model = "m.1997.2022.06.ut.All.MOCI", aic = m.1997.2022.06.ut.All.MOCI$AIC)
@@ -340,7 +361,7 @@ m.1997.2023.06.ut.All.MOCI.ES=MARSS(dat, model=list(
   C=C.model.MOCI,
   #x0 = x0.model, 
   tinitx=1, 
-  c = small_c_Coyote_3yr_MOCI_MOCI_lag),
+  c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
   control=list(maxit=5000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
 
 df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.All.MOCI.ES", aic = m.1997.2023.06.ut.All.MOCI.ES$AIC)
@@ -365,7 +386,7 @@ m.1997.2023.06.ut.Site.Class.MOCI.ES=MARSS(dat, model=list(
   C=C.model.MOCI,
   #x0 = x0.model, 
   tinitx=1, 
-  c = small_c_Coyote_3yr_MOCI_MOCI_lag),
+  c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
   control=list(maxit=7500, safe=TRUE, trace = 0, allow.degen=TRUE)) 
 
 df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Site.Class.MOCI.ES", aic = m.1997.2023.06.ut.Site.Class.MOCI.ES$AIC)
@@ -404,10 +425,73 @@ save(m.1997.2023.06.ut.Class.MOCI.ES.dist, file = "Output/m.1997.2023.06.ut.Clas
 #load(file = "Output/m.1997.2023.06.ut.Class.MOCI.ES.dist.RData")
 
 
+##m.1997.2023.06.ut.All.MOCI.ES  
+# time vary adult and molt AND pup
+# no site u diffs
+# added human disturbance by site 2024-06-23
+t0 <- Sys.time()
+m.1997.2023.06.ut.Class.All.MOCI.ES.dist=MARSS(dat, model=list(
+  Z=factor(c(1:18)), 
+  U=Ut.Class.all, #  only different line from previous model
+  R=diag(0.025, 18),
+  Q="diagonal and equal",
+  B=B.model,
+  C=C.model.MOCI,
+  #x0 = x0.model, 
+  tinitx=1, 
+  c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
+  control=list(maxit=1000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
+
+df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Class.All.MOCI.ES.dist", aic = m.1997.2023.06.ut.Class.All.MOCI.ES.dist$AIC)
+df_aic
+beepr::beep()
+t1 <- Sys.time()
+t1-t0
+save(m.1997.2023.06.ut.Class.All.MOCI.ES.dist, file = "Output/m.1997.2023.06.ut.Class.All.MOCI.ES.dist.RData")
+#load(file = "Output/m.1997.2023.06.ut.Class.All.MOCI.ES.dist.RData")
 
 
 
 
+
+
+
+
+
+
+
+
+#2024-08-21
+#remove ES from model per allen and codde
+
+##GIVES UNREALISTIC ESTIMATES FOR TB and TP
+##m.1997.2023.06.ut.All.MOCI.ES  
+# no site u diffs
+# added human disturbance by site 2024-06-23
+# solves in 763 iterations about 3-4 min
+t0 <- Sys.time()
+m.1997.2023.06.ut.Class.MOCI.dist=MARSS(dat, model=list(
+  Z=factor(c(1:18)), 
+  U=Ut.Class, 
+  R=diag(0.025, 18),
+  Q="diagonal and equal",
+  B=B.model,
+  C=C.model.MOCI,
+  #x0 = x0.model, 
+  tinitx=1, 
+  c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
+  control=list(maxit=1000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
+
+#df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Class.MOCI.dist", aic = m.1997.2023.06.ut.Class.MOCI.dist$AIC)
+df_aic
+beepr::beep()
+t1 <- Sys.time()
+t1-t0
+save(m.1997.2023.06.ut.Class.MOCI.ES.dist, file = "Output/m.1997.2023.06.ut.Class.MOCI.dist.RData")
+#load(file = "Output/m.1997.2023.06.ut.Class.MOCI.dist.RData")
+
+
+# next create competing models just for time change point?
 
 
 
