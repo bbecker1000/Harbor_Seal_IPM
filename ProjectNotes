@@ -228,9 +228,11 @@ C. How do pup:adult ratios change over time?  (Long data series)
 D. After add the long-term data, calculate rates of change over time for overall and by site. 
 
 2024-08-21
-A. removed eSeal covariate
-B. check that ratio being calculated correctly
-C. check why new model has some odd estimates for pop size.
+A. removed eSeal covariate but then kept
+B. check that ratio being calculated correctly - done
+C. check why new model has some odd estimates for pop size. fixed - was b/c molt date filter removed year 1 for TB.  expanded date windo 5 days.
+
+D. Fix up the B matrix since it is one year in the future.
    
    
    

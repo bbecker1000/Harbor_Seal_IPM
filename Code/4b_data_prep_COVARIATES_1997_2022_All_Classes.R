@@ -112,8 +112,8 @@ small_c_Coyote_3yr_MOCI_MOCI_lag <- as.matrix(t(small_c_Coyote_3yr_MOCI_MOCI_lag
 
 ####Matrix with coyote_3yr Human Disturbance and MOCI and MOCI-lags
 
-small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <-tibble(MEI[,c(7:9, 5,26, 27, 28, c(29:34))]) #scale for the covariate plots!
-small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <- scale(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag)
+small_c_Coyote_3yr_MOCI_MOCI_Dist_lag.table <-tibble(MEI[,c(7:9, 5,26, 27, 28, c(29:34))]) #scale for the covariate plots!
+small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <- scale(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag.table)
 small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <- as_tibble(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag)
 
 ## zeros for DR, PB, PRH
@@ -128,10 +128,16 @@ small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <- as.matrix(t(small_c_Coyote_3yr_MOCI_MOC
 #2024-08-21
 #drop the eSeal_IMM from the model per Codde and Allen
 
-small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <- small_c_Coyote_3yr_MOCI_MOCI_Dist_lag[-10,]
+#small_c_Coyote_3yr_MOCI_MOCI_Dist_lag <- small_c_Coyote_3yr_MOCI_MOCI_Dist_lag[-10,]
 
 
-
+# Summary Table
+summary(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag.table)
+library(vtable)
+sumtable(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag.table,
+         out="return",
+         group.long=TRUE)
+st(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag.table)
 
 
 

@@ -313,7 +313,7 @@ byrow = TRUE)
 
 ## MARSS Models----------------------------------------
 # AIC table setup
-df_aic <- data.frame(model=character(), aic=integer())
+df_aic <- data.frame(model=character(), aicc=integer())
 
 
 ## U models static
@@ -326,6 +326,36 @@ df_aic <- data.frame(model=character(), aic=integer())
 ####----
 ## adding MOCI MODEL
 
+t0 <- Sys.time()
+m.1997.2022.06.U.Equal.All.MOCI=MARSS(dat, model=list(
+  Z=factor(c(1:18)), 
+  U=U.Equal, 
+  R=diag(0.025, 18),
+  Q="diagonal and equal",
+  #B=B.model,
+  B="identity",
+  C=C.model.MOCI,
+  #x0 = x0.model, 
+  tinitx=1, 
+  c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
+  control=list(maxit=5000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
+
+df_aic <- df_aic %>% add_row(model = "m.1997.2022.06.U.Equal.All.MOCI", aicc = m.1997.2022.06.U.Equal.All.MOCI$AICc)
+df_aic
+beepr::beep()
+t1 <- Sys.time()
+t1-t0 #run time 11 min sec.
+save(m.1997.2022.06.ut.All.MOCI, file = "Output/m.1997.2022.06.U.Equal.All.MOCI.RData")
+#load(file = "Output/m.1997.2022.06.U.Equal.All.MOCI.RData")
+
+
+
+
+
+
+
+
+
 ##m.1997.2022.06 - Ut.All
 t0 <- Sys.time()
 m.1997.2022.06.ut.All.MOCI=MARSS(dat, model=list(
@@ -333,14 +363,15 @@ m.1997.2022.06.ut.All.MOCI=MARSS(dat, model=list(
   U=Ut.All, 
   R=diag(0.025, 18),
   Q="diagonal and equal",
-  B=B.model,
+  #B=B.model,
+  B="identity",
   C=C.model.MOCI,
   #x0 = x0.model, 
   tinitx=1, 
   c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
   control=list(maxit=5000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
 
-df_aic <- df_aic %>% add_row(model = "m.1997.2022.06.ut.All.MOCI", aic = m.1997.2022.06.ut.All.MOCI$AIC)
+df_aic <- df_aic %>% add_row(model = "m.1997.2022.06.ut.All.MOCI", aicc = m.1997.2022.06.ut.All.MOCI$AICc)
 df_aic
 beepr::beep()
 t1 <- Sys.time()
@@ -357,14 +388,15 @@ m.1997.2023.06.ut.All.MOCI.ES=MARSS(dat, model=list(
   U=Ut.All, 
   R=diag(0.025, 18),
   Q="diagonal and equal",
-  B=B.model,
+  #B=B.model,
+  B="identity",
   C=C.model.MOCI,
   #x0 = x0.model, 
   tinitx=1, 
   c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
   control=list(maxit=5000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
 
-df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.All.MOCI.ES", aic = m.1997.2023.06.ut.All.MOCI.ES$AIC)
+df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.All.MOCI.ES", aicc = m.1997.2023.06.ut.All.MOCI.ES$AICc)
 df_aic
 beepr::beep()
 t1 <- Sys.time()
@@ -382,14 +414,15 @@ m.1997.2023.06.ut.Site.Class.MOCI.ES=MARSS(dat, model=list(
   U=Ut.Site.Class, 
   R=diag(0.025, 18),
   Q="diagonal and equal",
-  B=B.model,
+  #B=B.model,
+  B="identity",
   C=C.model.MOCI,
   #x0 = x0.model, 
   tinitx=1, 
   c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
   control=list(maxit=7500, safe=TRUE, trace = 0, allow.degen=TRUE)) 
 
-df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Site.Class.MOCI.ES", aic = m.1997.2023.06.ut.Site.Class.MOCI.ES$AIC)
+df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Site.Class.MOCI.ES", aicc = m.1997.2023.06.ut.Site.Class.MOCI.ES$AICc)
 df_aic
 beepr::beep()
 t1 <- Sys.time()
@@ -409,14 +442,15 @@ m.1997.2023.06.ut.Class.MOCI.ES.dist=MARSS(dat, model=list(
   U=Ut.Class, 
   R=diag(0.025, 18),
   Q="diagonal and equal",
-  B=B.model,
+  #B=B.model,
+  B="identity",
   C=C.model.MOCI,
   #x0 = x0.model, 
   tinitx=1, 
   c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
   control=list(maxit=1000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
 
-df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Class.MOCI.ES.dist", aic = m.1997.2023.06.ut.Class.MOCI.ES.dist$AIC)
+df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Class.MOCI.ES.dist", aicc = m.1997.2023.06.ut.Class.MOCI.ES.dist$AICc)
 df_aic
 beepr::beep()
 t1 <- Sys.time()
@@ -435,14 +469,15 @@ m.1997.2023.06.ut.Class.All.MOCI.ES.dist=MARSS(dat, model=list(
   U=Ut.Class.all, #  only different line from previous model
   R=diag(0.025, 18),
   Q="diagonal and equal",
-  B=B.model,
+  #B=B.model,
+  B="identity",
   C=C.model.MOCI,
   #x0 = x0.model, 
   tinitx=1, 
   c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
   control=list(maxit=1000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
 
-df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Class.All.MOCI.ES.dist", aic = m.1997.2023.06.ut.Class.All.MOCI.ES.dist$AIC)
+df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Class.All.MOCI.ES.dist", aicc = m.1997.2023.06.ut.Class.All.MOCI.ES.dist$AICc)
 df_aic
 beepr::beep()
 t1 <- Sys.time()
@@ -452,6 +487,26 @@ save(m.1997.2023.06.ut.Class.All.MOCI.ES.dist, file = "Output/m.1997.2023.06.ut.
 
 
 
+#try B identity matrix # get much better and more accurate U estimates...so switch to identity
+t0 <- Sys.time()
+m.1997.2023.06.ut.Class.B_ident.MOCI.ES.dist=MARSS(dat, model=list(
+  Z=factor(c(1:18)), 
+  U=Ut.Class, 
+  R=diag(0.025, 18),
+  Q="diagonal and equal",
+  B="identity",
+  C=C.model.MOCI,
+  #x0 = x0.model, 
+  tinitx=1, 
+  c = small_c_Coyote_3yr_MOCI_MOCI_Dist_lag),
+  control=list(maxit=1000, safe=TRUE, trace = 0, allow.degen=TRUE)) 
+
+df_aic <- df_aic %>% add_row(model = "m.1997.2023.06.ut.Class.B_ident.MOCI.ES.dist", aicc = m.1997.2023.06.ut.Class.B_ident.MOCI.ES.dist$AICc)
+df_aic
+beepr::beep()
+t1 <- Sys.time()
+t1-t0
+save(m.1997.2023.06.ut.Class.B_ident.MOCI.ES.dist, file = "Output/m.1997.2023.06.ut.Class.B_ident.MOCI.ES.dist.RData")
 
 
 

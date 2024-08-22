@@ -5,8 +5,9 @@
 # Model plots -------------------------------------
 #############################
 #BESTMODEL <- m.1997.2023.06.ut.Class.MOCI.dist
-BESTMODEL <-   m.1997.2023.06.ut.Class.MOCI.ES.dist  
-
+#BESTMODEL <-   m.1997.2023.06.ut.Class.MOCI.ES.dist  
+BESTMODEL <-  m.1997.2023.06.ut.All.MOCI.ES
+#BESTMODEL <-   m.1997.2023.06.ut.Class.B_ident.MOCI.ES.dist
 #BESTMODEL <-   m.1997.2023.06.ut.Class.All.MOCI.ES.dist
 
 
@@ -40,6 +41,30 @@ CIs
 CIs$states.se  # change this to the CIs rather than SEs...  use 89%CIs for everything?
 
 
+#plot rate of change
+
+Date <- c("1997-2003", "2004-2023")
+Rate <- c(0.0632, -0.0248)
+Rate.lo <- c(0.028, -0.04088)
+Rate.hi <- c(0.0977, -0.008732)
+
+rate.df <- tibble(Date, Rate, Rate.lo, Rate.hi)
+
+rate.increase <- (1+0.0632)^7 - 1
+rate.decrease <- (1-0.0248)^20
+
+ggplot(rate.df, aes(Date, Rate)) +
+  geom_pointrange(ymin=Rate.lo, ymax=Rate.hi) +
+  ylim(-0.05, 0.1) +
+  ylab("Annual rate of change") +
+  xlab("Date Range") +
+  theme_classic(base_size = 20) +
+  annotate("text", x = 1.25, y=0.065, label = "54% total increase") +
+  annotate("text", x = 2.25, y=-0.025, label = "41% total decrease")
+
+
+
+#change by site
 
 d <- as_tibble(t(BESTMODEL$states-BESTMODEL$states[,1]))
 d.se <- as_tibble(t(BESTMODEL$states.se))
@@ -93,6 +118,7 @@ ggplot(d5, aes(x = years, y = log_est, group = Subsite_Season, color = Subsite))
   xlab("Year") +
   facet_wrap(.~Season, ncol = 1)
 
+ggsave("Output/Plots/logAbundance.jpeg", width = 20, height = 30, units = "cm")
 
 
 ## plot pup:adult ratios using predicted values
@@ -151,26 +177,27 @@ d7$ratio.hi <- (d7$log_est_Pup + (d7$log_est_Pup * d7$log_se_Pup * 1.68)) /
 mean(d7$ratio)
 
 
-ggplot(d7, aes(x = years, y = ratio)) +
+ggplot(d7, aes(x = years, y = ratio, colour = Subsite)) +
   geom_point(size = 2) + 
   geom_line(linewidth = 1.1) +
   geom_ribbon(aes(ymin = ratio.lo, ymax = ratio.hi), alpha = 0.2, colour = NA) +
   geom_hline(yintercept = 0.845, lty = 2) +
   xlim(1997, 2023) +
-  ylim(0.6, 1.1) + 
+  ylim(0.6, 1) + 
   theme_grey(base_size = 20) +
   ylab("pups:adults") +
   xlab("Year") +
+  theme(legend.position = "none") +
   facet_wrap(.~Subsite, ncol = 3)
 
-
+ggsave("Output/Plots/PupAdultRatio.jpeg", width = 30, height = 20, units = "cm")
 
 
 ## plot disturbance rates through time
  #from 4b
 HumanDisturbance.A <- HumanDisturbance %>% filter(SiteCode != "DR" & SiteCode != "PB")
 
-ggplot(HumanDisturbance.A, aes(x = Year, y = DistRate)) +
+ggplot(HumanDisturbance.A, aes(x = Year, y = DistRate, color= SiteCode)) +
   geom_point(size = 2) + 
   geom_line(linewidth = 1.1) +
   geom_hline(yintercept = mean(HumanDisturbance$DistRate), lty = 2) +
@@ -179,9 +206,10 @@ ggplot(HumanDisturbance.A, aes(x = Year, y = DistRate)) +
   theme_grey(base_size = 20) +
   ylab("Anthropogenic distrubance rate") +
   xlab("Year") +
+  theme(legend.position = "none") +
   facet_wrap(.~SiteCode, ncol = 3)
 
-
+ggsave("Output/Plots/HumanDisturbance.jpeg", width = 30, height = 20, units = "cm")
 
 ####----plot overall pop size for each age class summing sites
 
@@ -254,8 +282,11 @@ ggplot(d4, aes(x = years, y = estimate, color = Season)) +
   ylim(0, 5500) + 
   theme_classic(base_size = 20) +
   ylab("Estimated abundance") +
-  xlab("Year") 
+  xlab("Year") +
+  theme(legend.position = c(0.85, 0.85),
+        legend.title = element_blank())
 
+ggsave("Output/Plots/TotalPop.jpeg", width = 22, height = 15, units = "cm")
 
 
 ## change over time ---
@@ -325,7 +356,7 @@ change.df <- bind_rows(Change_1997_2004_Breed, Change_2004_2023_Breed,
 
 
 change.df$Season <- c("Breed", "Breed", "Molt", "Molt", "Pup", "Pup", "Breed", "Molt", "Pup")
-change.df$Range <- c("1997-2004", "2004-2023", "1997-2004", "2004-2023", "1997-2004", "2004-2023","1997-2023", "1997-2023", "1997-2023" )
+change.df$Range <- c("1997-2003", "2004-2023", "1997-2003", "2004-2023", "1997-2003", "2004-2023","1997-2023", "1997-2023", "1997-2023" )
 change.df$Duration <- c(7, 19, 
                         7, 19, 
                         7, 19, 
@@ -346,17 +377,19 @@ change.df$Label <- as.character(paste(change.df$Season, change.df$Range, sep = "
 
 dodge <- position_dodge(width=0.5)  
 
-ggplot(change.df, aes(x=factor(Range, levels = c("1997-2004", "2004-2023", "1997-2023")),
-                               y = Change, color = Season)) +
+ggplot(change.df, aes(x=factor(Range, levels = c("1997-2003", "2004-2023", "1997-2023")),
+                               y = Change, shape = Season, color = Season)) +
   geom_pointrange(aes(ymin=Change.lo, ymax=Change.hi), size = .5, position = dodge) + 
   geom_hline(yintercept=0, linetype=2) +
   xlab("Year Range") + 
-  ylab("Percent change") +
+  ylab("Change") +
   theme_classic(base_size = 18) +
   theme(legend.title=element_blank(),
-        legend.position = c(0.8, 0.8))
+        legend.position = c(0.8, 0.8),
+        legend.background = element_rect(size=0.5, linetype="solid", 
+                                         colour ="black"))
 
-
+ggsave("Output/Plots/PopChangeRate.jpeg", width = 22, height = 15, units = "cm")
 
 
 ####-----plot covariate effects
@@ -369,7 +402,7 @@ coef.data <- coef.data %>%
 
 coef.data$Season <- ifelse(str_detect(coef.data$term, "_A"), "Breeding Adults", 
                            ifelse(str_detect(coef.data$term, "_M"), "Molting", 
-                              ifelse(str_detect(coef.data$term, "_P"), "Pups", "All")))
+                              ifelse(str_detect(coef.data$term, "_P"), "Pups", "All Classes")))
 
 coef.data$Significant <- ifelse(coef.data$conf.up < 0, "Negative", 
                            ifelse(coef.data$conf.low > 0, "Positive", "Neutral"))
@@ -429,8 +462,12 @@ ggplot(aes(fct_reorder(Labels, estimate), estimate, shape = Season, color = Sign
   geom_hline(yintercept = 0, lty = 2) +
   #scale_x_discrete( labels = coef.data$Labels) + 
   xlab(NULL) +
-  theme_sjplot2(base_size = 18)
+  theme_sjplot2(base_size = 18) +
+  theme(legend.title=element_blank(),
+        legend.position = c(0.3, 0.86))
 
+
+ggsave("Output/Plots/Covariates.jpeg", width = 15, height = 25, units = "cm")
 
 ########################################################################
 
@@ -607,22 +644,40 @@ d.1 <- forecast1_BBB_plot_data[,1:2]
 d.2 <- exp(forecast1_BBB_plot_data[,3:9])
 forecast1_BBB_plot_data <- tibble(d.1, d.2)
 
-names(forecast1_BBB_plot_data)
+unique(forecast1_BBB_plot_data$.rownames)
+
+
+
+
+
+
+#remove the underscores from site names
+forecast1_BBB_plot_data$.rownames <- (sub("_", " ", forecast1_BBB_plot_data$.rownames))
+forecast_GGG_plot_data$.rownames <- (sub("_", " ", forecast_GGG_plot_data$.rownames))
+
+
+forecast1_BBB_plot_data$Site <- gsub( " .*$", "", forecast1_BBB_plot_data$.rownames)
+forecast1_BBB_plot_data$Class <- sub(".*? ", "", forecast1_BBB_plot_data$.rownames)
+
+forecast_GGG_plot_data$Site <- gsub( " .*$", "", forecast_GGG_plot_data$.rownames)
+forecast_GGG_plot_data$Class <- sub(".*? ", "", forecast_GGG_plot_data$.rownames)
 
 ggplot(forecast1_BBB_plot_data, aes(t+1996, estimate)) +
   geom_line() +
   geom_ribbon(aes(ymin = `Lo 80`, ymax = `Hi 80`), alpha =0.2) + 
   geom_point(aes(t+1996, y), color = "blue4") + 
-  geom_vline(xintercept = 2023.5, linetype = 2) + 
-  geom_vline(xintercept = 2004, linetype = 2, color = "red3") + #show TV timepoint
+  #geom_vline(xintercept = 2023.5, linetype = 2) + 
+  #geom_vline(xintercept = 2004, linetype = 2, color = "red3") + #show TV timepoint
   geom_line(data = forecast_GGG_plot_data, 
             aes(x = t+1996, y = estimate)) +
   geom_ribbon(data = forecast_GGG_plot_data, 
-              aes(ymin = `Lo 80`, ymax = `Hi 80`), alpha =0.2, color = "blue4") + 
+              aes(ymin = `Lo 80`, ymax = `Hi 80`), alpha =0.2, fill = "blue4") + 
   xlab("Year") + 
   ylab("Seals") +
-  facet_wrap(.~.rownames, ncol = 3)
-
+  theme_minimal(base_size = 18) +
+  facet_grid(Class~Site)
+  
+ggsave("Output/Plots/Ten_Year_Predictions.jpeg", width = 20, height = 30, units = "cm")
 
 # autoplot(forecast1) +
 #   theme_grey(base_size = 18) +

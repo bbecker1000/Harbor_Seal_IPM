@@ -38,7 +38,7 @@ Phoca$Julian <- yday(Phoca$Date2)
 # April 15 - May 20 for Breeding. For molt, it's just after June 10. 
 
 #rename adults during molting season "MOLTING"
-Phoca$Age <- ifelse(Phoca$Julian > 160, "MOLTING", Phoca$Age) # June 10
+Phoca$Age <- ifelse(Phoca$Julian > 155, "MOLTING", Phoca$Age) # ~June 5 (if June 10 get zero molt for TB in 1997)
 Phoca$Season <- ifelse(Phoca$Julian <= 140 & Phoca$Julian >= 105, "PUPPING", "MOLTING")
 
 
