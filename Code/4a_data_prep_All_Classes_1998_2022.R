@@ -161,4 +161,12 @@ n = nrow(dat)-1
 dat = dat[2:nrow(dat),]
 legendnames = (unlist(dimnames(dat)[1]))
 
+#summary table
+summary(all_data.MARSS.wide)
+library(vtable)
+sumtable(all_data.MARSS.wide,
+         out="return",
+         group.long=TRUE)
+st(all_data.MARSS.wide)
+
 

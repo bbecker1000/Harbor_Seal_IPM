@@ -281,6 +281,7 @@ ggplot(d4, aes(x = years, y = estimate, color = Season)) +
   xlim(1997, 2023) +
   ylim(0, 5500) + 
   theme_classic(base_size = 20) +
+  #scale_color_manual(values=c("black", "blue", "red")) +
   ylab("Estimated abundance") +
   xlab("Year") +
   theme(legend.position = c(0.85, 0.85),
@@ -585,7 +586,7 @@ c_forecast_GGG=matrix(c(rep(0, times = 10),
                   byrow = TRUE)
 
 
-#TODO:
+
 c_new_GGG <- cbind(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag, c_forecast_GGG)
 
 forecast_GGG <- predict(BESTMODEL, type="ytT", n.ahead = 10, interval = "prediction", 
@@ -609,7 +610,7 @@ forecast_GGG_plot_data <- filter(forecast_GGG_plot_data, t > 37-10)
 # example B
 # more coyotes, less upwelling
 c_forecast_BBB=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
-                    rep(3.02, times = 10),    #DE
+                    rep(1, times = 10),    #DE  softened since refuge sandbars
                     rep(2.62, times = 10),    #DP
                     rep(0, times = 10),   #PRH
                     rep(0, times = 10),      #TB
@@ -620,13 +621,13 @@ c_forecast_BBB=matrix(c(-0.8,-0.8,-0.8,-0.8,-0.8,1,1,1,1,1,  #BL
                     1,0,2,-1,0,0,1,-1,1,0, #MOCI OMD lag
                     rep(0, times = 10),  #  eSeal
                     
-                    rep(1, times = 10), # dist BL
-                    rep(1, times = 10), # dist DE
-                    rep(1, times = 10), # dist DP
-                    rep(1, times = 10), # dist PRH
-                    rep(1, times = 10), # dist TB
+                    rep(0, times = 10), # dist BL
+                    rep(0, times = 10), # dist DE
+                    rep(0, times = 10), # dist DP
+                    rep(0, times = 10), # dist PRH
+                    rep(0, times = 10), # dist TB
                     
-                    rep(1, times = 10)), # dist TP),  #eSeal), 
+                    rep(0, times = 10)), # dist TP)), 
                   nrow = 16, ncol = 10,
                   byrow = TRUE)
 
@@ -666,18 +667,20 @@ ggplot(forecast1_BBB_plot_data, aes(t+1996, estimate)) +
   geom_line() +
   geom_ribbon(aes(ymin = `Lo 80`, ymax = `Hi 80`), alpha =0.2) + 
   geom_point(aes(t+1996, y), color = "blue4") + 
-  #geom_vline(xintercept = 2023.5, linetype = 2) + 
-  #geom_vline(xintercept = 2004, linetype = 2, color = "red3") + #show TV timepoint
+  geom_vline(xintercept = 2023.5, linetype = 3, size = 0.5) + 
+  geom_vline(xintercept = 2004, linetype = 3, color = "red3") + #show TV timepoint
   geom_line(data = forecast_GGG_plot_data, 
             aes(x = t+1996, y = estimate)) +
   geom_ribbon(data = forecast_GGG_plot_data, 
               aes(ymin = `Lo 80`, ymax = `Hi 80`), alpha =0.2, fill = "blue4") + 
   xlab("Year") + 
   ylab("Seals") +
+  ylim(0,2300) +
   theme_minimal(base_size = 18) +
-  facet_grid(Class~Site)
+  theme(panel.spacing = unit(2, "lines")) +
+  facet_grid(Site~Class)
   
-ggsave("Output/Plots/Ten_Year_Predictions.jpeg", width = 20, height = 30, units = "cm")
+ggsave("Output/Plots/Ten_Year_Predictions.jpeg", width = 28, height = 40, units = "cm")
 
 # autoplot(forecast1) +
 #   theme_grey(base_size = 18) +

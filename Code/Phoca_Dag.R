@@ -21,7 +21,7 @@ library(dagitty)
 set.seed(123)
 
 DAG_PHOCA <- dagitty("dag{ 
-  Oceanography -> Prey -> Adult -> Pup;
+  MOCI -> Prey -> Adult -> Pup;
   Coyote -> Adult -> Pup ;
   Adult -> Pup ;
   Adult -> Molt ;
@@ -31,7 +31,7 @@ DAG_PHOCA <- dagitty("dag{
   
   
 
-  Oceanography [exposure] ;
+  MOCI [exposure] ;
   Coyote [exposure] ;
   Adult [outcome] ;
   Pup [outcome] ;
@@ -57,14 +57,14 @@ impliedConditionalIndependencies(DAG_PHOCA)
 
 # to pretty up the plot 
 coordinates(DAG_PHOCA) <- list(x=c(Coyote=2.5,
-                                   Oceanography=2.25,
+                                   MOCI=2.25,
                                    Disturbance=2.75,
                                    Pup=2.5,
                                    Adult=2.5, 
                                    Molt=2.75, 
                                    Prey=2.25),
                               y=c(Coyote=-4,
-                                  Oceanography=-4,
+                                  MOCI=-4,
                                   Disturbance=-4,
                                   Pup=-2,
                                   Adult=-3, 

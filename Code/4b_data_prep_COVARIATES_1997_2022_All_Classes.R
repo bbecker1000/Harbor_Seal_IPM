@@ -139,7 +139,45 @@ sumtable(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag.table,
          group.long=TRUE)
 st(small_c_Coyote_3yr_MOCI_MOCI_Dist_lag.table)
 
+##MOCI plot
+names(MEI)
+MOCI.plot <- MEI[c(5, 26, 28, 27)]
 
+MOCI.plot$year <- 1997:2023
+
+p1 <- ggplot(MOCI.plot, aes(x=year, y = MOCI_JFM_NC)) +
+  geom_line() +
+  ylab("MOCI Pre \n pupping (JFM)") +
+  xlab(NULL) + 
+  ylim(-10, 10) +
+  geom_hline(yintercept=0, color = "blue", linetype =2)+
+  theme_minimal(base_size = 18)
+
+p2 <- ggplot(MOCI.plot, aes(x=year, y = MOCI_LAG_OND_NC)) +
+  geom_line() +
+  ylab("MOCI Egg \n Implant (OND)") +
+  xlab(NULL) +
+  ylim(-10, 10) +
+  geom_hline(yintercept=0, color = "blue", linetype =2)+
+  theme_minimal(base_size = 18)
+
+p3 <- ggplot(MOCI.plot, aes(x=year, y = MOCI_LAG_AMJ_NC)) +
+  geom_line() +
+  ylab("MOCI Prior \n Spring (AMJ)") +
+  xlab(NULL) + 
+  ylim(-10, 10) +
+  geom_hline(yintercept=0, color = "blue", linetype =2)+
+  theme_minimal(base_size = 18)
+
+p4 <- ggplot(MOCI.plot, aes(x=year, y = eSeal_IMM)) +
+  geom_line() +
+  ylab("Immature \n elephant seals") +
+  ylim(0,1500) +
+  theme_minimal(base_size = 18)
+
+cowplot::plot_grid(p1, p2, p3, p4, ncol = 1, labels="auto")
+
+ggsave("Output/Plots/MOCI-Eseal.jpeg", width = 20, height = 30, units = "cm")
 
 ##################### old below
 
