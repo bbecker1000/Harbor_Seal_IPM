@@ -214,7 +214,7 @@ ggsave("Output/Plots/HumanDisturbance.jpeg", width = 30, height = 20, units = "c
 ####----plot overall pop size for each age class summing sites
 
 d.tot <- as_tibble(t(exp(BESTMODEL$states)))  #exp to original scale
-d.tot.se <- as_tibble(t(BESTMODEL$states.se)) #exp to original scale
+d.tot.se <- as_tibble(t(BESTMODEL$states.se)) #exp to original scale !!! check why no exp here 2024-11-19
 #add header names
 
 names(d.tot)[c(1:18)] <- c("BL_Breed", "BL_Molt", "BL_Pup",

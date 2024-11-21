@@ -48,9 +48,11 @@ Phoca$Year <- year(Phoca$Date2)
 ## get Julian Date (yday) for within year dates
 Phoca$Julian <- yday(Phoca$Date2)
 
+
 #rename adults during molting season "MOLTING"
-Phoca$Age <- ifelse(Phoca$Julian > 135, "MOLTING", Phoca$Age)
-Phoca$Season <- ifelse(Phoca$Julian <= 135, "PUPPING", "MOLTING")
+#updated julian dates per codde 2024-11-19
+Phoca$Age <- ifelse(Phoca$Julian > 155, "MOLTING", Phoca$Age) # ~June 5 (if June 10 get zero molt for TB in 1997)
+Phoca$Season <- ifelse(Phoca$Julian <= 140 & Phoca$Julian >= 105, "PUPPING", "MOLTING")
 
 
 
@@ -113,25 +115,26 @@ top.plot + facet_grid(Age ~ Subsite)
 seasonal.plot <- ggplot(all_data, aes(Julian, Count, color = Age)) + 
   geom_point(alpha = 0.1) + 
   geom_smooth(aes(colour = Age)) +
-  ylab("Day of Year")
-seasonal.plot + facet_grid(.~Subsite)
+  ylab("Count") + 
+  theme_gray(base_size = 18)
+seasonal.plot + facet_grid(~Subsite)
 
 #remove Point Bonita and Duxbury PUP data since no or few pups
-all_data.MARSS <- subset(top1_all_data, Age != "PUP") # | Subsite != "DR" & Subsite != "PB" & Subsite != "PRH")
+#all_data.MARSS <- subset(top1_all_data, Age != "PUP") # | Subsite != "DR" & Subsite != "PB" & Subsite != "PRH")
 
 #remove Point Bonita and Duxbury PUP data since no or few pups and shorter time series
-all_data.MARSS <- subset(all_data.MARSS, Subsite != "DR" & Subsite != "PB")
+#all_data.MARSS <- subset(all_data.MARSS, Subsite != "DR" & Subsite != "PB")
 
 #Year 1 only has bolinas data so delete 
 #all sites start in 1982...so use that
-all_data.MARSS <- subset(all_data.MARSS, Year > 1981)
+#all_data.MARSS <- subset(all_data.MARSS, Year > 1981)
 
 
 
 # unique(all_data.MARSS$Subsite)
 
 # remove extra columns
-all_data.MARSS <- all_data.MARSS[,c(1, 2, 4,5)]
+all_data.MARSS <- top1_all_data[,c(1, 2, 4,5)]
 
 ## log all the counts, # log = ln in R
 all_data.MARSS$Count <- log(all_data.MARSS$Count) 
