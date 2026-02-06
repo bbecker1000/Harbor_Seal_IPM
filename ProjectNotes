@@ -237,10 +237,63 @@ D. Fix up the B matrix since it is one year in the future.
    
    
 
+2025-02-25
+A. Should we also plot out non human and non-coyote disturbance over 
+  time to show no(?) impacts?  Sarah A report shows very low bird disturbances 
+  1997 - 2001. Ask Sarah Codde to check as well.
+
+TODO: 
+
+B. Add habitat filter
+  TP: beach and bird rock
+  Estuaries: DE + TB
+C. Add to models:
+	Estuary vs coast 
+	DE, BL, TB vs others
+D. NEW tests:
+	1. Test pup ratios
+		a. Differences between outer coast and estuaries
+	2. Add site (inner vs outer coast) to the models as interaction with covariates
+	3. Site by site:
+		a. Disturbance rates
+		b. Distance between sites
+		      in correlation matrix
+  4. If pup ratio and disturbance rates related to same year and lag-year disturbance?
+E. Qualitative discussion items
+    Management actions (perhaps a separate model that is simpler rather than the MARSS?)
+    Drakes pupping closure (BB check data spreadsheet ~ 1996)
+    Oyster farm End 2014
+    Tomales NOAA Docents (BB check the data spreadsheet)  ~ 1997 - 2005.
+    Dependent variables:
+      1. Pup:adult ratio
+      2. Disturbance rates
 
 
+2026-02-06
+A. Updated files from SC:
+Here are the elephant seal and harbor seal updated counts. Since I didn't hear back from you about 
+whether or not you wanted the elephant seal sites combined or not, I just assumed you would combine 
+the sites and put the data together that way. This is the new spreadsheet for the molt season counts 
+with all age classes combined that Sarah A. asked for. I'm also sending you the updated elephant seal 
+spreadsheet that I had originally sent you that has the breeding season counts (separated by site and 
+age class).
+
+B. need to update:
+  A. phoca data --> looks OK
+  B. Coyote     --> done
+  C. Disturbance --> 
+  D. MOCI -->
+  E. eSeal -->  double check the immature calculation to extract same as 2023 analysis.
+  
+C. for covariates - best to start a new coavariate file that pulls from raw data files
+  
 
 
+D. potential journals
+    JWM?
+    
+  
+  
 
 
 

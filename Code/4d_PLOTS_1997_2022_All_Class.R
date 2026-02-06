@@ -280,7 +280,7 @@ ggplot(d4, aes(x = years, y = estimate, color = Season)) +
   #geom_hline(yintercept = c(-1,0,1), lty = 2) +
   xlim(1997, 2023) +
   ylim(0, 5500) + 
-  theme_classic(base_size = 20) +
+  theme_minimal(base_size = 20) +
   #scale_color_manual(values=c("black", "blue", "red")) +
   ylab("Estimated abundance") +
   xlab("Year") +

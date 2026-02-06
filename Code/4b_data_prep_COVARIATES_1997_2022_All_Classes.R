@@ -17,7 +17,8 @@ MEI <- read_excel("Data/MEI.xlsx", col_types = c("numeric",
                                                  "numeric", "numeric", "numeric"))
 show(MEI)
 
-# 2024-06-23
+# 2026-02-06 looks ok
+
 #add human disturbance data 
 HumanDisturbance <- 
   read_excel("Data/HumanDisturbanceRate_1996To2023.xlsx")
