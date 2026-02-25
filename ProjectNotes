@@ -281,16 +281,29 @@ age class).
 B. need to update:
   A. phoca data --> looks OK
   B. Coyote     --> done
-  C. Disturbance --> 
-  D. MOCI -->
+  C. Disturbance --> done
+  D. MOCI -->  DONE
   E. eSeal -->  double check the immature calculation to extract same as 2023 analysis.
+                correlations between the two populations (phoca and eSeal).  
+                BB make sure understand what the covariate means.
+    **text for eSeal data from 2024**: 
+      competition between weaned eSeal and phoca.  
+    i. Quantitative data for weaned eSeal pups in Drakes Bay for same year.  SUMMED
+    ii. Just for DE, DP, PRH --> All three age classes (Adult, Molt, Pup).   DONE
+    iii. eSeal data-> SUM the IMMATURE MOLT and the WEANED PUP count as for all PR sites (total pop) covariate.  DONE
+   
   
 C. for covariates - best to start a new coavariate file that pulls from raw data files
   
 
 
-D. potential journals
-    JWM?
+D. comparison of elephant seal numbers (= max molt count May-June)  vs harbor seal molt numbers on annual basis.
+
+E. For forecasting - be sure to be consistent if including eSeals in main MARSS model (currently eSEal not in the forecast)
+
+F. potential journals
+    1. JWM?
+    2. Submit by May
     
   
   
