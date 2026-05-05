@@ -17,10 +17,10 @@ library(sjPlot) #used at end for 1 plot theme
 
 
 ## get PRNS data
-Phoca <- read_excel("Data/1997_2022_Phocadata.xls")
-
-Phoca <- Phoca[-c(3:4, 8:10)]
-
+Phoca <- read_excel("Data/1996_2025_Phocadata.xls")
+Phoca
+Phoca <- Phoca[-c(3:5, 8:10)]
+Phoca
 #older data
 hseal_max_1975_1999 <- read_excel("Data/1975-1999_max_counts.xlsx")
 

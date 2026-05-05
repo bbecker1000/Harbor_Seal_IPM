@@ -8,6 +8,7 @@ library(dplyr)
 library(tidyverse)
 library(sjPlot) #used at end for 1 plot theme
 
+
 ##%######################################################%##
 #                                                          #
 ####                   data wrangling                   ####
@@ -20,7 +21,7 @@ library(sjPlot) #used at end for 1 plot theme
 
 
 ## get PRNS data
-Phoca <- read_excel("Data/1997_2023_Phocadata.xls")
+Phoca <- read_excel("Data/1996_2025_Phocadata.xls")
 #Phoca <- read_excel("Data/1997_2022_Phocadata.xls")
 
 Phoca <- Phoca[-c(3:4, 8:10)]
@@ -160,6 +161,8 @@ years = dat[1,]     # remove years
 n = nrow(dat)-1
 dat = dat[2:nrow(dat),]
 legendnames = (unlist(dimnames(dat)[1]))
+
+dat
 
 #summary table
 summary(all_data.MARSS.wide)
