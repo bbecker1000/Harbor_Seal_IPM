@@ -5,7 +5,7 @@
 invisible(lapply(readRDS("session_packages.rds"), library, character.only = TRUE))
 
 # if just running post_model analyses/plots
-results.real <- readRDS("Output/harbor_seal_IPM_v3.2_real_fit.rds")
+Results.real <- readRDS("Output/harbor_seal_IPM_v3.2_real_fit.rds")
 
 
 # Save IPM input data
@@ -25,13 +25,6 @@ years <- input_data$years
 fit <- readRDS("Output/harbor_seal_IPM_v3.2_real_fit.rds")
 
 
-input_data <- readRDS("Output/ipm_input_data.rds")
-prepared   <- prepare_real_data_for_ipm_v3.2(
-  dat          = input_data$dat,
-  cov_t_scaled = input_data$cov_t_scaled,
-  years        = input_data$years,
-  T_proj       = 10
-)
 
 sync_analysis <- create_synchrony_projections_v3.2(
   fit      = fit,
@@ -68,11 +61,11 @@ years=years,
 seed = 123,
 iter_warmup=2000, 
 iter_sampling=2000, 
-adapt_delta=0.96,
+adapt_delta=0.97,
 max_treedepth = 12)
 
 
-
+saveRDS(Results.real, "Output/harbor_seal_IPM_v3.2_real_results.rds")
 
 
 
@@ -81,29 +74,51 @@ max_treedepth = 12)
 create_effect_plots_v3.2(fit, prefix = "IPM_v3.2_real")
 
 
-sync_analysis <- create_synchrony_projections_v3.2(fit, sim_data = results.real$data, prefix = "IPM_v3.2_real")
+
+# ── Reload the fit using load_seal_results() ──────────────────────────────
+out <- load_seal_results("IPM_v3.2_real")  # reads from Output/RDS files
+
+# Quick check before running plots
+cat("fit class:", class(out$fit), "\n")          # should show CmdStanFit
+cat("draws method works:", is.function(out$fit$draws), "\n")  # should be TRUE
 
 
 
 
-# Now run portfolio analysis
-portfolio <- create_portfolio_analysis_v3.2(fit, sim_data = sim_data, prefix = "IPM_v3.2_real")
+sync_analysis <- create_synchrony_projections_v3.2(
+  fit      = out$fit,
+  sim_data = out$sim_data,
+  prefix = "IPM_v3.2_real")
 
-# Rebuild the full sim_data structure
-data_list <- prepare_real_data_for_ipm_v3.2(dat, cov_t_scaled, years, T_proj = 10)
-sim_data <- list(
-  stan_data = data_list$stan_data,
-  site_names = data_list$site_names,
-  years = data_list$years,
-  scenario_names = data_list$scenario_names
+
+source("Code/harbor_seal_ipm_v3.2_plots.R", local=FALSE)
+
+
+
+# ── Now run plots ─────────────────────────────────────────────────────────
+run_all_plots_v3.2(
+  fit      = out$fit,
+  sim_data = out$sim_data,
+  prefix   = "IPM_v3.2_real"
 )
 
 
 portfolio.real <- create_portfolio_analysis_v3.2(
-  fit = fit,
-  sim_data = sim_data,
-  prefix = "IPM_v3.1_real"
+  fit      = out$fit,
+  sim_data = out$sim_data,
+  prefix   = "IPM_v3.2_real"
 )
 
+source("Code/harbor_seal_ipm_v3.2_plots.R", local=FALSE)
+eff.real <- create_effect_plots_v3.2(
+  fit      = out$fit,
+  #sim_data = out$sim_data,
+  prefix="IPM_v3.2_real")
 
+source("Code/harbor_seal_ipm_v3.2_plots.R", local=FALSE)
+decomp <- create_covariate_decomposition_plots_v3.2(
+  fit      = out$fit,
+  sim_data = out$sim_data,
+  prefix   = "IPM_v3.2_real"
+)
 

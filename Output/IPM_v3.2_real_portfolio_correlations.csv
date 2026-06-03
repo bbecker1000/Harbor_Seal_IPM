@@ -1,0 +1,16 @@
+Site1,Site2,r,Interpretation
+BL,DE,0.877,High
+DE,TB,0.737,High
+BL,TB,0.712,High
+DE,TP,0.693,High
+DP,TP,0.668,High
+PRH,TP,0.653,High
+BL,TP,0.64,High
+DP,TB,0.54,Moderate
+TB,TP,0.519,Moderate
+BL,DP,0.483,Moderate
+DP,PRH,0.469,Moderate
+DE,DP,0.462,Moderate
+DE,PRH,0.461,Moderate
+BL,PRH,0.431,Moderate
+PRH,TB,0.396,Moderate

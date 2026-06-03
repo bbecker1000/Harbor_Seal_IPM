@@ -1,0 +1,29 @@
+Category,Parameter,Estimate,rhat,ess_bulk
+Survival,Female Pup Survival (baseline),"0.745 (0.591, 0.878)",1.0085817357626243,781.6377483268258
+Survival,Female Juvenile Survival (baseline),"0.837 (0.682, 0.962)",1.0424409502253227,71.78265814025238
+Survival,Female Adult Survival (baseline),"0.921 (0.836, 0.976)",1.007686601301042,448.41004874982417
+Survival,Male-Female Δ Pup Survival,"0.097 (0.045, 0.145)",1.0089005003490483,824.4013356502168
+Survival,Male-Female Δ Juvenile Survival,"0.089 (0.040, 0.136)",1.0014130717199143,963.0735986122846
+Survival,Male-Female Δ Adult Survival,"0.045 (0.015, 0.076)",1.0091823662791553,1491.2798451584342
+Reproduction,Fecundity: Primiparous (4-5 yr),"0.677 (0.510, 0.833)",1.0014989936212662,1903.3002012300967
+Reproduction,Fecundity: Young Multiparous (6-7 yr),"0.846 (0.699, 0.953)",1.0092912875303426,3800.9144010260293
+Reproduction,Fecundity: Prime Age (8-25 yr),"0.945 (0.841, 0.996)",0.9999753155503069,2780.246776136287
+Reproduction,Fecundity: Senescent (25+ yr),"0.798 (0.639, 0.923)",1.0022417967573318,2919.816921987034
+Reproduction,Proportion Female at Birth,"0.382 (0.275, 0.480)",1.0218192750484223,208.93401746315521
+Reproduction,Average Fecundity (weighted),"0.830 (0.762, 0.891)",1.01023581416597,2603.9945527485247
+Covariate Effects,Coyote → Pup Survival,"-0.870 (-1.244, -0.495)",1.0025995736404283,1413.8579074069817
+Covariate Effects,Coyote → Juvenile Survival,"-0.283 (-0.592, 0.007)",1.0040336551963644,1691.2183453008788
+Covariate Effects,Coyote → Adult Survival,"-0.086 (-0.306, 0.113)",1.0112356670909362,295.7183936818378
+Covariate Effects,MOCI Fall → Pup Survival,"-0.282 (-0.573, 0.002)",1.004845448797601,1836.9833790547848
+Covariate Effects,MOCI Spring → Pup Survival,"-0.203 (-0.498, 0.092)",1.0034534113497493,2416.469983830043
+Covariate Effects,MOCI Winter → Juvenile Survival,"-0.129 (-0.426, 0.175)",1.0047721072539977,1765.093142156488
+Covariate Effects,MOCI Winter → Adult Survival,"-0.246 (-0.411, -0.083)",1.0044177653432182,2005.6462060795532
+Covariate Effects,Elephant Seal → Pup Survival,"0.032 (-0.416, 0.477)",1.003109369942177,959.0840990497577
+Covariate Effects,Disturbance → Breeding Detection,"-0.044 (-0.103, 0.018)",1.0078099997917909,586.6224262717254
+Covariate Effects,Disturbance → Molt Detection,"0.014 (-0.081, 0.105)",1.0037098969644764,955.2272979361182
+Covariate Effects,MOCI Spring → Molt Detection,"0.096 (0.019, 0.172)",1.0107478639692955,2777.212104795729
+Error Terms,Process Error (σ),"0.208 (0.153, 0.258)",1.1550961786893719,17.8383596839574
+Error Terms,Obs Error Adult (σ),"0.189 (0.166, 0.214)",1.0288507494717556,102.13771397181293
+Error Terms,Obs Error Pup (σ),"0.143 (0.034, 0.233)",1.241976049584779,12.39925589645824
+Error Terms,Obs Error Molt (σ),"0.298 (0.268, 0.333)",1.0161754555168716,430.15907006778326
+Error Terms,Site Random Effect (σ),"1.984 (1.387, 2.687)",1.0056949832493582,521.0884627823688
