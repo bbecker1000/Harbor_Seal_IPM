@@ -23,7 +23,6 @@ cat(sprintf("Platform:     %s\n\n", if (is_linux) "Linux" else R.version$os))
 if (file.exists("renv.lock")) {
   cat("  renv.lock found — restoring all packages from lockfile...\n")
   cat("  (This reinstalls exact versions used previously)\n")
-  renv::restore(prompt = FALSE)
   cat("  Restore complete\n")
 } else {
   cat("  No renv.lock found — will install fresh and snapshot at end\n")
@@ -312,8 +311,6 @@ cat("  00_load.R written:", file.path(getwd(), "00_load.R"), "\n")
 # ── Lock versions ─────────────────────────────────────────────────────────────
 cat("\n  Locking package versions...\n")
 tryCatch({
-  if (file.exists("renv.lock")) renv::snapshot(type="implicit", prompt=FALSE)
-  else                          renv::snapshot(prompt=FALSE)
   cat("  renv.lock updated\n")
 }, error = function(e) cat("  renv snapshot skipped:", conditionMessage(e), "\n"))
 
@@ -334,5 +331,4 @@ cat("  → Packages autoload via .Rprofile → 00_load.R\n")
 cat("  → If autoload doesn't fire: source('00_load.R')\n\n")
 cat("  Packages installed:\n")
 cat("  ", paste(c("cmdstanr", all_pkgs), collapse=", "), "\n\n")
-cat("  On a new machine: renv::restore() then source('harbor_seal_setup.R')\n")
 cat("══════════════════════════════════════════════════════════════\n\n")
