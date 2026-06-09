@@ -18,3 +18,4 @@ Data/
 .DS_Store
 .Rprofile.bak
 .Rproj.user/
+git_setup.sh

@@ -1,5 +1,22 @@
-# SAVE (before restart)
-#saveRDS((.packages()), "session_packages.rds")
+##2026-06-08 startup process
+
+
+# 1. ONLY FOR NEW CONTAINERS   If packages missing after container restart:
+source("restore_packages.R")   # restores + restarts automatically
+
+
+#everytime
+source("harbor_seal_setup.R")  # sets up git, CmdStan, .Rprofile
+
+# 2. After restart, normal workflow:
+source("00_load.R")
+source("Code/harbor_seal_ipm_v3.2.R")
+source("Code/harbor_seal_ipm_v3.2_plots.R")
+out <- load_seal_results("IPM_v3.2_real")
+
+
+
+
 
 # LOAD (after restart)
 invisible(lapply(readRDS("session_packages.rds"), library, character.only = TRUE))

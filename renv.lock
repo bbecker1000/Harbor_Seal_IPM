@@ -665,42 +665,6 @@
       "Repository": "RSPM",
       "Encoding": "UTF-8"
     },
-    "V8": {
-      "Package": "V8",
-      "Version": "8.2.0",
-      "Source": "Repository",
-      "Type": "Package",
-      "Title": "Embedded JavaScript and WebAssembly Engine for R",
-      "Authors@R": "c( person(\"Jeroen\", \"Ooms\", role = c(\"aut\", \"cre\"), email = \"jeroenooms@gmail.com\", comment = c(ORCID = \"0000-0002-4035-0289\")), person(\"George\", \"Stagg\", role = \"ctb\", comment = c(ORCID = \"0009-0006-3173-9846\")), person(\"Jan Marvin\", \"Garbuszus\", role = \"ctb\"))",
-      "Description": "An R interface to V8 <https://v8.dev>: Google's open source JavaScript and WebAssembly engine. This package can be compiled either with V8 or NodeJS  when built as a shared library.",
-      "License": "MIT + file LICENSE",
-      "URL": "https://jeroen.r-universe.dev/V8",
-      "BugReports": "https://github.com/jeroen/v8/issues",
-      "SystemRequirements": "On Linux you can build against libv8-dev (Debian) or v8-devel (Fedora). We also provide static libv8 binaries for most platforms, see the README for details.",
-      "NeedsCompilation": "yes",
-      "VignetteBuilder": "knitr",
-      "Imports": [
-        "Rcpp (>= 0.12.12)",
-        "jsonlite (>= 1.0)",
-        "curl (>= 1.0)",
-        "utils"
-      ],
-      "LinkingTo": [
-        "Rcpp"
-      ],
-      "Suggests": [
-        "testthat",
-        "knitr",
-        "rmarkdown"
-      ],
-      "RoxygenNote": "7.3.1",
-      "Language": "en-US",
-      "Encoding": "UTF-8",
-      "Biarch": "true",
-      "Author": "Jeroen Ooms [aut, cre] (ORCID: <https://orcid.org/0000-0002-4035-0289>), George Stagg [ctb] (ORCID: <https://orcid.org/0009-0006-3173-9846>), Jan Marvin Garbuszus [ctb]",
-      "Maintainer": "Jeroen Ooms <jeroenooms@gmail.com>",
-      "Repository": "CRAN"
-    },
     "abind": {
       "Package": "abind",
       "Version": "1.4-8",
@@ -1923,50 +1887,6 @@
       "Author": "Jeroen Ooms [aut, cre] (ORCID: <https://orcid.org/0000-0002-4035-0289>), Hadley Wickham [ctb], Posit Software, PBC [cph]",
       "Maintainer": "Jeroen Ooms <jeroenooms@gmail.com>",
       "Repository": "CRAN"
-    },
-    "dagitty": {
-      "Package": "dagitty",
-      "Version": "0.3-4",
-      "Source": "Repository",
-      "Type": "Package",
-      "Title": "Graphical Analysis of Structural Causal Models",
-      "Date": "2023-12-07",
-      "Author": "Johannes Textor, Benito van der Zander, Ankur Ankan",
-      "Maintainer": "Johannes Textor <johannes.textor@gmx.de>",
-      "Description": "A port of the web-based software 'DAGitty', available at  <https://dagitty.net>, for analyzing structural causal models  (also known as directed acyclic graphs or DAGs). This package computes covariate adjustment sets for estimating causal effects, enumerates instrumental variables, derives testable implications (d-separation and vanishing tetrads), generates equivalent models, and includes a simple facility for data simulation.",
-      "VignetteBuilder": "knitr",
-      "Encoding": "UTF-8",
-      "License": "GPL-2",
-      "URL": "https://www.dagitty.net, https://github.com/jtextor/dagitty",
-      "BugReports": "https://github.com/jtextor/dagitty/issues",
-      "Depends": [
-        "R (>= 3.0.0)"
-      ],
-      "Imports": [
-        "V8",
-        "jsonlite",
-        "boot",
-        "MASS",
-        "methods",
-        "grDevices",
-        "stats",
-        "utils",
-        "graphics"
-      ],
-      "Suggests": [
-        "igraph",
-        "knitr",
-        "base64enc (>= 0.1-3)",
-        "testthat",
-        "markdown",
-        "rmarkdown",
-        "lavaan",
-        "CCP",
-        "fastDummies"
-      ],
-      "RoxygenNote": "7.2.1",
-      "NeedsCompilation": "no",
-      "Repository": "RSPM"
     },
     "data.table": {
       "Package": "data.table",
