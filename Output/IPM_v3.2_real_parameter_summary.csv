@@ -1,36 +1,32 @@
 Category,Parameter,Estimate,rhat,ess_bulk
-Survival,"Pup survival, logit scale (sex-neutral)","-1.518 (-2.163, -0.899)",1.000388586135093,5040.050824644902
-Survival,Juvenile survival (sex-neutral),"0.784 (0.635, 0.907)",1.0005173612615663,5799.094336864499
-Survival,Adult female survival (logit scale),"2.897 (2.641, 3.161)",0.9998060728495711,5509.234365234597
-Survival,"Adult female survival (probability scale, derived)","0.947 (0.933, 0.959)",0.999867129115308,5509.236757353834
-Survival,Adult M-F survival difference,"0.018 (0.004, 0.035)",1.000788345805339,3823.5288328473616
-Reproduction,Fecundity: primiparous (4-5 yr),"0.501 (0.329, 0.675)",1.000498887276233,6188.721591900744
-Reproduction,"Fecundity: mature (6+ yr, experienced breeders)","0.434 (0.378, 0.489)",1.0003578400488748,3872.1921221939747
-Reproduction,Proportion female at birth,"0.531 (0.461, 0.588)",1.000842730588957,8293.42032038574
-Reproduction,Average fecundity (weighted),"0.447 (0.420, 0.477)",1.0012101111220024,3720.5941710632515
-Observation / Derived,Male haul-out fraction (breeding season),"0.060 (0.023, 0.101)",1.0012832468215218,3634.8542569477195
-Coyote (site-specific),Coyote → pup survival (BL),"-0.162 (-0.404, 0.072)",1.0001187998993795,11812.822295947124
-Coyote (site-specific),Coyote → pup survival (DE),"-0.485 (-0.781, -0.193)",0.9998810130442818,10901.31826227177
-Coyote (site-specific),Coyote → pup survival (DP),"-0.157 (-0.385, 0.073)",0.999974461104556,11015.516955023531
-Disturbance (site-specific),Disturbance → pup survival (BL),"-0.198 (-0.431, 0.036)",1.0006170402656442,11556.250518904195
-Disturbance (site-specific),Disturbance → pup survival (DE),"-0.241 (-0.480, -0.001)",1.000103784562243,10898.501475516003
-Disturbance (site-specific),Disturbance → pup survival (DP),"-0.097 (-0.333, 0.141)",1.0000837377716618,10865.205153345194
-Disturbance (site-specific),Disturbance → pup survival (PRH),"-0.107 (-0.339, 0.121)",1.0008356846382869,10833.899520213916
-Disturbance (site-specific),Disturbance → pup survival (TB),"-0.274 (-0.516, -0.032)",0.999894719549995,11653.458141268638
-Disturbance (site-specific),Disturbance → pup survival (TP),"-0.151 (-0.393, 0.090)",1.0000588020649015,11326.606298141043
-Reproduction,MOCI Fall (OND) → fecundity,"-0.213 (-0.279, -0.148)",1.001482276826393,3817.4705711957913
-Shared covariates,MOCI fall OND (t) → pup survival,"-0.233 (-0.468, 0.002)",1.0004296699293216,9559.357436903867
-Shared covariates,MOCI spring AMJ (t-1) → pup survival,"-0.148 (-0.383, 0.086)",1.0007466107770648,11891.715024804387
-Shared covariates,MOCI winter JFM (t) → pup survival,"-0.180 (-0.417, 0.053)",1.0012134974023228,10497.498034779277
-Shared covariates,MOCI winter → juvenile survival,"-0.125 (-0.367, 0.116)",1.0001265909276564,9697.551022631173
-Shared covariates,MOCI winter → adult survival,"-0.142 (-0.285, 0.005)",1.0005581013541116,10125.431476579592
-Shared covariates,Elephant seal → pup survival,"0.063 (-0.245, 0.368)",1.0003422134276834,10533.987240671011
-Shared covariates,MOCI spring → molt detection,"0.112 (0.017, 0.210)",0.9999422520842493,7333.179717401275
-Observation / Derived,Detect breed baseline (logit),"1.854 (1.259, 2.489)",0.9999264408548875,7218.574798205103
-Observation / Derived,Detect molt baseline (logit),"0.409 (-0.043, 0.902)",1.0009947429126065,2219.362712107082
-Error terms,Process error (σ),"0.244 (0.210, 0.278)",1.002109784870856,1078.971985959017
-Error terms,Obs error adult (σ),"0.203 (0.179, 0.230)",1.0004844786094798,3349.409344079086
-Error terms,Obs error pup (σ),"0.161 (0.131, 0.192)",1.002352718668865,1014.474697161814
-Error terms,Obs error molt (σ),"0.300 (0.269, 0.335)",1.0004358462120122,5485.063652340417
-Error terms,Site random effect (σ),"0.233 (0.081, 0.384)",1.0018762718559497,5088.643215864141
-Survival,"Pup survival, probability scale (derived)","0.187 (0.103, 0.289)",NA,NA
+Survival,"Pup survival, logit scale (sex-neutral)","-1.443 (-2.094, -0.787)",1.0004293905202124,3778.8032795185454
+Survival,Juvenile survival (sex-neutral),"0.784 (0.633, 0.910)",1.0003650207779244,4517.376675257948
+Survival,Adult female survival (logit scale),"2.883 (2.618, 3.153)",1.0001300382949423,4407.433764704941
+Survival,"Adult female survival (probability scale, derived)","0.946 (0.932, 0.959)",0.9999574816769923,4407.4350698599565
+Survival,Adult M-F survival difference,"0.017 (0.003, 0.033)",1.000497960228335,2404.343763157243
+Reproduction,Fecundity: primiparous (4-5 yr),"0.499 (0.322, 0.676)",0.9999380901740053,5348.361733499744
+Reproduction,"Fecundity: mature (6+ yr, experienced breeders)","0.434 (0.380, 0.491)",0.9999114153044321,3591.117293139472
+Reproduction,Proportion female at birth,"0.531 (0.459, 0.590)",1.002692043833623,3790.3919684736175
+Reproduction,Average fecundity (weighted),"0.447 (0.420, 0.477)",1.000442353132889,3298.9154432526643
+Observation / Derived,Male haul-out fraction (breeding season),"0.057 (0.022, 0.098)",1.00018403493769,2962.672632622701
+Coyote (site-specific),Coyote → pup survival (BL),"-0.222 (-0.539, 0.092)",1.0034152580522209,8282.148566862415
+Coyote (site-specific),Coyote → pup survival (DE),"-0.299 (-0.610, 0.004)",1.0003676962389598,7852.152279478669
+Coyote (site-specific),Coyote → pup survival (DP),"-0.358 (-0.655, -0.055)",1.0006054696953741,7763.607047793047
+Disturbance (site-specific),Disturbance → pup survival (BL),"-0.144 (-0.465, 0.178)",1.0039606673869192,9071.959090512948
+Disturbance (site-specific),Disturbance → pup survival (DE),"-0.042 (-0.346, 0.267)",1.00306035164315,7717.610501233351
+Disturbance (site-specific),Disturbance → pup survival (DP),"-0.071 (-0.392, 0.253)",1.0011819095419447,7279.548231917063
+Disturbance (site-specific),Disturbance → pup survival (PRH),"-0.160 (-0.481, 0.159)",1.0011337823352746,8705.910730376423
+Disturbance (site-specific),Disturbance → pup survival (TB),"-0.196 (-0.527, 0.131)",1.0018660156219577,8251.763253831825
+Disturbance (site-specific),Disturbance → pup survival (TP),"-0.153 (-0.482, 0.171)",1.0017734486833592,9544.570920014436
+Reproduction,MOCI Fall (OND) → fecundity,"-0.209 (-0.279, -0.140)",1.0014312403412389,2667.4258876612976
+Shared covariates,MOCI spring AMJ (t-1) → pup survival,"-0.143 (-0.445, 0.154)",0.999582409752656,7061.834491070221
+Shared covariates,MOCI winter → juvenile survival,"-0.172 (-0.405, 0.065)",1.0004113106352495,8803.238273440023
+Shared covariates,MOCI winter → adult survival,"-0.174 (-0.339, -0.006)",1.0015861884785673,7209.706849712216
+Shared covariates,Elephant seal → pup survival,"0.063 (-0.229, 0.360)",1.0029660124047672,8567.847592806329
+Shared covariates,MOCI spring → molt detection,"0.114 (0.022, 0.212)",0.9999292140762691,6167.973888294518
+Error terms,Process error (σ),"0.243 (0.208, 0.278)",1.0071897796118543,534.3398645220444
+Error terms,Obs error adult (σ),"0.203 (0.179, 0.229)",1.000888696551176,2345.257385944386
+Error terms,Obs error pup (σ),"0.161 (0.129, 0.192)",1.0106833542055413,318.11240202264827
+Error terms,Obs error molt (σ),"0.297 (0.267, 0.331)",1.0007094240412757,4011.448109676852
+Error terms,Site random effect (σ),"0.226 (0.079, 0.372)",1.0003379333340288,4646.836964564187
+Survival,"Pup survival, probability scale (derived)","0.199 (0.110, 0.313)",NA,NA

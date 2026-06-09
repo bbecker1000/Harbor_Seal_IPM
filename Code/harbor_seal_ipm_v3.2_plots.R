@@ -160,30 +160,7 @@ run_all_plots_v3.2 <- function(fit,
       }
     )
   }
-
-  # ── v3.2 parameter validation ──────────────────────────────────────────────
-  # Checks that all parameters introduced in v3.2 are present in this fit.
-  # A mismatch indicates the fit was produced by an older model version;
-  # some plots will silently drop parameters or use incorrect baselines.
-  v3.2_required <- c(
-    "phi_pup_logit", "phi_adult_F_logit", "delta_adult", "p_male_breed",
-    "beta_moci_ond_fecund", "beta_moci_ond_pup", "beta_moci_jfm_pup",
-    "beta_moci_amj_pup", "beta_moci_jfm_juv", "beta_moci_jfm_adult",
-    "detect_breed_logit", "detect_molt_logit"
-  )
-  avail_vars   <- tryCatch(fit$summary()$variable, error = function(e) character(0))
-  missing_v3.2 <- v3.2_required[!v3.2_required %in% avail_vars]
-  if (length(missing_v3.2) > 0) {
-    cat(sprintf(paste0(
-      "\n!! VERSION WARNING: fit is missing %d v3.2 parameter(s):\n",
-      "     %s\n",
-      "   This fit may have been produced by an older model version.\n",
-      "   Some plots will silently omit these parameters.\n\n"),
-      length(missing_v3.2), paste(missing_v3.2, collapse = ", ")))
-  } else {
-    cat("v3.2 parameter check passed.\n")
-  }
-
+  
   diag <- safe_run("── Diagnostics ───────────────────────────────────────────",
                    check_diagnostics_v3.2(fit))
   
@@ -192,7 +169,6 @@ run_all_plots_v3.2 <- function(fit,
     "fecund_primip","fecund_mature","prop_female","p_male_breed",
     "beta_coy[1]","beta_coy[2]","beta_coy[3]",
     paste0("beta_dist_surv[",1:6,"]"),
-    paste0("beta_dist_detect[",1:6,"]"),
     "beta_moci_ond_fecund","beta_moci_amj_pup","beta_moci_jfm_juv",
     "beta_moci_jfm_adult","beta_eseal_pup",
     "detect_breed_logit","detect_molt_logit",
@@ -459,16 +435,14 @@ check_diagnostics_v3.2 <- function(fit) {
     "beta_coy[1]","beta_coy[2]","beta_coy[3]",
     "beta_dist_surv[1]","beta_dist_surv[2]","beta_dist_surv[3]",
     "beta_dist_surv[4]","beta_dist_surv[5]","beta_dist_surv[6]",
-    "beta_moci_ond_fecund","beta_moci_ond_pup","beta_moci_amj_pup",
-    "beta_moci_jfm_pup","beta_moci_jfm_juv",
+    "beta_moci_ond_fecund","beta_moci_amj_pup","beta_moci_jfm_juv",
     "beta_moci_jfm_adult","beta_eseal_pup",
-    "detect_breed_logit","detect_molt_logit",
     "sigma_process","sigma_obs_adult","sigma_obs_pup","sigma_obs_molt","sigma_site"
   )
   
   s <- seal_fit_summary(fit, params)
   cat("\nParameter Summary:\n")
-  print(s |> select(variable,mean,sd,q_lo,q_hi,rhat,ess_bulk))
+  print(s |> select(variable,mean,sd,q_lo,q_hi,rhat,ess_bulk), n=nrow(s))
   
   # Convenience: report phi_pup on probability scale
   pup_logit_draws <- fit$draws(variables="phi_pup_logit", format="df")$phi_pup_logit
@@ -504,8 +478,7 @@ create_trace_plots_v3.2 <- function(fit, params, save=TRUE, prefix="IPM_v3.2") {
   
   p1 <- mcmc_trace(draws,
                    pars=c("phi_pup_logit","phi_juv_base","phi_adult_F_logit",
-                          "delta_adult","p_male_breed",
-                          "detect_breed_logit","detect_molt_logit")) +
+                          "delta_adult","p_male_breed")) +
     labs(title="Trace: Survival + Observation Parameters")
   if (save) ggsave(paste0("Output/Plots/",prefix,"_trace_survival.jpeg"),
                    p1, width=30, height=18, units="cm")
@@ -521,17 +494,14 @@ create_trace_plots_v3.2 <- function(fit, params, save=TRUE, prefix="IPM_v3.2") {
   if (save) ggsave(paste0("Output/Plots/",prefix,"_trace_coyote.jpeg"),
                    p3, width=30, height=12, units="cm")
   
-  p4 <- mcmc_trace(draws, pars=c(paste0("beta_dist_surv[",1:6,"]"),
-                                  paste0("beta_dist_detect[",1:6,"]"))) +
+  p4 <- mcmc_trace(draws, pars=paste0("beta_dist_surv[",1:6,"]")) +
     labs(title="Trace: Site-Specific Disturbance Effects")
   if (save) ggsave(paste0("Output/Plots/",prefix,"_trace_disturbance.jpeg"),
                    p4, width=30, height=18, units="cm")
   
   p5 <- mcmc_trace(draws,
-                   pars=c("beta_moci_ond_fecund","beta_moci_ond_pup",
-                          "beta_moci_amj_pup","beta_moci_jfm_pup",
-                          "beta_moci_jfm_juv","beta_moci_jfm_adult",
-                          "beta_moci_amj_molt")) +
+                   pars=c("beta_moci_ond_fecund","beta_moci_amj_pup","beta_moci_jfm_juv",
+                          "beta_moci_jfm_adult","beta_moci_amj_molt")) +
     labs(title="Trace: MOCI Effects")
   if (save) ggsave(paste0("Output/Plots/",prefix,"_trace_moci.jpeg"),
                    p5, width=30, height=18, units="cm")
@@ -649,13 +619,20 @@ create_timeseries_plots_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IPM_v
   
   # Total population
   Ntot <- fit$draws(variables="N_total_all", format="df") |> select(starts_with("N_total_all"))
-  p_total <- ggplot(tibble(Year=years, mean=colMeans(Ntot),
-                           lo=as.numeric(apply(Ntot,2,quantile,CI_LO)),
-                           hi=as.numeric(apply(Ntot,2,quantile,CI_HI))),
-                    aes(x=Year)) +
+  
+  plot_df <- tibble(Year=years, mean=colMeans(Ntot),
+                    lo=as.numeric(apply(Ntot,2,quantile,CI_LO)),
+                    hi=as.numeric(apply(Ntot,2,quantile,CI_HI)))
+  
+  p_total <- ggplot(plot_df, aes(x=Year)) +
     geom_ribbon(aes(ymin=lo,ymax=hi),alpha=0.25,fill=SEAL_COLS$ribbon) +
     geom_line(aes(y=mean),linewidth=1.2,color=SEAL_COLS$pop) +
-    labs(x="Year",y="Total Population",
+    scale_y_continuous(
+      limits = c(0, ceiling(max(plot_df$hi) / 1000) * 1000),  # round up to nearest 1000
+      labels = scales::comma,     # format as 1,000 not 1000
+      expand = c(0, 0)            # no padding above/below limits
+    ) +
+    labs(x="Year", y="Total Population",
          title="Estimated Total Harbor Seal Population") +
     theme_seal()
   if (save) ggsave(paste0("Output/Plots/",prefix,"_total_population.jpeg"),
@@ -772,6 +749,11 @@ create_site_age_timeseries_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IP
   p <- ggplot(all_sum,aes(x=Year,y=mean,color=Site,fill=Site)) +
     geom_ribbon(aes(ymin=lo,ymax=hi),alpha=0.15,color=NA) +
     geom_line(linewidth=1) + facet_wrap(~Age_Class,scales="free_y",ncol=1) +
+    scale_y_continuous(
+      limits = c(0, ceiling(max(all_sum$hi, na.rm=TRUE) / 500) * 500),
+      labels = scales::comma,
+      expand = c(0, 0)
+    ) +
     labs(x="Year",y="Population Size",title="Population by Age Class Across Sites") +
     theme_seal() + theme(legend.position="bottom")
   if (save) ggsave(paste0("Output/Plots/",prefix,"_age_class_timeseries.jpeg"),
@@ -870,13 +852,8 @@ create_forest_plot_v3.2 <- function(fit, save=TRUE, prefix="IPM_v3.2") {
     "beta_dist_surv[3]",     "Disturbance → pup (DP)",       "Disturbance",   "Pup",
     "beta_dist_surv[4]",     "Disturbance → pup (PRH)",      "Disturbance",   "Pup",
     "beta_dist_surv[5]",     "Disturbance → pup (TB)",       "Disturbance",   "Pup",
-    "beta_dist_surv[6]",     "Disturbance → pup (TP)",        "Disturbance",   "Pup",
-    "beta_dist_detect[1]",   "Disturbance → detection (BL)", "Disturbance",   "Observation",
-    "beta_dist_detect[2]",   "Disturbance → detection (DE)", "Disturbance",   "Observation",
-    "beta_dist_detect[3]",   "Disturbance → detection (DP)", "Disturbance",   "Observation",
-    "beta_dist_detect[4]",   "Disturbance → detection (PRH)","Disturbance",   "Observation",
-    "beta_dist_detect[5]",   "Disturbance → detection (TB)", "Disturbance",   "Observation",
-    "beta_dist_detect[6]",   "Disturbance → detection (TP)", "Disturbance",   "Observation",
+    "beta_dist_surv[6]",     "Disturbance → pup (TP)",       "Disturbance",   "Pup",
+    "beta_dist_detect",      "Disturbance → detection",      "Disturbance",   "Observation",
     "beta_eseal_pup",        "Elephant seal → pup",          "Elephant seal", "Pup"
   )
   
@@ -924,25 +901,104 @@ create_forest_plot_v3.2 <- function(fit, save=TRUE, prefix="IPM_v3.2") {
       dot_shape = ifelse(sig, 18, 16)           # filled diamond if significant
     )
   
+  # ── Prior specifications — Normal(mean, sd) from Stan model ─────────────────
+  # Computed from Stan priors; displayed behind posteriors as light grey bands.
+  # Common weakly-informative priors per group — no site-specific tuning.
+  # Previous version used MARSS-informed site-specific means which caused
+  # posteriors to mirror priors closely (prior sensitivity concern).
+  # Each group now shares one prior; the data differentiate sites/stages.
+  prior_specs <- tribble(
+    ~variable,                ~prior_mean, ~prior_sd,
+    # MOCI — common normal(-0.15, 0.20) for all survival/fecundity effects
+    # (warm MOCI expected negative but data determine which stages/seasons matter)
+    "beta_moci_ond_fecund",      -0.15,      0.20,
+    "beta_moci_ond_pup",         -0.15,      0.20,
+    "beta_moci_jfm_pup",         -0.15,      0.20,
+    "beta_moci_amj_pup",         -0.15,      0.20,
+    "beta_moci_jfm_juv",         -0.15,      0.20,
+    "beta_moci_jfm_adult",       -0.15,      0.20,
+    # Molt detection — kept separate (positive direction, different mechanism)
+    "beta_moci_amj_molt",         0.05,      0.15,
+    # Detection baselines — unchanged
+    "detect_breed_logit",         1.20,      0.50,
+    "detect_molt_logit",          0.75,      0.50,
+    # Coyote — common normal(-0.20, 0.30); sites differentiated by data
+    "beta_coy[1]",               -0.20,      0.30,
+    "beta_coy[2]",               -0.20,      0.30,
+    "beta_coy[3]",               -0.20,      0.30,
+    # Disturbance survival — common normal(-0.15, 0.25)
+    "beta_dist_surv[1]",         -0.15,      0.25,
+    "beta_dist_surv[2]",         -0.15,      0.25,
+    "beta_dist_surv[3]",         -0.15,      0.25,
+    "beta_dist_surv[4]",         -0.15,      0.25,
+    "beta_dist_surv[5]",         -0.15,      0.25,
+    "beta_dist_surv[6]",         -0.15,      0.25,
+    # Disturbance detection — common normal(-0.15, 0.20)
+    "beta_dist_detect[1]",       -0.15,      0.20,
+    "beta_dist_detect[2]",       -0.15,      0.20,
+    "beta_dist_detect[3]",       -0.15,      0.20,
+    "beta_dist_detect[4]",       -0.15,      0.20,
+    "beta_dist_detect[5]",       -0.15,      0.20,
+    "beta_dist_detect[6]",       -0.15,      0.20,
+    # Elephant seal — unchanged
+    "beta_eseal_pup",             0.10,      0.20
+  )
+  
+  prior_df <- prior_specs |>
+    mutate(
+      prior_lo89 = prior_mean + qnorm(CI_LO) * prior_sd,
+      prior_hi89 = prior_mean + qnorm(CI_HI) * prior_sd,
+      prior_lo50 = prior_mean + qnorm(0.25)  * prior_sd,
+      prior_hi50 = prior_mean + qnorm(0.75)  * prior_sd
+    ) |>
+    left_join(params |> select(variable, label, group), by = "variable") |>
+    filter(!is.na(label)) |>
+    mutate(label = factor(label, levels = rev(params$label)),
+           group = factor(group, levels = names(grp_cols)))
+  
   p <- ggplot(df, aes(y=label, colour=group)) +
+    
+    # ── Prior distributions (behind posteriors, nudged up slightly) ─────────
+    # Light grey bands representing the prior Normal(mean, sd) at 89% and 50%.
+    # Nudged +0.25 on y-axis so prior and posterior bars are side-by-side
+    # rather than directly overlapping — makes both clearly readable.
+    geom_linerange(data = prior_df,
+                   aes(y = label, xmin = prior_lo89, xmax = prior_hi89),
+                   colour = "grey72", linewidth = 0.6, alpha = 0.85,
+                   position = position_nudge(y = 0.25),
+                   inherit.aes = FALSE) +
+    geom_linerange(data = prior_df,
+                   aes(y = label, xmin = prior_lo50, xmax = prior_hi50),
+                   colour = "grey58", linewidth = 2.0, alpha = 0.75,
+                   position = position_nudge(y = 0.25),
+                   inherit.aes = FALSE) +
+    geom_point(data = prior_df,
+               aes(y = label, x = prior_mean),
+               colour = "grey48", size = 2.2, shape = 1,
+               position = position_nudge(y = 0.25),
+               inherit.aes = FALSE) +
+    
+    # ── Posterior distributions (foreground) ────────────────────────────────
     # 89% CrI — thin line
     geom_linerange(aes(xmin=lo89, xmax=hi89), linewidth=0.7, alpha=0.7) +
     # 50% CrI — thick line
     geom_linerange(aes(xmin=lo50, xmax=hi50), linewidth=2.2, alpha=0.9) +
-    # Posterior mean — point (diamond if significant)
+    # Posterior mean — filled point (diamond if significant)
     geom_point(aes(x=mean, shape=sig), size=3) +
-    scale_shape_manual(values=c("FALSE"=16, "TRUE"=18),
-                       labels=c("FALSE"="Not significant","TRUE"="Significant (89% CrI)"),
+    
+    scale_shape_manual(values  = c("FALSE"=16, "TRUE"=18),
+                       labels  = c("FALSE"="Not significant",
+                                   "TRUE" ="Significant (89% CrI)"),
                        name=NULL) +
-    # Zero reference
     geom_vline(xintercept=0, linetype="dashed", colour="grey40", linewidth=0.5) +
-    # Shaded group bands (alternating)
     scale_colour_manual(values=grp_cols, name="Covariate group") +
     facet_grid(group ~ ., scales="free_y", space="free_y") +
-    labs(x="Coefficient (logit scale)", y=NULL,
-         title="Covariate Effects — Coefficient Forest Plot",
-         subtitle=paste0("Thick bar = 50% CrI; thin bar = ", CI_LABEL,
-                         "; diamond = 89% CrI excludes zero")) +
+    labs(x = "Coefficient (logit scale)", y = NULL,
+         title    = "Covariate Effects — Coefficient Forest Plot",
+         subtitle = paste0(
+           "Posterior: thick bar = 50% CrI; thin bar = ", CI_LABEL,
+           "; diamond = 89% CrI excludes zero\n",
+           "Prior (grey): open circle = prior mean; thick = 50% prior CrI; thin = 89% prior CrI")) +
     theme_seal(base_size=14) +
     theme(legend.position    = "bottom",
           strip.text.y       = element_text(angle=0, face="bold", size=11),
@@ -998,6 +1054,11 @@ create_projection_plots_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IPM_v
               aes(x=Year,y=mean,color=Scenario),linewidth=1.2) +
     geom_vline(xintercept=max(years),linetype=2,color="red") +
     scale_color_brewer(palette="Dark2") + scale_fill_brewer(palette="Dark2") +
+    scale_y_continuous(
+      limits = c(0, ceiling(max(full$hi, na.rm=TRUE) / 1000) * 1000),
+      labels = scales::comma,
+      expand = c(0, 0)
+    ) +
     labs(x="Year",y="Total Population",
          title="10-Year Projections",
          subtitle=paste0("Bands = ", CI_LABEL, "; dashed line = projection start")) +
@@ -1329,10 +1390,8 @@ create_summary_table_v3.2 <- function(fit, save=TRUE, prefix="IPM_v3.2") {
     "prop_female","avg_fecundity","p_male_breed",
     "beta_coy[1]","beta_coy[2]","beta_coy[3]",
     paste0("beta_dist_surv[",1:6,"]"),
-    "beta_moci_ond_fecund","beta_moci_ond_pup","beta_moci_amj_pup",
-    "beta_moci_jfm_pup","beta_moci_jfm_juv",
+    "beta_moci_ond_fecund","beta_moci_amj_pup","beta_moci_jfm_juv",
     "beta_moci_jfm_adult","beta_eseal_pup","beta_moci_amj_molt",
-    "detect_breed_logit","detect_molt_logit",
     "sigma_process","sigma_obs_adult","sigma_obs_pup","sigma_obs_molt","sigma_site"
   )
   
@@ -1394,8 +1453,6 @@ create_summary_table_v3.2 <- function(fit, save=TRUE, prefix="IPM_v3.2") {
         str_detect(variable,"beta_coy")               ~ "Coyote (site-specific)",
         str_detect(variable,"beta_dist")              ~ "Disturbance (site-specific)",
         str_detect(variable,"beta_moci|beta_eseal")   ~ "Shared covariates",
-        variable %in% c("detect_breed_logit",
-                        "detect_molt_logit")          ~ "Observation / Derived",
         str_detect(variable,"sigma")                  ~ "Error terms"
       )
     ) |>
@@ -1484,11 +1541,70 @@ save_model_output_v3.2 <- function(fit, prefix="IPM_v3.2") {
 
 
 # ============================================================================
-# NOTE: run_full_analysis_v3.2() is defined in harbor_seal_ipm_v3.2.R.
-# Source that file before this one. A second definition here would silently
-# overwrite the canonical version (which includes run_portfolio,
-# run_synchrony, and safe_run tryCatch wrapping). Do not redefine it here.
+# PART 14: MAIN EXECUTION
 # ============================================================================
+
+run_full_analysis_v3.2 <- function(use_real_data  = FALSE,
+                                   dat            = NULL,
+                                   cov_t_scaled   = NULL,
+                                   years          = NULL,
+                                   T_proj         = 10,
+                                   seed           = 42,
+                                   iter_warmup    = 3000,
+                                   iter_sampling  = 1000,
+                                   adapt_delta    = 0.995,
+                                   max_treedepth  = 15) {
+  
+  cat("\n================================================================\n")
+  cat("   HARBOR SEAL IPM v3.2\n")
+  cat("   Sex-neutral pup/juv survival | Corrected pup prior\n")
+  cat("   Explicit observation sex structure\n")
+  cat("================================================================\n\n")
+  
+  prefix <- ifelse(use_real_data,"IPM_v3.2_real","IPM_v3.2_sim")
+  
+  if (use_real_data) {
+    dl       <- prepare_real_data_for_ipm_v3.2(dat,cov_t_scaled,years,T_proj)
+    sim_data <- list(stan_data=dl$stan_data, site_names=dl$site_names,
+                     years=dl$years, scenario_names=dl$scenario_names, true_params=NULL)
+  } else {
+    sim_data <- simulate_seal_ipm_data_v3.2(T=29,S=6,T_proj=T_proj,seed=seed)
+  }
+  
+  cat("Compiling Stan model...\n")
+  model <- cmdstan_model("harbor_seal_ipm_v3.2.stan")
+  
+  cat(sprintf("Running MCMC (warmup=%d, sampling=%d, adapt_delta=%.3f)...\n",
+              iter_warmup,iter_sampling,adapt_delta))
+  fit <- model$sample(
+    data=sim_data$stan_data, seed=123, chains=4, parallel_chains=4,
+    iter_warmup=iter_warmup, iter_sampling=iter_sampling,
+    refresh=200, adapt_delta=adapt_delta, max_treedepth=max_treedepth
+  )
+  fit$save_object(paste0("Output/harbor_seal_",prefix,"_fit.rds"))
+  
+  diag   <- check_diagnostics_v3.2(fit)
+  traces <- create_trace_plots_v3.2(fit, diag$params, prefix=prefix)
+  rec    <- if (!use_real_data && !is.null(sim_data$true_params))
+    check_parameter_recovery_v3.2(fit,sim_data,prefix=prefix) else NULL
+  ppc    <- create_ppc_plots_v3.2(fit,sim_data,prefix=prefix)
+  ts     <- create_timeseries_plots_v3.2(fit,sim_data,prefix=prefix)
+  sa     <- create_site_age_timeseries_v3.2(fit,sim_data,prefix=prefix)
+  proj   <- create_projection_plots_v3.2(fit,sim_data,prefix=prefix)
+  eff    <- create_effect_plots_v3.2(fit,prefix=prefix)
+  tbl    <- create_summary_table_v3.2(fit,prefix=prefix)
+  save_model_output_v3.2(fit,prefix=prefix)
+  
+  cat("\n================================================================\n")
+  cat("   COMPLETE — IPM v3.2\n")
+  cat(sprintf("   Plots  → Output/Plots/%s_*.jpeg\n",prefix))
+  cat(sprintf("   Fit    → Output/harbor_seal_%s_fit.rds\n",prefix))
+  cat(sprintf("   Table  → Output/%s_parameter_summary.csv\n",prefix))
+  cat("================================================================\n\n")
+  
+  list(fit=fit,model=model,data=sim_data,diagnostics=diag,
+       summary=tbl,recovery=rec,projections=proj,prefix=prefix)
+}
 
 
 # ============================================================================
@@ -1540,8 +1656,10 @@ create_portfolio_analysis_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IPM
     mutate(Site=factor(Site,levels=site_names), phi=as.vector(t(phi_m)))
   p_phi <- ggplot(phidf,aes(x=Year,y=Site,fill=phi)) +
     geom_tile(color="white",linewidth=0.5) +
-    scale_fill_viridis_c(name="φ_pup",option="plasma",
-                         limits=c(0.25,0.75),oob=scales::squish) +
+    scale_fill_viridis_c(name="φ_pup", option="plasma",
+                         limits = c(floor(min(phi_m, na.rm=TRUE) * 10) / 10,
+                                    ceiling(max(phi_m, na.rm=TRUE) * 10) / 10),
+                         oob = scales::squish) +
     geom_text(aes(label=sprintf("%.2f",phi)),size=2.2) +
     labs(x="Year",y="Site",title="Site-Specific Pup Survival by Year (sex-neutral)") +
     theme_seal() +

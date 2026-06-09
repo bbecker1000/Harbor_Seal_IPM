@@ -5,7 +5,7 @@
 source("restore_packages.R")   # restores + restarts automatically
 
 
-#everytime
+# everytime
 source("harbor_seal_setup.R")  # sets up git, CmdStan, .Rprofile
 
 # 2. After restart, normal workflow:
@@ -13,9 +13,15 @@ source("00_load.R")
 source("Code/harbor_seal_ipm_v3.2.R")
 source("Code/harbor_seal_ipm_v3.2_plots.R")
 out <- load_seal_results("IPM_v3.2_real")
+filter <- dplyr::filter   # prevent stats::filter masking
 
 
-
+source("restore_packages.R")   # installs packages + restarts R automatically
+# after restart:
+# 
+# #only if cmdstan missing
+# source("harbor_seal_setup.R")  # git config, CmdStan path, .Rprofile
+# # then normal startup above
 
 
 # LOAD (after restart)
@@ -41,18 +47,6 @@ years <- input_data$years
 
 fit <- readRDS("Output/harbor_seal_IPM_v3.2_real_fit.rds")
 
-
-
-sync_analysis <- create_synchrony_projections_v3.2(
-  fit      = fit,
-  sim_data = prepared,
-  prefix   = "IPM_v3.2_real"
-)
-
-
-
-
-
 #
 ## run sim
 
@@ -76,15 +70,21 @@ dat=dat,
 cov_t_scaled=cov_t_scaled, 
 years=years,
 seed = 123,
-iter_warmup=2000, 
-iter_sampling=2000, 
-adapt_delta=0.97,
-max_treedepth = 12)
+iter_warmup=3000, 
+iter_sampling=1000, 
+adapt_delta=0.98,
+max_treedepth = 12,
+store_warmup    = FALSE,    # explicit — don't store warmup draws
+save_warmup     = 0,        # Stan-level: don't write warmup to CSV
+refresh         = 200)
 
 
 saveRDS(Results.real, "Output/harbor_seal_IPM_v3.2_real_results.rds")
 
-
+# After saving fit object, delete temp CSV files
+fit$save_object("Output/harbor_seal_IPM_v3.2_real_fit.rds")
+fit$output_files()    # shows where the CSVs are
+unlink(fit$output_files())    # deletes them
 
 
 # Use fit directly for all functions:
@@ -102,21 +102,22 @@ cat("draws method works:", is.function(out$fit$draws), "\n")  # should be TRUE
 
 
 
-sync_analysis <- create_synchrony_projections_v3.2(
-  fit      = out$fit,
-  sim_data = out$sim_data,
-  prefix = "IPM_v3.2_real")
 
 
-source("Code/harbor_seal_ipm_v3.2_plots.R", local=FALSE)
+## run it all 
 
+source("Code/harbor_seal_ipm_v3.2.R")
+source("Code/harbor_seal_ipm_v3.2_plots.R")
 
+out <- load_seal_results("IPM_v3.2_real")
 
 # ── Now run plots ─────────────────────────────────────────────────────────
 run_all_plots_v3.2(
   fit      = out$fit,
   sim_data = out$sim_data,
-  prefix   = "IPM_v3.2_real"
+  prefix   = "IPM_v3.2_real",
+  run_portfolio = TRUE,
+  run_synchrony = TRUE
 )
 
 
@@ -146,22 +147,28 @@ proj <- create_projection_plots_v3.2(
   prefix   = "IPM_v3.2_real"
 )
 
-
-
-
-## run it all 
-
-source("Code/harbor_seal_ipm_v3.2.R")
-source("Code/harbor_seal_ipm_v3.2_plots.R")
-
-out <- load_seal_results("IPM_v3.2_real")
-
-run_all_plots_v3.2(
+sync_analysis <- create_synchrony_projections_v3.2(
   fit      = out$fit,
   sim_data = out$sim_data,
-  prefix   = "IPM_v3.2_real"
-)
+  prefix = "IPM_v3.2_real")
 
 
 
+
+source("Code/harbor_seal_ipm_v3.2_plots.R")
+forest <- create_forest_plot_v3.2(out$fit, save=TRUE, prefix="IPM_v3.2_real")
+
+
+
+
+
+
+
+#before close: 
+ # ── Clean up after heavy model processing ────────────────────────────────────
+  # Remove large intermediate objects that accumulate during plotting
+  rm(list = setdiff(ls(), c("out", "filter")))   # keep only what you need
+
+# Force garbage collection twice — second pass frees memory from first
+gc(); gc()
 

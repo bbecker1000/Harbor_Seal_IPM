@@ -68,16 +68,16 @@ life_cycle <- ggplot() +
   geom_circle(aes(x0=amx, y0=amy, r=r), fill=NA, color="black",       linewidth=1.4) +
   
   # ── Node labels ──────────────────────────────────────────────────────────────
-  annotate("text", x=px,  y=py+0.13,  label="bold('N'['pup'])",       parse=TRUE, size=4.2) +
-  annotate("text", x=px,  y=py-0.15,  label="italic('sex-neutral')",   parse=TRUE, size=2.8) +
-  annotate("text", x=jfx, y=jfy+0.13, label="bold('N'['juv,F'])",     parse=TRUE, size=4.2) +
-  annotate("text", x=jfx, y=jfy-0.15, label="italic('3-yr  \u2640')",  parse=TRUE, size=2.8) +
-  annotate("text", x=jmx, y=jmy+0.13, label="bold('N'['juv,M'])",     parse=TRUE, size=4.2) +
-  annotate("text", x=jmx, y=jmy-0.15, label="italic('3-yr  \u2642')",  parse=TRUE, size=2.8) +
-  annotate("text", x=afx, y=afy+0.13, label="bold('N'['adult,F'])",   parse=TRUE, size=4.2) +
-  annotate("text", x=afx, y=afy-0.15, label="'\u2640'",                parse=TRUE, size=3.6) +
-  annotate("text", x=amx, y=amy+0.13, label="bold('N'['adult,M'])",   parse=TRUE, size=4.2) +
-  annotate("text", x=amx, y=amy-0.15, label="'\u2642'",                parse=TRUE, size=3.6) +
+  annotate("text", x=px,  y=py+0.13,  label="bold('N'['pup'])",       parse=TRUE, size=6) +
+  annotate("text", x=px,  y=py-0.15,  label="italic('sex-neutral')",   parse=TRUE, size=4) +
+  annotate("text", x=jfx, y=jfy+0.13, label="bold('N'['juv,F'])",     parse=TRUE, size=6) +
+  annotate("text", x=jfx, y=jfy-0.15, label="italic('3-yr  \u2640')",  parse=TRUE, size=4) +
+  annotate("text", x=jmx, y=jmy+0.13, label="bold('N'['juv,M'])",     parse=TRUE, size=6) +
+  annotate("text", x=jmx, y=jmy-0.15, label="italic('3-yr  \u2642')",  parse=TRUE, size=4) +
+  annotate("text", x=afx, y=afy+0.13, label="bold('N'['adult,F'])",   parse=TRUE, size=6) +
+  annotate("text", x=afx, y=afy-0.15, label="'\u2640'",                parse=TRUE, size=5) +
+  annotate("text", x=amx, y=amy+0.13, label="bold('N'['adult,M'])",   parse=TRUE, size=6) +
+  annotate("text", x=amx, y=amy-0.15, label="'\u2642'",                parse=TRUE, size=5) +
   
   # ── Stage-transition arrows ───────────────────────────────────────────────────
   annotate("segment",
@@ -129,27 +129,27 @@ life_cycle <- ggplot() +
   annotate("text",
            x=(pup_to_jf_d[1]+pup_to_jf_a[1])/2 - 0.25,
            y=(pup_to_jf_d[2]+pup_to_jf_a[2])/2 + 0.25,
-           label="phi[pup]~rho[F]", parse=TRUE, size=3.2, fontface="bold") +
+           label="phi[pup]~rho[F]", parse=TRUE, size=5, fontface="bold") +
   annotate("text",
            x=(pup_to_jm_d[1]+pup_to_jm_a[1])/2 - 0.25,
            y=(pup_to_jm_d[2]+pup_to_jm_a[2])/2 - 0.25,
-           label="phi[pup]~(1-rho[F])", parse=TRUE, size=3.2, fontface="bold") +
+           label="phi[pup]~(1-rho[F])", parse=TRUE, size=5, fontface="bold") +
   annotate("text",
            x=(jf_to_af_d[1]+jf_to_af_a[1])/2, y=jfy+0.25,
-           label="frac(1,3)~phi[juv]", parse=TRUE, size=3.2, fontface="bold") +
+           label="frac(1,3)~phi[juv]", parse=TRUE, size=5, fontface="bold") +
   annotate("text",
            x=(jm_to_am_d[1]+jm_to_am_a[1])/2, y=jmy-0.25,
-           label="frac(1,3)~phi[juv]", parse=TRUE, size=3.2, fontface="bold") +
+           label="frac(1,3)~phi[juv]", parse=TRUE, size=5, fontface="bold") +
   
   # Stasis labels
   annotate("text", x=jfx, y=jfy+r+0.23,
-           label="frac(2,3)~phi[juv]", parse=TRUE, size=3.0) +
+           label="frac(2,3)~phi[juv]", parse=TRUE, size=4) +
   annotate("text", x=jmx, y=jmy-r-0.23,
-           label="frac(2,3)~phi[juv]", parse=TRUE, size=3.0) +
+           label="frac(2,3)~phi[juv]", parse=TRUE, size=4.0) +
   annotate("text", x=afx, y=afy+r+0.23,
-           label="phi[adult~F]", parse=TRUE, size=3.0) +
+           label="phi[adult~F]", parse=TRUE, size=4.0) +
   annotate("text", x=amx, y=amy-r-0.23,
-           label="phi[adult~M]", parse=TRUE, size=3.0) +
+           label="phi[adult~M]", parse=TRUE, size=4.0) +
   
   # Fecundity label
   annotate("text",
@@ -179,3 +179,4 @@ life_cycle
 
 ggsave("Output/Plots/life_cycle_v3.2.jpeg",
        life_cycle, width=32, height=22, units="cm", dpi=300)
+
