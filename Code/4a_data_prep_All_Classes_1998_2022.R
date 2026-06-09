@@ -1,4 +1,4 @@
-# data prep for 1997-2023 years adults and molt
+# data prep for 1997-2025 years adults and molt
                                             
 
 library("MARSS")
@@ -48,7 +48,7 @@ Phoca$Season <- ifelse(Phoca$Julian <= 140 & Phoca$Julian >= 105, "PUPPING", "MO
 library(plyr)
 library(dplyr)
 
-Phoca <- filter(Phoca, Age != "DEADPUP" & Age != "DEADADULT")
+Phoca <- Phoca %>% dplyr::filter(Age != "DEADPUP" & Age != "DEADADULT")
 unique(Phoca$Age)
 
 
@@ -59,6 +59,7 @@ Phoca$Yearf <- as.factor(Phoca$Year)
 all_data <- Phoca
 
 all_data
+View(all_data)
 
 # Change PR to PRH
 unique(all_data$Subsite)
@@ -68,9 +69,9 @@ unique(all_data$Subsite)
 
 #top1 master file (all data)
 top1_all_data <- all_data %>% 
-  group_by(Year, Subsite, Age) %>%
+  dplyr::group_by(Year, Subsite, Age) %>%
   slice_max(Count, n = 1) %>%
-  filter(Age != "PUP" | Season != "MOLTING") #remove pups counted in early molting season
+  dplyr::filter(Age != "PUP" | Season != "MOLTING") #remove pups counted in early molting season
 top1_all_data
 
 top.plot <- ggplot(top1_all_data,
@@ -118,7 +119,7 @@ all_data.MARSS <- distinct(all_data.MARSS)
 all_data.MARSS$Subsite_Age <- paste0(all_data.MARSS$Subsite, "_", all_data.MARSS$Age)
 
 #remove extra columns
-all_data.MARSS <- all_data.MARSS %>% filter(Year > 1996)
+all_data.MARSS <- all_data.MARSS %>% dplyr::filter(Year > 1996)
 
 #bolinas missing 1997 Molt data, so us ethe 1999 (non-ENSO) data...seems pretty steady from 1999
 addBL97molt<- data.frame(list(1997, "BL", "MOLTING", 5.7745515, "BL_MOLTING"))
@@ -139,7 +140,7 @@ all_data.MARSS <- all_data.MARSS %>%
 
 # Remove PB and DR since not pupping sites and sometimes have zero pups
 all_data.MARSS <- all_data.MARSS %>% 
-  filter(Subsite != "DR" & Subsite != "PB" )
+  dplyr::filter(Subsite != "DR" & Subsite != "PB" )
 
 
 all_data.MARSS <- all_data.MARSS[,-c(2:3)]

@@ -40,7 +40,7 @@ create_effect_plot <- function(coef_name, coef_value,
   )
   
   # Get CI from CIs object
-  ci_row <- tidy(CIs) %>% filter(term == paste0("C.", coef_name))
+  ci_row <- tidy(CIs) %>% dplyr::filter(term == paste0("C.", coef_name))
   
   if (nrow(ci_row) > 0) {
     lo_effect <- (exp(ci_row$conf.low * x_range) - 1) * 100
@@ -84,8 +84,8 @@ create_effect_plot <- function(coef_name, coef_value,
 
 # Get coefficient values from model
 C_df <- tidy(CIs) %>% 
-  filter(str_detect(term, "^C\\.")) %>%
-  mutate(coef_name = str_remove(term, "^C\\."))
+  dplyr::filter(str_detect(term, "^C\\.")) %>%
+  dplyr::mutate(coef_name = str_remove(term, "^C\\."))
 
 # View all C coefficients
 print(C_df %>% select(term, estimate, conf.low, conf.up))
@@ -97,7 +97,7 @@ print(C_df %>% select(term, estimate, conf.low, conf.up))
 # COYOTE EFFECTS
 p_coy_bl <- create_effect_plot(
   coef_name = "Coy_BL",
-  coef_value = C_df %>% filter(coef_name == "Coy_BL") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "Coy_BL") %>% pull(estimate),
   covariate_name = "Coyote_BL",
   x_label = "Coyote Sighting Rate (SD)",
   title = "Coyote - BL (All Classes)"
@@ -105,7 +105,7 @@ p_coy_bl <- create_effect_plot(
 
 p_coy_de <- create_effect_plot(
   coef_name = "Coy_DE",
-  coef_value = C_df %>% filter(coef_name == "Coy_DE") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "Coy_DE") %>% pull(estimate),
   covariate_name = "Coyote_DE",
   x_label = "Coyote Sighting Rate (SD)",
   title = "Coyote - DE (All Classes)"
@@ -113,7 +113,7 @@ p_coy_de <- create_effect_plot(
 
 p_coy_dp <- create_effect_plot(
   coef_name = "Coy_DP",
-  coef_value = C_df %>% filter(coef_name == "Coy_DP") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "Coy_DP") %>% pull(estimate),
   covariate_name = "Coyote_DP",
   x_label = "Coyote Sighting Rate (SD)",
   title = "Coyote - DP (All Classes)"
@@ -122,7 +122,7 @@ p_coy_dp <- create_effect_plot(
 # DISTURBANCE EFFECTS
 p_dist_bl <- create_effect_plot(
   coef_name = "Dist_BL",
-  coef_value = C_df %>% filter(coef_name == "Dist_BL") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "Dist_BL") %>% pull(estimate),
   covariate_name = "Dist_BL",
   x_label = "Disturbance Rate (SD)",
   title = "Disturbance - BL (All Classes)"
@@ -130,7 +130,7 @@ p_dist_bl <- create_effect_plot(
 
 p_dist_de <- create_effect_plot(
   coef_name = "Dist_DE",
-  coef_value = C_df %>% filter(coef_name == "Dist_DE") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "Dist_DE") %>% pull(estimate),
   covariate_name = "Dist_DE",
   x_label = "Disturbance Rate (SD)",
   title = "Disturbance - DE (All Classes)"
@@ -138,7 +138,7 @@ p_dist_de <- create_effect_plot(
 
 p_dist_tb <- create_effect_plot(
   coef_name = "Dist_TB",
-  coef_value = C_df %>% filter(coef_name == "Dist_TB") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "Dist_TB") %>% pull(estimate),
   covariate_name = "Dist_TB",
   x_label = "Disturbance Rate (SD)",
   title = "Disturbance - TB (All Classes)"
@@ -147,7 +147,7 @@ p_dist_tb <- create_effect_plot(
 # MOCI EFFECTS - PUPS
 p_moci_ond_p <- create_effect_plot(
   coef_name = "MOCI_OND_P",
-  coef_value = C_df %>% filter(coef_name == "MOCI_OND_P") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "MOCI_OND_P") %>% pull(estimate),
   covariate_name = "MOCI_OND",
   x_label = "MOCI Prior Fall (SD)",
   title = "MOCI Prior Fall (Pup)"
@@ -155,7 +155,7 @@ p_moci_ond_p <- create_effect_plot(
 
 p_moci_amj_p <- create_effect_plot(
   coef_name = "MOCI_AMJ_P",
-  coef_value = C_df %>% filter(coef_name == "MOCI_AMJ_P") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "MOCI_AMJ_P") %>% pull(estimate),
   covariate_name = "MOCI_AMJ",
   x_label = "MOCI Spring (SD)",
   title = "MOCI Spring (Pup)"
@@ -164,7 +164,7 @@ p_moci_amj_p <- create_effect_plot(
 # MOCI EFFECTS - MOLTING
 p_moci_amj_m <- create_effect_plot(
   coef_name = "MOCI_AMJ_M",
-  coef_value = C_df %>% filter(coef_name == "MOCI_AMJ_M") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "MOCI_AMJ_M") %>% pull(estimate),
   covariate_name = "MOCI_AMJ",
   x_label = "MOCI Spring (SD)",
   title = "MOCI Spring (Molting)"
@@ -172,7 +172,7 @@ p_moci_amj_m <- create_effect_plot(
 
 p_moci_jfm_m <- create_effect_plot(
   coef_name = "MOCI_JFM_M",
-  coef_value = C_df %>% filter(coef_name == "MOCI_JFM_M") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "MOCI_JFM_M") %>% pull(estimate),
   covariate_name = "MOCI_JFM",
   x_label = "MOCI Winter (SD)",
   title = "MOCI Winter (Molting)"
@@ -181,7 +181,7 @@ p_moci_jfm_m <- create_effect_plot(
 # ELEPHANT SEALS
 p_es_prh <- create_effect_plot(
   coef_name = "ES-PRH",
-  coef_value = C_df %>% filter(coef_name == "ES-PRH") %>% pull(estimate),
+  coef_value = C_df %>% dplyr::filter(coef_name == "ES-PRH") %>% pull(estimate),
   covariate_name = "eSeal",
   x_label = "Elephant Seal Abundance (SD)",
   title = "Elephant Seals - PRH (All Classes)"
@@ -246,7 +246,7 @@ ggsave("Output/Plots/Effects_All_Significant.jpeg", all_effects,
 # ----------------------------------------------------------------------------
 
 effects_summary <- C_df %>%
-  filter(coef_name %in% c("Coy_BL", "Coy_DE", "Coy_DP",
+  dplyr::filter(coef_name %in% c("Coy_BL", "Coy_DE", "Coy_DP",
                           "Dist_BL", "Dist_DE", "Dist_TB",
                           "MOCI_OND_P", "MOCI_AMJ_P", 
                           "MOCI_AMJ_M", "MOCI_JFM_M",

@@ -145,34 +145,71 @@ run_all_plots_v3.2 <- function(fit,
   
   safe_run <- function(label, expr) {
     cat(sprintf("\n%s\n", label))
+    # withCallingHandlers muffles warnings IN PLACE (no restart).
+    # tryCatch catches errors after the fact and returns NULL.
+    # Using tryCatch(warning=) here would restart the expression on every
+    # warning, causing the entire step to execute twice.
     tryCatch(
-      expr,
+      withCallingHandlers(
+        expr,
+        warning = function(w) invokeRestart("muffleWarning")
+      ),
       error = function(e) {
-        cat(sprintf("  ERROR in %s:\n  %s\n", label, conditionMessage(e)))
-        cat(sprintf("  -> To retry: run_all_plots_v3.2(out$fit, out$sim_data, prefix=\"%s\")\n",
-                    prefix))
+        cat(sprintf("  !! FAILED: %s\n", conditionMessage(e)))
         NULL
-      },
-      warning = function(w) {
-        # Re-run suppressing the warning so pipeline continues
-        suppressWarnings(expr)
       }
     )
   }
-  
+
+  # ── v3.2 parameter validation ──────────────────────────────────────────────
+  # Checks that all parameters introduced in v3.2 are present in this fit.
+  # A mismatch indicates the fit was produced by an older model version;
+  # some plots will silently drop parameters or use incorrect baselines.
+  v3.2_required <- c(
+    "phi_pup_logit", "phi_adult_F_logit", "delta_adult", "p_male_breed",
+    "beta_moci_ond_fecund", "beta_moci_ond_pup", "beta_moci_jfm_pup",
+    "beta_moci_amj_pup", "beta_moci_jfm_juv", "beta_moci_jfm_adult",
+    "detect_breed_logit", "detect_molt_logit"
+  )
+  avail_vars   <- tryCatch(fit$summary()$variable, error = function(e) character(0))
+  missing_v3.2 <- v3.2_required[!v3.2_required %in% avail_vars]
+  if (length(missing_v3.2) > 0) {
+    cat(sprintf(paste0(
+      "\n!! VERSION WARNING: fit is missing %d v3.2 parameter(s):\n",
+      "     %s\n",
+      "   This fit may have been produced by an older model version.\n",
+      "   Some plots will silently omit these parameters.\n\n"),
+      length(missing_v3.2), paste(missing_v3.2, collapse = ", ")))
+  } else {
+    cat("v3.2 parameter check passed.\n")
+  }
+
   diag <- safe_run("── Diagnostics ───────────────────────────────────────────",
                    check_diagnostics_v3.2(fit))
   
-  params <- if (!is.null(diag)) diag$params else c(
+  params_candidate <- c(
     "phi_pup_logit","phi_juv_base","phi_adult_F_logit","phi_adult_F_base","delta_adult",
     "fecund_primip","fecund_mature","prop_female","p_male_breed",
     "beta_coy[1]","beta_coy[2]","beta_coy[3]",
     paste0("beta_dist_surv[",1:6,"]"),
+    paste0("beta_dist_detect[",1:6,"]"),
     "beta_moci_ond_fecund","beta_moci_amj_pup","beta_moci_jfm_juv",
     "beta_moci_jfm_adult","beta_eseal_pup",
     "detect_breed_logit","detect_molt_logit",
+    "beta_moci_ond_pup","beta_moci_jfm_pup",
     "sigma_process","sigma_obs_adult","sigma_obs_pup","sigma_obs_molt","sigma_site"
   )
+  # Filter to only params present in this model fit — prevents trace/summary
+  # failures when plotting against a fit that pre-dates new parameter additions.
+  available_vars <- tryCatch(
+    fit$summary()$variable,
+    error = function(e) params_candidate
+  )
+  params <- if (!is.null(diag) && !is.null(diag$params)) {
+    diag$params[diag$params %in% available_vars]
+  } else {
+    params_candidate[params_candidate %in% available_vars]
+  }
   
   traces <- safe_run("── Trace plots ───────────────────────────────────────────",
                      create_trace_plots_v3.2(fit, params, save=save, prefix=prefix))
@@ -237,20 +274,34 @@ run_all_plots_v3.2 <- function(fit,
                   projections=proj, effects=eff, juv_adult_effects=jveff,
                   forest=forest, decomposition=decomp,
                   table=tbl, portfolio=port, sync=sync)
-  n_ok   <- sum(!sapply(results, is.null))
-  n_fail <- sum( sapply(results, is.null))
+  # ── Tally results ─────────────────────────────────────────────────────────
+  # Distinguish genuinely skipped steps from genuine failures.
+  # Skipped steps are expected NULLs; failures are unexpected NULLs.
+  skipped_keys <- c(
+    if (!run_recovery || is.null(sim_data$true_params)) "recovery" else character(0),
+    if (!run_portfolio)                                  "portfolio" else character(0),
+    if (!run_synchrony)                                  "sync"      else character(0)
+  )
+  attempted <- results[!names(results) %in% skipped_keys]
+  n_ok      <- sum(!sapply(attempted, is.null))
+  n_fail    <- sum( sapply(attempted, is.null))
+  failed_names <- names(attempted)[sapply(attempted, is.null)]
   
   cat(sprintf("\n── Pipeline complete: %d/%d steps succeeded ──────────────\n",
-              n_ok, n_ok + n_fail))
+              n_ok, length(attempted)))
   cat(sprintf("   Plots  -> Output/Plots/%s_*\n", prefix))
   cat(sprintf("   Fit    -> Output/harbor_seal_%s_fit.rds\n", prefix))
-  if (n_fail > 0)
+  if (length(skipped_keys) > 0)
+    cat(sprintf("   Skipped (%d): %s\n",
+                length(skipped_keys), paste(skipped_keys, collapse=", ")))
+  if (n_fail > 0) {
+    cat(sprintf("   Failed  (%d): %s\n", n_fail, paste(failed_names, collapse=", ")))
     cat(sprintf(paste0(
-      "   %d step(s) failed — rerun with:\n",
-      "   source('harbor_seal_ipm_v3.2_plots.R')\n",
-      "   out <- load_seal_results('%s')\n",
-      "   run_all_plots_v3.2(out$fit, out$sim_data, prefix='%s')\n"
-    ), n_fail, prefix, prefix))
+      "   To retry failed steps, re-source and run:\n",
+      "     out <- load_seal_results('%s')\n",
+      "     run_all_plots_v3.2(out$fit, out$sim_data, prefix='%s')\n"
+    ), prefix, prefix))
+  }
   
   invisible(results)
 }
@@ -350,6 +401,18 @@ seal_fit_summary <- function(fit, variables) {
   s$q_lo <- apply(d[, s$variable, drop = FALSE], 2, quantile, ci_lo)
   s$q_hi <- apply(d[, s$variable, drop = FALSE], 2, quantile, ci_hi)
   
+  # Newer posterior versions (>=1.6) may return rhat/ess columns as S3
+  # class objects or list columns rather than plain doubles, which breaks
+  # the > operator. Coerce element-by-element to handle both cases.
+  .to_num <- function(x) {
+    if (is.list(x))
+      vapply(x, function(v) suppressWarnings(as.numeric(v)[1L]), numeric(1))
+    else
+      suppressWarnings(as.numeric(x))
+  }
+  for (col in c("rhat", "ess_bulk", "ess_tail"))
+    if (col %in% names(s)) s[[col]] <- .to_num(s[[col]])
+  
   s
 }
 
@@ -396,8 +459,10 @@ check_diagnostics_v3.2 <- function(fit) {
     "beta_coy[1]","beta_coy[2]","beta_coy[3]",
     "beta_dist_surv[1]","beta_dist_surv[2]","beta_dist_surv[3]",
     "beta_dist_surv[4]","beta_dist_surv[5]","beta_dist_surv[6]",
-    "beta_moci_ond_fecund","beta_moci_amj_pup","beta_moci_jfm_juv",
+    "beta_moci_ond_fecund","beta_moci_ond_pup","beta_moci_amj_pup",
+    "beta_moci_jfm_pup","beta_moci_jfm_juv",
     "beta_moci_jfm_adult","beta_eseal_pup",
+    "detect_breed_logit","detect_molt_logit",
     "sigma_process","sigma_obs_adult","sigma_obs_pup","sigma_obs_molt","sigma_site"
   )
   
@@ -412,11 +477,18 @@ check_diagnostics_v3.2 <- function(fit) {
               quantile(plogis(pup_logit_draws), CI_LO),
               quantile(plogis(pup_logit_draws), CI_HI)))
   
-  bad   <- s |> filter(rhat>1.05)
-  low   <- s |> filter(ess_bulk<400)
+  # Force rhat and ess to plain double before comparison — immune to
+  # S3-class columns, list columns, or dplyr dispatch issues.
+  # unclass() strips S3, as.vector() strips all attributes, as.double() converts.
+  rhat_v <- tryCatch(as.double(as.vector(unclass(s$rhat))),
+                     error = function(e) rep(NA_real_, nrow(s)))
+  ess_v  <- tryCatch(as.double(as.vector(unclass(s$ess_bulk))),
+                     error = function(e) rep(NA_real_, nrow(s)))
+  bad <- s[!is.na(rhat_v) & rhat_v > 1.05, , drop=FALSE]
+  low <- s[!is.na(ess_v)  & ess_v  < 400,  , drop=FALSE]
   cat(paste0("\n", CI_LABEL, " used for all intervals\n"))
-  if (nrow(bad)>0) { cat("\nWARNING: Rhat > 1.05:\n"); print(bad |> select(variable,rhat)) }
-  if (nrow(low)>0) { cat("\nWARNING: low ESS:\n");     print(low |> select(variable,ess_bulk)) }
+  if (nrow(bad)>0) { cat("\nWARNING: Rhat > 1.05:\n"); print(bad[, c('variable','rhat')]) }
+  if (nrow(low)>0) { cat("\nWARNING: low ESS:\n");     print(low[, c('variable','ess_bulk')]) }
   
   list(params=params, summary=s)
 }
@@ -432,7 +504,8 @@ create_trace_plots_v3.2 <- function(fit, params, save=TRUE, prefix="IPM_v3.2") {
   
   p1 <- mcmc_trace(draws,
                    pars=c("phi_pup_logit","phi_juv_base","phi_adult_F_logit",
-                          "delta_adult","p_male_breed")) +
+                          "delta_adult","p_male_breed",
+                          "detect_breed_logit","detect_molt_logit")) +
     labs(title="Trace: Survival + Observation Parameters")
   if (save) ggsave(paste0("Output/Plots/",prefix,"_trace_survival.jpeg"),
                    p1, width=30, height=18, units="cm")
@@ -448,14 +521,17 @@ create_trace_plots_v3.2 <- function(fit, params, save=TRUE, prefix="IPM_v3.2") {
   if (save) ggsave(paste0("Output/Plots/",prefix,"_trace_coyote.jpeg"),
                    p3, width=30, height=12, units="cm")
   
-  p4 <- mcmc_trace(draws, pars=paste0("beta_dist_surv[",1:6,"]")) +
+  p4 <- mcmc_trace(draws, pars=c(paste0("beta_dist_surv[",1:6,"]"),
+                                  paste0("beta_dist_detect[",1:6,"]"))) +
     labs(title="Trace: Site-Specific Disturbance Effects")
   if (save) ggsave(paste0("Output/Plots/",prefix,"_trace_disturbance.jpeg"),
                    p4, width=30, height=18, units="cm")
   
   p5 <- mcmc_trace(draws,
-                   pars=c("beta_moci_ond_fecund","beta_moci_amj_pup","beta_moci_jfm_juv",
-                          "beta_moci_jfm_adult","beta_moci_amj_molt")) +
+                   pars=c("beta_moci_ond_fecund","beta_moci_ond_pup",
+                          "beta_moci_amj_pup","beta_moci_jfm_pup",
+                          "beta_moci_jfm_juv","beta_moci_jfm_adult",
+                          "beta_moci_amj_molt")) +
     labs(title="Trace: MOCI Effects")
   if (save) ggsave(paste0("Output/Plots/",prefix,"_trace_moci.jpeg"),
                    p5, width=30, height=18, units="cm")
@@ -794,8 +870,13 @@ create_forest_plot_v3.2 <- function(fit, save=TRUE, prefix="IPM_v3.2") {
     "beta_dist_surv[3]",     "Disturbance → pup (DP)",       "Disturbance",   "Pup",
     "beta_dist_surv[4]",     "Disturbance → pup (PRH)",      "Disturbance",   "Pup",
     "beta_dist_surv[5]",     "Disturbance → pup (TB)",       "Disturbance",   "Pup",
-    "beta_dist_surv[6]",     "Disturbance → pup (TP)",       "Disturbance",   "Pup",
-    "beta_dist_detect",      "Disturbance → detection",      "Disturbance",   "Observation",
+    "beta_dist_surv[6]",     "Disturbance → pup (TP)",        "Disturbance",   "Pup",
+    "beta_dist_detect[1]",   "Disturbance → detection (BL)", "Disturbance",   "Observation",
+    "beta_dist_detect[2]",   "Disturbance → detection (DE)", "Disturbance",   "Observation",
+    "beta_dist_detect[3]",   "Disturbance → detection (DP)", "Disturbance",   "Observation",
+    "beta_dist_detect[4]",   "Disturbance → detection (PRH)","Disturbance",   "Observation",
+    "beta_dist_detect[5]",   "Disturbance → detection (TB)", "Disturbance",   "Observation",
+    "beta_dist_detect[6]",   "Disturbance → detection (TP)", "Disturbance",   "Observation",
     "beta_eseal_pup",        "Elephant seal → pup",          "Elephant seal", "Pup"
   )
   
@@ -1248,8 +1329,10 @@ create_summary_table_v3.2 <- function(fit, save=TRUE, prefix="IPM_v3.2") {
     "prop_female","avg_fecundity","p_male_breed",
     "beta_coy[1]","beta_coy[2]","beta_coy[3]",
     paste0("beta_dist_surv[",1:6,"]"),
-    "beta_moci_ond_fecund","beta_moci_amj_pup","beta_moci_jfm_juv",
+    "beta_moci_ond_fecund","beta_moci_ond_pup","beta_moci_amj_pup",
+    "beta_moci_jfm_pup","beta_moci_jfm_juv",
     "beta_moci_jfm_adult","beta_eseal_pup","beta_moci_amj_molt",
+    "detect_breed_logit","detect_molt_logit",
     "sigma_process","sigma_obs_adult","sigma_obs_pup","sigma_obs_molt","sigma_site"
   )
   
@@ -1311,6 +1394,8 @@ create_summary_table_v3.2 <- function(fit, save=TRUE, prefix="IPM_v3.2") {
         str_detect(variable,"beta_coy")               ~ "Coyote (site-specific)",
         str_detect(variable,"beta_dist")              ~ "Disturbance (site-specific)",
         str_detect(variable,"beta_moci|beta_eseal")   ~ "Shared covariates",
+        variable %in% c("detect_breed_logit",
+                        "detect_molt_logit")          ~ "Observation / Derived",
         str_detect(variable,"sigma")                  ~ "Error terms"
       )
     ) |>
@@ -1368,22 +1453,28 @@ save_model_output_v3.2 <- function(fit, prefix="IPM_v3.2") {
   cat("\nMOCI effects by stage (logit scale; negative = warm MOCI reduces survival):\n")
   cat(sprintf("  Pup    OND lag:  %.3f (%.3f–%.3f)\n",
               moci$mean[3], moci$q_lo[3], moci$q_hi[3]))
-  # Detection baselines
-  dtb <- seal_fit_summary(fit, c("detect_breed_logit","detect_molt_logit"))
-  cat("\nDetection baselines (logit scale; plogis = detection probability):\n")
-  cat(sprintf("  Breeding survey: %.3f (%.3f\u2013%.3f) -> p = %.2f\n",
-              dtb$mean[1],dtb$q_lo[1],dtb$q_hi[1],plogis(dtb$mean[1])))
-  cat(sprintf("  Molt survey:     %.3f (%.3f\u2013%.3f) -> p = %.2f\n",
-              dtb$mean[2],dtb$q_lo[2],dtb$q_hi[2],plogis(dtb$mean[2])))
+  # Detection baselines — only present in updated model; skip gracefully if absent
+  tryCatch({
+    dtb <- seal_fit_summary(fit, c("detect_breed_logit","detect_molt_logit"))
+    cat("\nDetection baselines (logit scale; plogis = detection probability):\n")
+    cat(sprintf("  Breeding survey: %.3f (%.3f\u2013%.3f) -> p = %.2f\n",
+                dtb$mean[1],dtb$q_lo[1],dtb$q_hi[1],plogis(dtb$mean[1])))
+    cat(sprintf("  Molt survey:     %.3f (%.3f\u2013%.3f) -> p = %.2f\n",
+                dtb$mean[2],dtb$q_lo[2],dtb$q_hi[2],plogis(dtb$mean[2])))
+  }, error = function(e)
+    cat("  NOTE: detect_breed_logit / detect_molt_logit not in this model fit\n"))
   cat("\nMOCI effects by stage:\n")
   cat(sprintf("  Pup    AMJ (t-1): %.3f (%.3f–%.3f)\n",
               moci$mean[4], moci$q_lo[4], moci$q_hi[4]))
-  # New pup MOCI effects
-  pup_moci2 <- seal_fit_summary(fit, c("beta_moci_ond_pup", "beta_moci_jfm_pup"))
-  cat(sprintf("  Pup    OND post-wean:  %.3f (%.3f–%.3f)\n",
-              pup_moci2$mean[1], pup_moci2$q_lo[1], pup_moci2$q_hi[1]))
-  cat(sprintf("  Pup    JFM 1st-winter: %.3f (%.3f–%.3f)\n",
-              pup_moci2$mean[2], pup_moci2$q_lo[2], pup_moci2$q_hi[2]))
+  # New pup MOCI effects — only present in updated model; skip gracefully if absent
+  tryCatch({
+    pup_moci2 <- seal_fit_summary(fit, c("beta_moci_ond_pup", "beta_moci_jfm_pup"))
+    cat(sprintf("  Pup    OND post-wean:  %.3f (%.3f–%.3f)\n",
+                pup_moci2$mean[1], pup_moci2$q_lo[1], pup_moci2$q_hi[1]))
+    cat(sprintf("  Pup    JFM 1st-winter: %.3f (%.3f–%.3f)\n",
+                pup_moci2$mean[2], pup_moci2$q_lo[2], pup_moci2$q_hi[2]))
+  }, error = function(e)
+    cat("  NOTE: beta_moci_ond_pup / beta_moci_jfm_pup not in this model fit\n"))
   cat(sprintf("  Juv    JFM:      %.3f (%.3f–%.3f)\n",
               moci$mean[1], moci$q_lo[1], moci$q_hi[1]))
   cat(sprintf("  Adult  JFM:      %.3f (%.3f–%.3f)\n",
@@ -1393,70 +1484,11 @@ save_model_output_v3.2 <- function(fit, prefix="IPM_v3.2") {
 
 
 # ============================================================================
-# PART 14: MAIN EXECUTION
+# NOTE: run_full_analysis_v3.2() is defined in harbor_seal_ipm_v3.2.R.
+# Source that file before this one. A second definition here would silently
+# overwrite the canonical version (which includes run_portfolio,
+# run_synchrony, and safe_run tryCatch wrapping). Do not redefine it here.
 # ============================================================================
-
-run_full_analysis_v3.2 <- function(use_real_data  = FALSE,
-                                   dat            = NULL,
-                                   cov_t_scaled   = NULL,
-                                   years          = NULL,
-                                   T_proj         = 10,
-                                   seed           = 42,
-                                   iter_warmup    = 3000,
-                                   iter_sampling  = 1000,
-                                   adapt_delta    = 0.995,
-                                   max_treedepth  = 15) {
-  
-  cat("\n================================================================\n")
-  cat("   HARBOR SEAL IPM v3.2\n")
-  cat("   Sex-neutral pup/juv survival | Corrected pup prior\n")
-  cat("   Explicit observation sex structure\n")
-  cat("================================================================\n\n")
-  
-  prefix <- ifelse(use_real_data,"IPM_v3.2_real","IPM_v3.2_sim")
-  
-  if (use_real_data) {
-    dl       <- prepare_real_data_for_ipm_v3.2(dat,cov_t_scaled,years,T_proj)
-    sim_data <- list(stan_data=dl$stan_data, site_names=dl$site_names,
-                     years=dl$years, scenario_names=dl$scenario_names, true_params=NULL)
-  } else {
-    sim_data <- simulate_seal_ipm_data_v3.2(T=29,S=6,T_proj=T_proj,seed=seed)
-  }
-  
-  cat("Compiling Stan model...\n")
-  model <- cmdstan_model("harbor_seal_ipm_v3.2.stan")
-  
-  cat(sprintf("Running MCMC (warmup=%d, sampling=%d, adapt_delta=%.3f)...\n",
-              iter_warmup,iter_sampling,adapt_delta))
-  fit <- model$sample(
-    data=sim_data$stan_data, seed=123, chains=4, parallel_chains=4,
-    iter_warmup=iter_warmup, iter_sampling=iter_sampling,
-    refresh=200, adapt_delta=adapt_delta, max_treedepth=max_treedepth
-  )
-  fit$save_object(paste0("Output/harbor_seal_",prefix,"_fit.rds"))
-  
-  diag   <- check_diagnostics_v3.2(fit)
-  traces <- create_trace_plots_v3.2(fit, diag$params, prefix=prefix)
-  rec    <- if (!use_real_data && !is.null(sim_data$true_params))
-    check_parameter_recovery_v3.2(fit,sim_data,prefix=prefix) else NULL
-  ppc    <- create_ppc_plots_v3.2(fit,sim_data,prefix=prefix)
-  ts     <- create_timeseries_plots_v3.2(fit,sim_data,prefix=prefix)
-  sa     <- create_site_age_timeseries_v3.2(fit,sim_data,prefix=prefix)
-  proj   <- create_projection_plots_v3.2(fit,sim_data,prefix=prefix)
-  eff    <- create_effect_plots_v3.2(fit,prefix=prefix)
-  tbl    <- create_summary_table_v3.2(fit,prefix=prefix)
-  save_model_output_v3.2(fit,prefix=prefix)
-  
-  cat("\n================================================================\n")
-  cat("   COMPLETE — IPM v3.2\n")
-  cat(sprintf("   Plots  → Output/Plots/%s_*.jpeg\n",prefix))
-  cat(sprintf("   Fit    → Output/harbor_seal_%s_fit.rds\n",prefix))
-  cat(sprintf("   Table  → Output/%s_parameter_summary.csv\n",prefix))
-  cat("================================================================\n\n")
-  
-  list(fit=fit,model=model,data=sim_data,diagnostics=diag,
-       summary=tbl,recovery=rec,projections=proj,prefix=prefix)
-}
 
 
 # ============================================================================
@@ -1595,8 +1627,10 @@ create_portfolio_analysis_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IPM
       SD_lambda   = round(apply(across(where(is.numeric)), 1,
                                 function(x) sd(x, na.rm=TRUE)), 3),
       CV_lambda   = round(SD_lambda / Mean_lambda, 3),
-      Times_best  = as.integer(bw$Best_Site  |> table())[Site] |> replace_na(0L),
-      Times_worst = as.integer(bw$Worst_Site |> table())[Site] |> replace_na(0L)
+      # table() must be subsetted BEFORE as.integer() — as.integer() strips names,
+      # making named lookup impossible and returning NA → 0 for every site.
+      Times_best  = as.integer(table(bw$Best_Site) [Site]) |> replace_na(0L),
+      Times_worst = as.integer(table(bw$Worst_Site)[Site]) |> replace_na(0L)
     ) |>
     select(Site, Mean_lambda, SD_lambda, CV_lambda, Times_best, Times_worst)
   cat("
@@ -1609,7 +1643,7 @@ create_portfolio_analysis_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IPM
   # Table 3: between-site correlation matrix as a tidy table
   cor_long <- as.data.frame(lcor) |>
     tibble::rownames_to_column("Site1") |>
-    pivot_longer(-Site1, names_to="Site2", values_to="r") |>
+    pivot_longer(cols=-all_of("Site1"), names_to="Site2", values_to="r") |>
     filter(Site1 < Site2) |>
     mutate(r = round(r, 3),
            Interpretation = case_when(
@@ -1691,10 +1725,13 @@ create_synchrony_projections_v3.2 <- function(fit, sim_data, n_sims=500,
   delta_a  <- draws$delta_adult[idx]
   pf       <- draws$prop_female[idx]
   avgf     <- draws$avg_fecundity[idx]
-  b_ond    <- draws$beta_moci_ond_fecund[idx]
-  b_amj    <- draws$beta_moci_amj_pup[idx]
+  b_ond    <- draws$beta_moci_ond_fecund[idx]     # OND → fecundity
+  b_amj    <- draws$beta_moci_amj_pup[idx]         # AMJ → pup survival
   b_jfmJ   <- draws$beta_moci_jfm_juv[idx]
   b_jfmA   <- draws$beta_moci_jfm_adult[idx]
+  # New pup MOCI parameters — may be absent in old model fits; default to 0
+  b_ond_pup <- tryCatch(draws$beta_moci_ond_pup[idx],  error=function(e) rep(0, length(idx)))
+  b_jfm_pup <- tryCatch(draws$beta_moci_jfm_pup[idx],  error=function(e) rep(0, length(idx)))
   
   se   <- sapply(1:S, function(s) draws[[paste0("site_effect[",s,"]")]][idx])
   bcoy <- sapply(1:3, function(k) draws[[paste0("beta_coy[",k,"]")]][idx])
@@ -1722,11 +1759,18 @@ create_synchrony_projections_v3.2 <- function(fit, sim_data, n_sims=500,
         sh <- if (sync) rep(rnorm(1,0,psd),S) else rnorm(S,0,psd)
         for (s in 1:S) {
           ce <- if (cidx[s]>0) bcoy[i,cidx[s]]*sc$coyote else 0
-          pp  <- plogis(pup_l[i]+se[i,s]+ce+b_ond[i]*sc$moci+b_amj[i]*sc$moci)
+          # OND MOCI → fecundity (maternal condition), NOT phi_pup
+          fecund_t <- plogis(qlogis(pmax(pmin(avgf[i],0.999),0.001)) + b_ond[i]*sc$moci)
+          # phi_pup: AMJ + new OND pup-survival + JFM first-winter terms
+          pp  <- plogis(pup_l[i]+se[i,s]+ce +
+                          b_amj[i]*sc$moci +
+                          b_ond_pup[i]*sc$moci +
+                          b_jfm_pup[i]*sc$moci)
           pj  <- plogis(qlogis(phi_juv[i])+se[i,s]*0.5+b_jfmJ[i]*sc$moci)
           paF <- plogis(phi_aF_logit[i] + se[i,s]*0.25 + b_jfmA[i]*sc$moci)
-          paM <- plogis(qlogis(plogis(phi_aF_logit[i]) - delta_a[i]) + se[i,s]*0.25 + b_jfmA[i]*sc$moci)
-          new_p <- naf[s]*avgf[i]*exp(sh[s])
+          paM <- plogis(qlogis(pmax(plogis(phi_aF_logit[i]) - delta_a[i], 0.001)) +
+                          se[i,s]*0.25 + b_jfmA[i]*sc$moci)
+          new_p <- naf[s]*fecund_t*exp(sh[s])   # fecundity now MOCI-modulated
           njF2  <- np[s]*pf[i]*pp;       njM2 <- np[s]*(1-pf[i])*pp
           jsF   <- njf[s]*pj*(2/3);      jsM  <- njm[s]*pj*(2/3)
           jaF   <- njf[s]*pj*(1/3);      jaM  <- njm[s]*pj*(1/3)
@@ -1963,8 +2007,8 @@ create_covariate_decomposition_plots_v3.2 <- function(fit, sim_data,
   
   pup_long <- contrib |>
     select(Site, Year, all_of(pup_vars)) |>
-    pivot_longer(-c(Site, Year), names_to = "Covariate", values_to = "Effect") |>
-    filter(Effect != 0) |>
+    pivot_longer(cols=-all_of(c("Site","Year")), names_to="Covariate", values_to="Effect") |>
+    filter(!is.na(Effect) & Effect != 0) |>
     mutate(Covariate = factor(Covariate, levels = pup_vars))
   
   p_pup <- ggplot(pup_long, aes(x = Year, y = Effect, fill = Covariate)) +
@@ -1981,7 +2025,7 @@ create_covariate_decomposition_plots_v3.2 <- function(fit, sim_data,
   # ── (b) Fecundity decomposition ────────────────────────────────────────────
   fec_long <- contrib |>
     select(Site, Year, `MOCI OND → fecund (t)`) |>
-    pivot_longer(-c(Site, Year), names_to = "Covariate", values_to = "Effect") |>
+    pivot_longer(cols=-all_of(c("Site","Year")), names_to="Covariate", values_to="Effect") |>
     mutate(Covariate = factor(Covariate))
   
   p_fec <- ggplot(fec_long, aes(x = Year, y = Effect, fill = Covariate)) +
@@ -1999,8 +2043,8 @@ create_covariate_decomposition_plots_v3.2 <- function(fit, sim_data,
   all_vars <- names(cov_cols)
   
   all_long <- contrib |>
-    pivot_longer(-c(Site, Year), names_to = "Covariate", values_to = "Effect") |>
-    filter(Effect != 0) |>
+    pivot_longer(cols=-all_of(c("Site","Year")), names_to="Covariate", values_to="Effect") |>
+    filter(!is.na(Effect) & Effect != 0) |>
     mutate(Covariate = factor(Covariate, levels = all_vars))
   
   p_all <- ggplot(all_long, aes(x = Year, y = Effect, fill = Covariate)) +

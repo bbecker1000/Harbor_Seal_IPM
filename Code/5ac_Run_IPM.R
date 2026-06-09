@@ -122,3 +122,29 @@ decomp <- create_covariate_decomposition_plots_v3.2(
   prefix   = "IPM_v3.2_real"
 )
 
+
+proj <- create_projection_plots_v3.2(
+  fit      = out$fit,
+  sim_data = out$sim_data,
+  prefix   = "IPM_v3.2_real"
+)
+
+
+
+
+## run it all 
+
+source("Code/harbor_seal_ipm_v3.2.R")
+source("Code/harbor_seal_ipm_v3.2_plots.R")
+
+out <- load_seal_results("IPM_v3.2_real")
+
+run_all_plots_v3.2(
+  fit      = out$fit,
+  sim_data = out$sim_data,
+  prefix   = "IPM_v3.2_real"
+)
+
+
+
+

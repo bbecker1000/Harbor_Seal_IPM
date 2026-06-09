@@ -279,16 +279,30 @@ model {
   //   Prior centered at annual ≈ 0.23 (logit = -1.2); SD = 0.5 spans 0.10-0.45
   phi_pup_logit    ~ normal(-1.2, 0.5);
 
-  // Juvenile survival (ages 1-3): beta prior updated from literature
-  //   No direct age 1-3 estimates; bounded by first-year (35-80%) and adult (71-85%)
-  //   (Bigg 1969: adult female 0.85, adult male 0.71)
-  //   Prior: beta(14,6) → mean = 0.70, SD ≈ 0.10
-  //   vs. old beta(17,3) → mean = 0.85 which was pulling posteriors too high
-  phi_juv_base     ~ beta(14, 6);    // mean = 0.70, SD ≈ 0.10
-  // Adult female survival: logit-normal prior; prevents drift to implausible values
-  // Normal(2.44, 0.25): logit(0.92)=2.44; 95% CrI on prob scale ≈ (0.87, 0.96)
-  phi_adult_F_logit ~ normal(2.44, 0.25);
-  delta_adult       ~ normal(0.05, 0.015);   // F ≈ 5% higher than M (probability scale)
+  // Juvenile survival (ages 1-3): beta prior calibrated to conspecific mark-recapture
+  //   Hastings et al. 2012 (P. v. richardii, Alaska): ages 1-3 female=0.865, male=0.782
+  //   Sex-neutral average ≈ 0.82; Hansen 2013 deterministic model also requires ~0.82
+  //   for 11%/yr decline when pup survival and fecundity are in observed range
+  //   Prior: beta(16,4) → mean = 0.80, SD ≈ 0.089; spans 0.60–0.94 at ±2SD
+  //   (vs. beta(14,6)→0.70 used previously; that was too pessimistic vs literature)
+  phi_juv_base     ~ beta(16, 4);    // mean = 0.80, SD ≈ 0.089
+  // Adult female survival: prior calibrated to PRNS-specific and conspecific estimates
+  //   Manugian 2017 (Tomales Bay, adult females): 0.90 (95% CI 0.18-0.99) — most
+  //     geographically relevant; Tomales Bay is one of our PRNS monitoring sites
+  //   Härkönen & Heide-Jørgensen 1990 (East Atlantic): annual female = 0.902
+  //   Mackey 2008, Cordes & Thompson 2014: 92-98% (other Pacific populations)
+  //   Bigg 1969 life tables: 0.85
+  //   Consensus: 0.90 best single estimate for PRNS; logit(0.90) = 2.197
+  //   Prior: normal(2.20, 0.25) → median 0.900; ±1SD spans (0.865, 0.932)
+  //   (vs. old normal(2.44,0.25)→0.920 which was slightly above PRNS evidence)
+  phi_adult_F_logit ~ normal(2.20, 0.25);
+  // delta_adult: literature is genuinely inconsistent on sex difference direction
+  //   Bigg 1969: F=0.85 vs M=0.71 → Δ≈0.14 (large female advantage)
+  //   Härkönen 1990: M=0.91 vs F=0.902 → slight male advantage
+  //   No direct PRNS-specific male-vs-female comparison available
+  //   Mean kept at 0.05 (small female advantage); SD widened to 0.025
+  //   to reflect genuine uncertainty while keeping F≥M (lower=0 bound)
+  delta_adult       ~ normal(0.05, 0.025);   // F ≈ 5% higher than M; wider SD = more uncertain
 
   // Reproduction — 2-class fecundity (collapses prior 4-class structure)
   fecund_primip ~ beta(12, 8);    // mean = 0.60; primiparous, first breeders
