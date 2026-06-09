@@ -1,9 +1,17 @@
-.Rproj.user
+# Large model output files
+*.rds
+*.RDS
+*.rda
+*.RData
+# Stan compiled models
+*.exe
+*.o
+*.hpp
+# R session
 .Rhistory
 .RData
 .Ruserdata
-
-*.png
-*.jpg
-*.jpeg
-.positai
+# Generated outputs
+Output/
+# Data files
+Data/

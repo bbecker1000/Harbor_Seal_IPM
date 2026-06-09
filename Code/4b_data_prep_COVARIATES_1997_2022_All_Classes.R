@@ -90,7 +90,7 @@ HumanDisturbance.wide <-
 #remove DR and PB and 1996
 HumanDisturbance.wide <-
   HumanDisturbance.wide %>%
-  filter(Year > 1996) %>%
+  dplyr::filter(Year > 1996) %>%
   select(-c(DR, PB))
 
 (HumanDisturbance.wide)
@@ -111,11 +111,11 @@ MOCI.dat <- MOCI %>%
   # Calculate mean of North and Central California
   mutate(mean_value = (`North California (38-42N)` + `Central California (34.5-38N)`) / 2) %>%
   # Select only needed columns
-  select(Year, Season, mean_value) %>%
+  dplyr::select(Year, Season, mean_value) %>%
   # Create a lead year for OND values
   mutate(Year = ifelse(Season == "OND", Year + 1, Year)) %>%
   # Filter to keep only JFM, AMJ, and OND
-  filter(Season %in% c("JFM", "AMJ", "OND")) %>%
+  dplyr::filter(Season %in% c("JFM", "AMJ", "OND")) %>%
   # Pivot wider to create columns for each season
   pivot_wider(
     names_from = Season,
@@ -178,8 +178,8 @@ covariates <- MOCI.dat %>%
   left_join(HumanDisturbance.wide, by = "Year") %>%
   left_join(coyote_wide, by = "Year") %>%
   left_join(eSeal_max_imm, by = "Year") %>%
-  filter(Year>1996) %>% ## seal data from 1997 - present
-  filter(Year<2026)  #some leftover 2026 data
+  dplyr::filter(Year>1996) %>% ## seal data from 1997 - present
+  dplyr::filter(Year<2026)  #some leftover 2026 data
 
 
 
@@ -202,11 +202,12 @@ rowMeans(cov_t_scaled)  # Should be ~0
 apply(cov_t_scaled, 1, sd)  # Should be ~1
 
 
+cov_t_marss[is.na(cov_t_marss)] <- 0
+
 # Scale only rows with variance
 cov_t_scaled <- cov_t_marss
 rows_to_scale <- apply(cov_t_marss, 1, sd) > 0
 cov_t_scaled[rows_to_scale, ] <- t(scale(t(cov_t_marss[rows_to_scale, ])))
-
 
 
 # dat appears ready - just confirm it's a matrix
@@ -218,6 +219,9 @@ ncol(dat_marss)    # Should match
 
 dim(dat)          # Should be 18 × 29
 dim(cov_t_marss)  # Should be 16 × 29
+
+#remove NAs and replace with 0
+cov_t_marss[is.na(cov_t_marss)] <- 0
 
 
 

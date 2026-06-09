@@ -82,6 +82,19 @@ install_pkgs <- function(pkgs, extra_repos = NULL) {
   else                    cat("  OK\n")
 }
 
+# ── Step 0: Git configuration ─────────────────────────────────────────────────
+cat("── Step 0/5: Git configuration ──────────────────────────────\n")
+
+system('git config --global credential.helper store')
+system('git config --global user.email "your@email.com"')   # ← edit
+system('git config --global user.name  "Your Name"')        # ← edit
+
+# Confirm
+cat(system('git config --global --list', intern=TRUE), sep="\n")
+cat("  Git configured\n")
+cat("  NOTE: run 'git push' once manually to cache your token\n\n")
+
+
 # ── 1. renv ───────────────────────────────────────────────────────────────────
 cat("── Step 1/5: renv ───────────────────────────────────────────\n")
 if (!pkg_ok("renv")) install.packages("renv", repos=repos, quiet=TRUE)
