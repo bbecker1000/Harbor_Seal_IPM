@@ -1,0 +1,27 @@
+{
+    "id": "8AA11EC2",
+    "path": "~/harborSeals/harbor_seal_setup.R",
+    "project_path": "harbor_seal_setup.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": true,
+    "created": 1780553020315.0,
+    "source_on_save": false,
+    "relative_order": 12,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "324,25",
+        "scrollLine": "295"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1780975179,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1780975201402,
+    "read_only": false,
+    "read_only_alternatives": []
+}

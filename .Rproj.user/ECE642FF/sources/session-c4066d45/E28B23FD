@@ -1,0 +1,28 @@
+{
+    "id": "E28B23FD",
+    "path": "~/harborSeals/Code/harbor_seal_ipm_v3.2_plots.R",
+    "project_path": "Code/harbor_seal_ipm_v3.2_plots.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1778050429921.0,
+    "source_on_save": false,
+    "relative_order": 9,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "2117,0",
+        "scrollLine": "970",
+        "disableDependencyDiscovery": "1"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1780965606,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1780965606701,
+    "read_only": false,
+    "read_only_alternatives": []
+}
