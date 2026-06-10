@@ -48,36 +48,27 @@ years <- input_data$years
 fit <- readRDS("Output/harbor_seal_IPM_v3.2_real_fit.rds")
 
 #
-## run sim
-
-library(bayesplot)
-results.sim <- run_full_analysis_v3.2(use_real_data = FALSE, #shorter runs and lower adapt delta
-                                      iter_warmup = 1000,
-                                      iter_sampling = 500,
-                                      adapt_delta = 0.95,
-                                      seed = 42)
-saveRDS(results.sim, "Output/harbor_seal_IPM_v3.2_sim_results.rds")
-
-out.sim <- load_seal_results("IPM_v3.2_sim")
-out.sim$sim_data$true_params   # should now have values
 
 
 ## run real
 
 library(bayesplot) 
-Results.real <- run_full_analysis_v3.2(
-use_real_data=TRUE, 
-dat=dat, 
-cov_t_scaled=cov_t_scaled, 
-years=years,
-seed = 123,
-iter_warmup=3000, 
-iter_sampling=1000, 
-adapt_delta=0.98,
-max_treedepth = 12,
-store_warmup    = FALSE,    # explicit — don't store warmup draws
-save_warmup     = 0,        # Stan-level: don't write warmup to CSV
-refresh         = 200)
+results.real <- run_full_analysis_v3.2(
+  use_real_data  = TRUE,
+  dat            = dat,
+  cov_t_scaled   = cov_t_scaled,
+  years          = years,
+  seed           = 123,
+  iter_warmup    = 3000,
+  iter_sampling  = 1000,
+  adapt_delta    = 0.97,
+  max_treedepth  = 12
+  # prefix         = "IPM_v3.2_real"
+)
+
+# Explicit save immediately after run completes
+results.real$fit$save_object("Output/harbor_seal_IPM_v3.2_real_fit.rds")
+cat("Saved at:", format(Sys.time()), "\n")
 
 
 saveRDS(Results.real, "Output/harbor_seal_IPM_v3.2_real_results.rds")
@@ -115,14 +106,20 @@ out <- load_seal_results("IPM_v3.2_real")
 filter <- dplyr::filter
 
 run_all_plots_v3.2(
-  fit           = out$fit,
-  sim_data      = out$sim_data,
+  fit           = results.real$fit,
+  sim_data      = results.real$data,   # note: $data not $sim_data
   prefix        = "IPM_v3.2_real",
   run_portfolio = TRUE,
   run_synchrony = TRUE
 )
 
+# Save the new fit over the old RDS
+results.real$fit$save_object("Output/harbor_seal_IPM_v3.2_real_fit.rds")
 
+# Then future sessions can use load_seal_results normally
+out <- load_seal_results("IPM_v3.2_real")
+# Verify
+out$fit$summary("phi_juv_base")[, c("variable","mean")]  # should be ~0.698
 
 
 
@@ -133,15 +130,21 @@ out.sim$sim_data$true_params
 
 
 
+## run sim
 
-results.sim <- run_full_analysis_v3.2(
-  use_real_data  = FALSE,        # generates fake data from true_params
-  iter_warmup    = 2000,
-  iter_sampling  = 2000,
-  adapt_delta    = 0.97
-)
+library(bayesplot)
+results.sim <- run_full_analysis_v3.2(use_real_data = FALSE, #shorter runs and lower adapt delta
+                                      iter_warmup = 1000,
+                                      iter_sampling = 500,
+                                      adapt_delta = 0.9, #for speed
+                                      seed = 42)
+saveRDS(results.sim, "Output/harbor_seal_IPM_v3.2_sim_results.rds")
+
+out.sim <- load_seal_results("IPM_v3.2_sim")
+out.sim$sim_data$true_params   # should now have values
 
 # ── Step 2: check recovery against known true values ─────────────────────────
+filter <- dplyr::filter
 rec <- check_parameter_recovery_v3.2(
   fit      = results.sim$fit,
   sim_data = results.sim$sim_data,   # contains true_params
@@ -161,8 +164,35 @@ run_all_plots_v3.2(
 )
 
 
+# see recovery plot: 
+
+# Access the results directly
+results.sim$recovery$table
+results.sim$recovery$plot
+results.sim$recovery$manuscript_table
+
+# View the plot
+p.sim.recovery <- results.sim$recovery$plot
+
+ggsave(paste0("Output/Plots/p.sim.recovery.jpeg"),
+       p.sim.recovery, width=30, height=15, units="cm")
 
 
+
+# Check coverage — already printed in subtitle:
+# "Overall coverage: 30/30 (100%); mean |bias|: 23.8%"
+
+
+results.sim$recovery$table |> 
+  dplyr::arrange(desc(abs(rel_bias_pct))) |>
+  dplyr::select(variable, true_value, mean, rel_bias_pct) |>
+  print(n = 30)
+
+#what drives bias?
+results.sim$recovery$table |>
+  dplyr::arrange(desc(abs(rel_bias_pct))) |>
+  dplyr::select(variable, true_value, mean, rel_bias_pct, identifiability) |>
+  print(n=30)
 
 
 
