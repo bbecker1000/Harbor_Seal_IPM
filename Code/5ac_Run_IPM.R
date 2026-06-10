@@ -58,7 +58,8 @@ results.sim <- run_full_analysis_v3.2(use_real_data = FALSE, #shorter runs and l
                                       seed = 42)
 saveRDS(results.sim, "Output/harbor_seal_IPM_v3.2_sim_results.rds")
 
-
+out.sim <- load_seal_results("IPM_v3.2_sim")
+out.sim$sim_data$true_params   # should now have values
 
 
 ## run real
@@ -106,57 +107,58 @@ cat("draws method works:", is.function(out$fit$draws), "\n")  # should be TRUE
 
 ## run it all 
 
+# ── Now run plots ─────────────────────────────────────────────────────────
 source("Code/harbor_seal_ipm_v3.2.R")
 source("Code/harbor_seal_ipm_v3.2_plots.R")
 
 out <- load_seal_results("IPM_v3.2_real")
+filter <- dplyr::filter
 
-# ── Now run plots ─────────────────────────────────────────────────────────
 run_all_plots_v3.2(
-  fit      = out$fit,
-  sim_data = out$sim_data,
-  prefix   = "IPM_v3.2_real",
+  fit           = out$fit,
+  sim_data      = out$sim_data,
+  prefix        = "IPM_v3.2_real",
   run_portfolio = TRUE,
   run_synchrony = TRUE
 )
 
 
-portfolio.real <- create_portfolio_analysis_v3.2(
-  fit      = out$fit,
-  sim_data = out$sim_data,
-  prefix   = "IPM_v3.2_real"
+
+
+
+# ── Step 1: fit model on SIMULATED data ──────────────────────────────────────
+out.sim <- load_seal_results("IPM_v3.2_sim")
+names(out.sim$sim_data)
+out.sim$sim_data$true_params
+
+
+
+
+results.sim <- run_full_analysis_v3.2(
+  use_real_data  = FALSE,        # generates fake data from true_params
+  iter_warmup    = 2000,
+  iter_sampling  = 2000,
+  adapt_delta    = 0.97
 )
 
-source("Code/harbor_seal_ipm_v3.2_plots.R", local=FALSE)
-eff.real <- create_effect_plots_v3.2(
-  fit      = out$fit,
-  #sim_data = out$sim_data,
-  prefix="IPM_v3.2_real")
-
-source("Code/harbor_seal_ipm_v3.2_plots.R", local=FALSE)
-decomp <- create_covariate_decomposition_plots_v3.2(
-  fit      = out$fit,
-  sim_data = out$sim_data,
-  prefix   = "IPM_v3.2_real"
+# ── Step 2: check recovery against known true values ─────────────────────────
+rec <- check_parameter_recovery_v3.2(
+  fit      = results.sim$fit,
+  sim_data = results.sim$sim_data,   # contains true_params
+  save     = TRUE,
+  prefix   = "IPM_v3.2_sim"
 )
 
-
-proj <- create_projection_plots_v3.2(
-  fit      = out$fit,
-  sim_data = out$sim_data,
-  prefix   = "IPM_v3.2_real"
+# ── Step 3: separately reload and plot real data results ─────────────────────
+out <- load_seal_results("IPM_v3.2_real")
+filter <- dplyr::filter
+run_all_plots_v3.2(
+  fit           = out$fit,
+  sim_data      = out$sim_data,
+  prefix        = "IPM_v3.2_real",
+  run_portfolio = TRUE,
+  run_synchrony = TRUE
 )
-
-sync_analysis <- create_synchrony_projections_v3.2(
-  fit      = out$fit,
-  sim_data = out$sim_data,
-  prefix = "IPM_v3.2_real")
-
-
-
-
-source("Code/harbor_seal_ipm_v3.2_plots.R")
-forest <- create_forest_plot_v3.2(out$fit, save=TRUE, prefix="IPM_v3.2_real")
 
 
 
@@ -171,4 +173,10 @@ forest <- create_forest_plot_v3.2(out$fit, save=TRUE, prefix="IPM_v3.2_real")
 
 # Force garbage collection twice — second pass frees memory from first
 gc(); gc()
+
+
+# Stage, commit, push — run these three lines
+system('git add -A')
+system('git commit -m "commit"')
+system('git push origin main')
 

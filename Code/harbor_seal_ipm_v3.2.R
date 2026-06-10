@@ -277,7 +277,9 @@ model {
   phi_pup_logit     ~ normal(-1.2, 0.5);
 
   // Juvenile: beta(16,4) mean=0.80, SD≈0.089; Hastings 2012 sex-neutral avg
-  phi_juv_base      ~ beta(16, 4);
+  phi_juv_base      ~ beta(14, 6); // Härkönen & Heide-Jørgensen (1990) and Reijnders (1992) 
+                                   // rather than Hastings et al. (2012), 
+                                   // citing the declining-population distinction explicitly. 
 
   // Adult female: logit-normal centred at 0.90; Manugian 2017 Tomales Bay
   phi_adult_F_logit ~ normal(2.20, 0.25);
@@ -516,40 +518,55 @@ simulate_seal_ipm_data_v3.2 <- function(T=29, S=6, T_proj=10, seed=123) {
   N_coy <- 3
   
   true_params <- list(
-    # Pup/juv: sex-neutral; adult: sex-specific
-    # True values set to literature-informed estimates matching updated priors
-    phi_pup_base      = 0.23,            # literature central: Hansen 6-mo²=0.15; Oates 6-mo²=0.23
-    phi_pup_logit     = qlogis(0.23),    # ≈ -1.27; prior Normal(-1.2, 0.5)
-    phi_juv_base      = 0.80,            # Hastings 2012 (P. v. richardii) sex-neutral ≈ 0.82; prior beta(16,4)
-    phi_adult_F_logit = qlogis(0.90),    # = 2.197; Manugian 2017 Tomales Bay; prior Normal(2.20, 0.25)
-    phi_adult_F_base  = 0.90,            # kept for simulation loop
-    phi_adult_M_base  = 0.85,            # = F_base - delta_adult
-    delta_adult       = 0.05,
+    # ── Survival ──────────────────────────────────────────────────────────────
+    phi_pup_logit     = qlogis(0.23),    # consistent with normal(-1.2, 0.5)
+    phi_juv_base      = 0.70,            # updated: beta(14,6) mean=0.70
+    phi_adult_F_logit = qlogis(0.90),    # consistent with normal(2.20, 0.25)
+    delta_adult       = 0.05,            # consistent with normal(0.05, 0.025)
     
-    # 2-class fecundity (collapses prior 4-class structure)
-    fecund_primip = 0.60,
-    fecund_mature = 0.85,
-    avg_fecundity = 0.20*0.60 + 0.80*0.85,   # = 0.80
-    prop_female   = 0.50,
+    # ── Reproduction ──────────────────────────────────────────────────────────
+    fecund_primip     = 0.60,            # consistent with beta(12,8) mean=0.60
+    fecund_mature     = 0.85,            # consistent with beta(17,3) mean=0.85
+    prop_female       = 0.50,            # consistent with beta(50,50) mean=0.50
+    p_male_breed      = 0.10,            # consistent with beta(2,18) mean=0.10
     
-    # ~10% of adult males hauled out during spring breeding survey
-    p_male_breed = 0.10,
+    # ── Detection baselines ───────────────────────────────────────────────────
+    detect_breed_logit = 1.20,           # consistent with normal(1.20, 0.50)
+    detect_molt_logit  = 0.75,           # consistent with normal(0.75, 0.50)
     
-    beta_coy        = c(-0.15, -0.40, -0.05),
-    beta_dist_surv  = c(-0.20, -0.30, -0.15, -0.10, -0.25, -0.15),
-    beta_dist_detect = c(-0.20, -0.20, -0.15, -0.10, -0.25, -0.15),
+    # ── Coyote — common prior centre ─────────────────────────────────────────
+    beta_coy = c(-0.20, -0.20, -0.20),  # consistent with normal(-0.20, 0.20)
     
-    detect_breed_logit = 1.20, detect_molt_logit = 0.75,  # plogis ≈ 0.77, 0.68
-    beta_moci_ond_fecund = -0.25,
-    beta_moci_ond_pup    = -0.20, beta_moci_jfm_pup   = -0.15,
-    beta_moci_amj_pup    = -0.15,
-    beta_moci_jfm_juv   = -0.10, beta_moci_jfm_adult = -0.08,
-    beta_moci_amj_molt  =  0.05, beta_eseal_pup      =  0.10,
+    # ── Disturbance survival — common prior centre ────────────────────────────
+    beta_dist_surv   = rep(-0.15, 6),   # consistent with normal(-0.15, 0.20)
+    beta_dist_detect = rep(-0.15, 6),   # consistent with normal(-0.15, 0.15)
     
-    sigma_process = 0.06, sigma_obs_adult = 0.12,
-    sigma_obs_pup = 0.15, sigma_obs_molt  = 0.12,
-    sigma_site    = 0.20       # matches new prior Normal(0.2, 0.1) and hard bound 0.5
+    # ── MOCI — common prior centre ────────────────────────────────────────────
+    beta_moci_ond_fecund = -0.15,       # consistent with normal(-0.15, 0.20)
+    beta_moci_ond_pup    = -0.15,       # consistent with normal(-0.15, 0.20)
+    beta_moci_amj_pup    = -0.15,       # consistent with normal(-0.15, 0.20)
+    beta_moci_jfm_pup    = -0.15,       # consistent with normal(-0.15, 0.20)
+    beta_moci_jfm_juv    = -0.15,       # consistent with normal(-0.15, 0.15)
+    beta_moci_jfm_adult  = -0.10,       # consistent with normal(-0.10, 0.12)
+    beta_moci_amj_molt   =  0.05,       # consistent with normal(0.05, 0.15)
+    
+    # ── Elephant seal ─────────────────────────────────────────────────────────
+    beta_eseal_pup = 0.10,              # consistent with normal(0.10, 0.20)
+    
+    # ── Error terms ───────────────────────────────────────────────────────────
+    sigma_process   = 0.15,             # consistent with normal(0.15, 0.08)
+    sigma_obs_adult = 0.18,             # consistent with normal(0.18, 0.06)
+    sigma_obs_pup   = 0.15,             # consistent with normal(0.15, 0.02)
+    sigma_obs_molt  = 0.35,             # consistent with normal(0.35, 0.10)
+    sigma_site      = 0.20              # consistent with normal(0.20, 0.10)
   )
+  
+  # ── Derived quantities from true_params (not stored in list) ─────────────
+  # phi_adult_M_base: derived from female survival minus sex offset
+  phi_adult_M_base <- plogis(true_params$phi_adult_F_logit) - true_params$delta_adult
+  # avg_fecundity: weighted average of primiparous and mature rates
+  avg_fecundity    <- 0.20 * true_params$fecund_primip + 0.80 * true_params$fecund_mature
+  # = 0.20 * 0.60 + 0.80 * 0.85 = 0.80
   
   coyote_idx <- c(1,2,3,0,0,0)
   has_eseal  <- c(0,1,0,1,0,0)
@@ -571,37 +588,43 @@ simulate_seal_ipm_data_v3.2 <- function(T=29, S=6, T_proj=10, seed=123) {
                  rep( 0.6, T - T_inflect - 2))
   moci_base <- moci_mean + as.vector(arima.sim(list(ar=0.45), n=T)) * 0.7
   moci_jfm  <- as.vector(scale(moci_base))
-  moci_amj  <- as.vector(scale(moci_base * 0.85 + as.vector(arima.sim(list(ar=0.3),n=T))*0.4))
-  moci_ond  <- as.vector(scale(moci_base * 0.75 + as.vector(arima.sim(list(ar=0.3),n=T))*0.5))
+  moci_amj  <- as.vector(scale(moci_base * 0.85 +
+                                 as.vector(arima.sim(list(ar=0.3), n=T)) * 0.4))
+  moci_ond  <- as.vector(scale(moci_base * 0.75 +
+                                 as.vector(arima.sim(list(ar=0.3), n=T)) * 0.5))
   
   # ── Coyote: low and flat Phase 1, increasing trend Phase 2 ───────────────
   coyote_trend <- c(rep(0, T_inflect),
                     seq(0, 1.2, length.out = T - T_inflect))
   coyote <- matrix(0, S, T)
-  coyote[1,] <- as.vector(scale(coyote_trend       + as.vector(arima.sim(list(ar=0.4),n=T))*0.35))
-  coyote[2,] <- as.vector(scale(coyote_trend * 1.3 + as.vector(arima.sim(list(ar=0.4),n=T))*0.35))
-  coyote[3,] <- as.vector(scale(coyote_trend * 0.5 + as.vector(arima.sim(list(ar=0.4),n=T))*0.35))
+  coyote[1,] <- as.vector(scale(coyote_trend +
+                                  as.vector(arima.sim(list(ar=0.4), n=T)) * 0.35))
+  coyote[2,] <- as.vector(scale(coyote_trend * 1.3 +
+                                  as.vector(arima.sim(list(ar=0.4), n=T)) * 0.35))
+  coyote[3,] <- as.vector(scale(coyote_trend * 0.5 +
+                                  as.vector(arima.sim(list(ar=0.4), n=T)) * 0.35))
   
   # ── Disturbance: moderate random variation with slight upward trend ───────
-  dist_trend <- seq(0, 0.4, length.out = T)
+  dist_trend  <- seq(0, 0.4, length.out = T)
   disturbance <- matrix(0, S, T)
   for (s in 1:S)
-    disturbance[s,] <- as.vector(scale(dist_trend + as.vector(arima.sim(list(ar=0.3),n=T))*0.6))
+    disturbance[s,] <- as.vector(scale(dist_trend +
+                                         as.vector(arima.sim(list(ar=0.3), n=T)) * 0.6))
   
   # ── Elephant seals: gradual increase at DE and PRH ────────────────────────
-  elephant_seal <- matrix(0,S,T)
-  elephant_seal[2,] <- as.vector(scale(seq(0,3,length.out=T)+rnorm(T,0,0.5)))
-  elephant_seal[4,] <- as.vector(scale(seq(0,4,length.out=T)+rnorm(T,0,0.5)))
+  elephant_seal    <- matrix(0, S, T)
+  elephant_seal[2,] <- as.vector(scale(seq(0, 3, length.out=T) + rnorm(T, 0, 0.5)))
+  elephant_seal[4,] <- as.vector(scale(seq(0, 4, length.out=T) + rnorm(T, 0, 0.5)))
   
   site_effect <- rnorm(S, 0, true_params$sigma_site)
   
-  # State arrays
-  N_adult_F <- N_adult_M <- matrix(NA,S,T)
-  N_juv_F   <- N_juv_M   <- matrix(NA,S,T)
-  N_pup     <-              matrix(NA,S,T)
-  phi_pup   <- phi_juv   <- matrix(NA,S,T)
-  phi_adult_F <- phi_adult_M <- matrix(NA,S,T)
-  detect_breed <- detect_molt <- matrix(NA,S,T)
+  # ── State arrays ──────────────────────────────────────────────────────────
+  N_adult_F <- N_adult_M <- matrix(NA, S, T)
+  N_juv_F   <- N_juv_M   <- matrix(NA, S, T)
+  N_pup                  <- matrix(NA, S, T)
+  phi_pup   <- phi_juv   <- matrix(NA, S, T)
+  phi_adult_F <- phi_adult_M <- matrix(NA, S, T)
+  detect_breed <- detect_molt <- matrix(NA, S, T)
   
   # ── Initial populations: moderate 1997 values, room to grow in Phase 1 ───
   N_adult_F[,1] <- c(120, 90, 45, 65, 75, 28)
@@ -614,50 +637,67 @@ simulate_seal_ipm_data_v3.2 <- function(T=29, S=6, T_proj=10, seed=123) {
     for (t in 1:T) {
       # Covariates acting during pup birth year (t-1); use t for t=1 (harmless)
       t_birth <- if (t > 1) t - 1 else 1
-      ce  <- if (coyote_idx[s]>0) true_params$beta_coy[coyote_idx[s]]*coyote[s,t_birth] else 0
-      dse <- true_params$beta_dist_surv[s]   * disturbance[s,t_birth]
-      dde <- true_params$beta_dist_detect[s] * disturbance[s,t]   # detection at counting year
       
-      # Pup survival: birth-year covariates at t_birth, MOCI OND + JFM at t
-      phi_pup[s,t] <- plogis(true_params$phi_pup_logit + site_effect[s] + ce +
-                               true_params$beta_moci_amj_pup*moci_amj[t_birth] +
-                               true_params$beta_moci_ond_pup*moci_ond[t] +
-                               true_params$beta_moci_jfm_pup*moci_jfm[t] +
-                               has_eseal[s]*true_params$beta_eseal_pup*elephant_seal[s,t_birth] + dse)
+      ce  <- if (coyote_idx[s] > 0)
+        true_params$beta_coy[coyote_idx[s]] * coyote[s, t_birth]
+      else 0
+      dse <- true_params$beta_dist_surv[s]   * disturbance[s, t_birth]
+      dde <- true_params$beta_dist_detect[s] * disturbance[s, t]
+      
+      # Pup survival: birth-year covariates at t_birth; MOCI OND + JFM at t
+      phi_pup[s,t] <- plogis(
+        true_params$phi_pup_logit + site_effect[s] + ce +
+          true_params$beta_moci_amj_pup * moci_amj[t_birth] +
+          true_params$beta_moci_ond_pup * moci_ond[t]       +
+          true_params$beta_moci_jfm_pup * moci_jfm[t]       +
+          has_eseal[s] * true_params$beta_eseal_pup * elephant_seal[s, t_birth] + dse)
       
       # Juvenile survival: sex-neutral
-      phi_juv[s,t] <- plogis(qlogis(true_params$phi_juv_base) + site_effect[s]*0.5 +
-                               true_params$beta_moci_jfm_juv*moci_jfm[t])
+      phi_juv[s,t] <- plogis(
+        qlogis(true_params$phi_juv_base) + site_effect[s] * 0.5 +
+          true_params$beta_moci_jfm_juv * moci_jfm[t])
       
       # Adult survival: sex-specific
-      phi_adult_F[s,t] <- plogis(qlogis(true_params$phi_adult_F_base) + site_effect[s]*0.25 +
-                                   true_params$beta_moci_jfm_adult*moci_jfm[t])
-      phi_adult_M[s,t] <- plogis(qlogis(true_params$phi_adult_M_base) + site_effect[s]*0.25 +
-                                   true_params$beta_moci_jfm_adult*moci_jfm[t])
+      phi_adult_F[s,t] <- plogis(
+        true_params$phi_adult_F_logit + site_effect[s] * 0.25 +
+          true_params$beta_moci_jfm_adult * moci_jfm[t])
       
+      phi_adult_M[s,t] <- plogis(
+        qlogis(phi_adult_M_base) + site_effect[s] * 0.25 +
+          true_params$beta_moci_jfm_adult * moci_jfm[t])
+      
+      # Detection
       detect_breed[s,t] <- plogis(true_params$detect_breed_logit + dde)
-      detect_molt[s,t]  <- plogis(true_params$detect_molt_logit  + dde +
-                                    true_params$beta_moci_amj_molt*moci_amj[t])
+      detect_molt[s,t]  <- plogis(
+        true_params$detect_molt_logit + dde +
+          true_params$beta_moci_amj_molt * moci_amj[t])
       
       if (t > 1) {
         # Fecundity modulated by fall MOCI (maternal energy at conception)
-        fecund_t <- plogis(qlogis(true_params$avg_fecundity) +
-                             true_params$beta_moci_ond_fecund * moci_ond[t])
-        ep  <- N_adult_F[s,t-1] * fecund_t
-        njF <- N_pup[s,t-1] * true_params$prop_female       * phi_pup[s,t]
-        njM <- N_pup[s,t-1] * (1-true_params$prop_female)   * phi_pup[s,t]
-        jsF <- N_juv_F[s,t-1] * phi_juv[s,t] * (2/3)
-        jsM <- N_juv_M[s,t-1] * phi_juv[s,t] * (2/3)
-        jaF <- N_juv_F[s,t-1] * phi_juv[s,t] * (1/3)
-        jaM <- N_juv_M[s,t-1] * phi_juv[s,t] * (1/3)
+        fecund_t <- plogis(
+          qlogis(avg_fecundity) +
+            true_params$beta_moci_ond_fecund * moci_ond[t])
         
-        N_pup[s,t]     <- exp(rnorm(1,log(max(ep,1)),          true_params$sigma_process))
-        N_juv_F[s,t]   <- exp(rnorm(1,log(max(njF+jsF,0.1)),   true_params$sigma_process*0.5))
-        N_juv_M[s,t]   <- exp(rnorm(1,log(max(njM+jsM,0.1)),   true_params$sigma_process*0.5))
-        N_adult_F[s,t] <- exp(rnorm(1,log(max(N_adult_F[s,t-1]*phi_adult_F[s,t]+jaF,1)),
-                                    true_params$sigma_process*0.5))
-        N_adult_M[s,t] <- exp(rnorm(1,log(max(N_adult_M[s,t-1]*phi_adult_M[s,t]+jaM,1)),
-                                    true_params$sigma_process*0.5))
+        ep  <- N_adult_F[s, t-1] * fecund_t
+        njF <- N_pup[s, t-1] * true_params$prop_female     * phi_pup[s, t]
+        njM <- N_pup[s, t-1] * (1 - true_params$prop_female) * phi_pup[s, t]
+        jsF <- N_juv_F[s, t-1] * phi_juv[s, t] * (2/3)
+        jsM <- N_juv_M[s, t-1] * phi_juv[s, t] * (2/3)
+        jaF <- N_juv_F[s, t-1] * phi_juv[s, t] * (1/3)
+        jaM <- N_juv_M[s, t-1] * phi_juv[s, t] * (1/3)
+        
+        N_pup[s,t]     <- exp(rnorm(1, log(max(ep,         1.0)),
+                                    true_params$sigma_process))
+        N_juv_F[s,t]   <- exp(rnorm(1, log(max(njF + jsF,  0.1)),
+                                    true_params$sigma_process * 0.5))
+        N_juv_M[s,t]   <- exp(rnorm(1, log(max(njM + jsM,  0.1)),
+                                    true_params$sigma_process * 0.5))
+        N_adult_F[s,t] <- exp(rnorm(1,
+                                    log(max(N_adult_F[s,t-1] * phi_adult_F[s,t] + jaF, 1)),
+                                    true_params$sigma_process * 0.5))
+        N_adult_M[s,t] <- exp(rnorm(1,
+                                    log(max(N_adult_M[s,t-1] * phi_adult_M[s,t] + jaM, 1)),
+                                    true_params$sigma_process * 0.5))
       }
     }
   }
@@ -666,53 +706,75 @@ simulate_seal_ipm_data_v3.2 <- function(T=29, S=6, T_proj=10, seed=123) {
   N_juv_total   <- N_juv_F   + N_juv_M
   N_molt_true   <- N_juv_total + N_adult_total
   
-  y_adult <- y_pup <- y_molt <- matrix(NA,S,T)
-  for (s in 1:S) for (t in 1:T) {
-    N_adult_obs  <- N_adult_F[s,t] + N_adult_M[s,t] * true_params$p_male_breed
-    y_adult[s,t] <- log(N_adult_obs  * detect_breed[s,t]) + rnorm(1,0,true_params$sigma_obs_adult)
-    y_pup[s,t]   <- log(N_pup[s,t]  * detect_breed[s,t]) + rnorm(1,0,true_params$sigma_obs_pup)
-    y_molt[s,t]  <- log(N_molt_true[s,t]*detect_molt[s,t])+ rnorm(1,0,true_params$sigma_obs_molt)
+  # ── Observation model ─────────────────────────────────────────────────────
+  y_adult <- y_pup <- y_molt <- matrix(NA, S, T)
+  for (s in 1:S) {
+    for (t in 1:T) {
+      N_adult_obs  <- N_adult_F[s,t] + N_adult_M[s,t] * true_params$p_male_breed
+      y_adult[s,t] <- log(N_adult_obs       * detect_breed[s,t]) +
+        rnorm(1, 0, true_params$sigma_obs_adult)
+      y_pup[s,t]   <- log(N_pup[s,t]        * detect_breed[s,t]) +
+        rnorm(1, 0, true_params$sigma_obs_pup)
+      y_molt[s,t]  <- log(N_molt_true[s,t]  * detect_molt[s,t])  +
+        rnorm(1, 0, true_params$sigma_obs_molt)
+    }
   }
   
-  n_obs <- S*T
-  y_adult[sample(1:n_obs, round(0.05*n_obs))] <- NA
-  y_pup[sample(1:n_obs,   round(0.05*n_obs))] <- NA
-  y_molt[sample(1:n_obs,  round(0.05*n_obs))] <- NA
+  # ── Randomly remove ~5% of observations (missing data) ───────────────────
+  n_obs <- S * T
+  y_adult[sample(1:n_obs, round(0.05 * n_obs))] <- NA
+  y_pup[  sample(1:n_obs, round(0.05 * n_obs))] <- NA
+  y_molt[ sample(1:n_obs, round(0.05 * n_obs))] <- NA
   
-  y_adult_obs <- ifelse(is.na(y_adult),0L,1L)
-  y_pup_obs   <- ifelse(is.na(y_pup),  0L,1L)
-  y_molt_obs  <- ifelse(is.na(y_molt), 0L,1L)
+  y_adult_obs <- ifelse(is.na(y_adult), 0L, 1L)
+  y_pup_obs   <- ifelse(is.na(y_pup),   0L, 1L)
+  y_molt_obs  <- ifelse(is.na(y_molt),  0L, 1L)
   y_adult[is.na(y_adult)] <- 0
-  y_pup[is.na(y_pup)]     <- 0
-  y_molt[is.na(y_molt)]   <- 0
+  y_pup[  is.na(y_pup)]   <- 0
+  y_molt[ is.na(y_molt)]  <- 0
   
+  # ── Projection scenario arrays ────────────────────────────────────────────
   N_scenarios    <- 4
-  moci_proj      <- matrix(c(0,1,-1,1), N_scenarios, T_proj)
-  coyote_proj    <- matrix(c(0,0, 0,1), N_scenarios, T_proj)
-  scenario_names <- c("Status Quo","Warm (MOCI +1)","Cool (MOCI -1)","Warm + High Coyote")
+  moci_proj      <- matrix(c( 0, 1, -1, 1), N_scenarios, T_proj)
+  coyote_proj    <- matrix(c( 0, 0,  0, 1), N_scenarios, T_proj)
+  scenario_names <- c("Status Quo", "Warm (MOCI +1)",
+                      "Cool (MOCI -1)", "Warm + High Coyote")
   
   stan_data <- list(
-    T=T, S=S, N_coy=N_coy,
-    y_adult=y_adult, y_pup=y_pup, y_molt=y_molt,
-    y_adult_obs=y_adult_obs, y_pup_obs=y_pup_obs, y_molt_obs=y_molt_obs,
-    coyote=coyote, disturbance=disturbance, elephant_seal=elephant_seal,
-    moci_jfm=as.vector(moci_jfm), moci_amj=as.vector(moci_amj),
-    moci_ond=as.vector(moci_ond),
-    coyote_idx=coyote_idx, has_eseal=has_eseal,
-    T_proj=T_proj, N_scenarios=N_scenarios,
-    moci_proj=moci_proj, coyote_proj=coyote_proj
+    T = T, S = S, N_coy = N_coy,
+    y_adult     = y_adult,     y_pup     = y_pup,     y_molt     = y_molt,
+    y_adult_obs = y_adult_obs, y_pup_obs = y_pup_obs, y_molt_obs = y_molt_obs,
+    coyote      = coyote,      disturbance = disturbance,
+    elephant_seal = elephant_seal,
+    moci_jfm    = as.vector(moci_jfm),
+    moci_amj    = as.vector(moci_amj),
+    moci_ond    = as.vector(moci_ond),
+    coyote_idx  = coyote_idx,
+    has_eseal   = has_eseal,
+    T_proj      = T_proj,
+    N_scenarios = N_scenarios,
+    moci_proj   = moci_proj,
+    coyote_proj = coyote_proj
   )
   
-  list(stan_data=stan_data, true_params=true_params,
-       true_states=list(N_adult_F=N_adult_F, N_adult_M=N_adult_M,
-                        N_juv_F=N_juv_F, N_juv_M=N_juv_M, N_pup=N_pup,
-                        N_adult_total=N_adult_total, N_molt_true=N_molt_true,
-                        phi_pup=phi_pup, phi_juv=phi_juv,
-                        phi_adult_F=phi_adult_F, phi_adult_M=phi_adult_M,
-                        detect_breed=detect_breed, detect_molt=detect_molt),
-       site_names=site_names, years=1997:(1997+T-1), scenario_names=scenario_names)
+  list(
+    stan_data   = stan_data,
+    true_params = true_params,
+    true_states = list(
+      N_adult_F     = N_adult_F,   N_adult_M   = N_adult_M,
+      N_juv_F       = N_juv_F,     N_juv_M     = N_juv_M,
+      N_pup         = N_pup,
+      N_adult_total = N_adult_total,
+      N_molt_true   = N_molt_true,
+      phi_pup       = phi_pup,     phi_juv     = phi_juv,
+      phi_adult_F   = phi_adult_F, phi_adult_M = phi_adult_M,
+      detect_breed  = detect_breed, detect_molt = detect_molt
+    ),
+    site_names     = site_names,
+    years          = 1997:(1997 + T - 1),
+    scenario_names = scenario_names
+  )
 }
-
 
 # ============================================================================
 # PART 3: PREPARE REAL DATA
@@ -850,7 +912,10 @@ run_full_analysis_v3.2 <- function(use_real_data  = FALSE,
   fit$save_object(paste0("Output/harbor_seal_", prefix, "_fit.rds"))
   
   # Save sim_data alongside fit so plots can be rerun without re-sampling
-  saveRDS(sim_data, paste0("Output/harbor_seal_", prefix, "_input_data.rds"))
+  saveRDS(list(stan_data   = stan_data,
+               years       = years,
+               true_params = if (use_real_data) NULL else true_params),
+          paste0("Output/harbor_seal_", prefix, "_input_data.rds"))
   cat(sprintf("Input data saved: Output/harbor_seal_%s_input_data.rds\n", prefix))
   
   # Run all plots and tables via companion script orchestrator

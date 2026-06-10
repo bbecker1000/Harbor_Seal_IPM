@@ -525,15 +525,17 @@ check_parameter_recovery_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IPM_
   tp <- sim_data$true_params
   
   true_vals <- tibble(
-    parameter  = c(
+    parameter = c(
       "phi_pup_logit","phi_juv_base","phi_adult_F_logit","delta_adult",
       "fecund_primip","fecund_mature",
       "prop_female","p_male_breed",
       "beta_coy[1]","beta_coy[2]","beta_coy[3]",
       "beta_dist_surv[1]","beta_dist_surv[2]","beta_dist_surv[3]",
       "beta_dist_surv[4]","beta_dist_surv[5]","beta_dist_surv[6]",
-      "beta_moci_ond_fecund","beta_moci_amj_pup","beta_moci_jfm_juv",
+      "beta_moci_ond_fecund","beta_moci_ond_pup","beta_moci_jfm_pup",
+      "beta_moci_amj_pup","beta_moci_jfm_juv",
       "beta_moci_jfm_adult","beta_eseal_pup",
+      "detect_breed_logit","detect_molt_logit",
       "sigma_process","sigma_obs_adult","sigma_obs_pup","sigma_obs_molt"
     ),
     true_value = c(
@@ -543,33 +545,86 @@ check_parameter_recovery_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IPM_
       tp$beta_coy[1], tp$beta_coy[2], tp$beta_coy[3],
       tp$beta_dist_surv[1], tp$beta_dist_surv[2], tp$beta_dist_surv[3],
       tp$beta_dist_surv[4], tp$beta_dist_surv[5], tp$beta_dist_surv[6],
-      tp$beta_moci_ond_fecund, tp$beta_moci_amj_pup, tp$beta_moci_jfm_juv,
+      tp$beta_moci_ond_fecund, tp$beta_moci_ond_pup, tp$beta_moci_jfm_pup,
+      tp$beta_moci_amj_pup, tp$beta_moci_jfm_juv,
       tp$beta_moci_jfm_adult, tp$beta_eseal_pup,
+      tp$detect_breed_logit, tp$detect_molt_logit,
       tp$sigma_process, tp$sigma_obs_adult, tp$sigma_obs_pup, tp$sigma_obs_molt
     )
   )
   
   rec <- seal_fit_summary(fit, true_vals$parameter) |>
     left_join(true_vals, by=c("variable"="parameter")) |>
-    mutate(recovered    = true_value>=q_lo & true_value<=q_hi,
-           rel_bias_pct = (mean-true_value)/abs(true_value)*100)
+    mutate(recovered    = true_value >= q_lo & true_value <= q_hi,
+           rel_bias_pct = (mean - true_value) / abs(true_value) * 100)
   
-  cat("Recovery rate:", sum(rec$recovered),"/",nrow(rec),
-      sprintf("(%.1f%%)\n", 100*mean(rec$recovered)))
-  print(rec |> select(variable,true_value,mean,q_lo,q_hi,recovered,rel_bias_pct) |>
-          mutate(across(where(is.numeric),~round(.x,3))))
+  cat("Recovery rate:", sum(rec$recovered), "/", nrow(rec),
+      sprintf("(%.1f%%)\n", 100 * mean(rec$recovered)))
+  print(rec |> select(variable, true_value, mean, q_lo, q_hi, recovered, rel_bias_pct) |>
+          mutate(across(where(is.numeric), ~round(.x, 3))), n=nrow(rec))
   
-  p <- ggplot(rec, aes(x=true_value,y=mean)) +
-    geom_abline(slope=1,intercept=0,linetype=2,color="gray50") +
-    geom_pointrange(aes(ymin=q_lo,ymax=q_hi,color=recovered),size=0.8) +
-    geom_text(aes(label=variable),hjust=-0.1,vjust=-0.3,size=2.5,check_overlap=TRUE) +
-    scale_color_manual(values=c("TRUE"=SEAL_COLS$pop,"FALSE"=SEAL_COLS$adult_f)) +
-    labs(x="True Value",y=paste0("Estimated (", CI_LABEL, ")"),title="Parameter Recovery: IPM v3.2") +
-    theme_seal() + coord_equal()
-  if (save) ggsave(paste0("Output/Plots/",prefix,"_parameter_recovery.jpeg"),
-                   p, width=25, height=22, units="cm")
+  # ── Identifiability categories ─────────────────────────────────────────────
+  rec <- rec |>
+    mutate(
+      identifiability = case_when(
+        variable %in% c("phi_adult_F_logit","fecund_mature",
+                        "beta_moci_ond_fecund","detect_breed_logit",
+                        "sigma_obs_adult") ~ "Well identified",
+        variable %in% c("phi_juv_base","beta_coy[1]","beta_coy[2]","beta_coy[3]",
+                        "beta_moci_jfm_adult","detect_molt_logit",
+                        "sigma_process","sigma_obs_molt") ~ "Moderately identified",
+        TRUE ~ "Prior dominated"
+      ),
+      identifiability = factor(identifiability,
+                               levels = c("Well identified",
+                                          "Moderately identified",
+                                          "Prior dominated"))
+    )
   
-  list(table=rec, plot=p)
+  # ── Recovery plot with identifiability ────────────────────────────────────
+  p <- ggplot(rec, aes(x=true_value, y=mean)) +
+    geom_abline(slope=1, intercept=0, linetype=2, color="gray50") +
+    geom_pointrange(aes(ymin=q_lo, ymax=q_hi,
+                        color=recovered, shape=identifiability),
+                    size=0.8) +
+    geom_text(aes(label=variable), hjust=-0.1, vjust=-0.3,
+              size=2.5, check_overlap=TRUE) +
+    scale_color_manual(values=c("TRUE"=SEAL_COLS$pop, "FALSE"=SEAL_COLS$adult_f),
+                       name="True value in 89% CrI") +
+    scale_shape_manual(values=c("Well identified"=16,
+                                "Moderately identified"=17,
+                                "Prior dominated"=1),
+                       name="Identifiability") +
+    facet_wrap(~identifiability, scales="free") +
+    labs(x="True Value", y=paste0("Posterior Mean (", CI_LABEL, ")"),
+         title="Parameter Recovery: IPM v3.2",
+         subtitle=sprintf("Overall coverage: %d/%d (%.0f%%); mean |bias|: %.1f%%",
+                          sum(rec$recovered), nrow(rec),
+                          100*mean(rec$recovered),
+                          mean(abs(rec$rel_bias_pct), na.rm=TRUE))) +
+    theme_seal()
+  
+  if (save) ggsave(paste0("Output/Plots/", prefix, "_parameter_recovery.jpeg"),
+                   p, width=30, height=22, units="cm")
+  
+  # ── Manuscript recovery table ──────────────────────────────────────────────
+  rec_tbl <- rec |>
+    mutate(
+      CrI       = sprintf("(%.3f, %.3f)", q_lo, q_hi),
+      Bias      = sprintf("%.1f%%", rel_bias_pct),
+      Recovered = ifelse(recovered, "Yes", "No")
+    ) |>
+    select(variable, true_value, mean, CrI, Bias, Recovered, identifiability) |>
+    arrange(identifiability, variable)
+  
+  cat("\n── Parameter Recovery Summary ───────────────────────────\n")
+  print(rec_tbl, n=nrow(rec_tbl))
+  
+  if (save) write_csv(rec_tbl,
+                      paste0("Output/", prefix, "_parameter_recovery_table.csv"))
+  
+  # ── Return all outputs ─────────────────────────────────────────────────────
+  list(table=rec, plot=p, manuscript_table=rec_tbl)
 }
 
 

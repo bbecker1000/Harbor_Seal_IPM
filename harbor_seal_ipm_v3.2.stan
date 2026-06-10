@@ -226,7 +226,9 @@ model {
   phi_pup_logit     ~ normal(-1.2, 0.5);
 
   // Juvenile: beta(16,4) mean=0.80, SD≈0.089; Hastings 2012 sex-neutral avg
-  phi_juv_base      ~ beta(16, 4);
+  phi_juv_base      ~ beta(14, 6); // Härkönen & Heide-Jørgensen (1990) and Reijnders (1992) 
+                                   // rather than Hastings et al. (2012), 
+                                   // citing the declining-population distinction explicitly. 
 
   // Adult female: logit-normal centred at 0.90; Manugian 2017 Tomales Bay
   phi_adult_F_logit ~ normal(2.20, 0.25);
