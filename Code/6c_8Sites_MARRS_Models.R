@@ -29,8 +29,8 @@
 library(MARSS)
 
 # ── Verify source data are loaded ─────────────────────────────────────────────
-stopifnot(exists("dat_8site"),          "Run 4a_data_prep_8sites_MARSS.R first")
-stopifnot(exists("cov_t_scaled_8site"), "Run 4b_covariates_8sites_MARSS.R first")
+if (!exists("dat_8site"))          stop("Run 4a_data_prep_8sites_MARSS.R first")
+if (!exists("cov_t_scaled_8site")) stop("Run 4b_covariates_8sites_MARSS.R first")
 
 cov <- cov_t_scaled_8site   # shorthand
 cat("Data:      ", nrow(dat_8site), "×", ncol(dat_8site), "\n")
@@ -232,3 +232,4 @@ save(CIs_8site, file = "Output/CIs_8site.RData")
 print(CIs_8site)
 
 write.csv(df_aic_8site, "Output/model_comparison_8site_AIC.csv", row.names = FALSE)
+
