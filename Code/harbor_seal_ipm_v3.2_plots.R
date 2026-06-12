@@ -805,7 +805,7 @@ create_site_age_timeseries_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IP
     geom_ribbon(aes(ymin=lo,ymax=hi),alpha=0.15,color=NA) +
     geom_line(linewidth=1) + facet_wrap(~Age_Class,scales="free_y",ncol=1) +
     scale_y_continuous(
-      limits = c(0, ceiling(max(all_sum$hi, na.rm=TRUE) / 500) * 500),
+      limits = c(0, NA),
       labels = scales::comma,
       expand = c(0, 0)
     ) +
@@ -857,7 +857,7 @@ create_site_panels_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IPM_v3.2")
   p <- ggplot(all_df, aes(x=Year, y=mean, colour=Age_Class, fill=Age_Class)) +
     geom_ribbon(aes(ymin=lo, ymax=hi), alpha=0.15, colour=NA) +
     geom_line(linewidth=0.9) +
-    facet_grid(Site ~ Age_Class, scales="free_y") +
+    facet_grid(Site ~ ., scales="free_y") +
     scale_colour_manual(values=age_cols, guide="none") +
     scale_fill_manual(  values=age_cols, guide="none") +
     labs(x="Year", y="Population Size",

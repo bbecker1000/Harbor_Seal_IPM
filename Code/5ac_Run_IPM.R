@@ -119,6 +119,22 @@ out$fit$summary("phi_juv_base")[, c("variable","mean")]  # should be ~0.698
 
 
 
+
+out <- load_seal_results("IPM_v3.2_real")
+
+sa <- create_site_age_timeseries_v3.2(out$fit, out$sim_data, save=TRUE, prefix="IPM_v3.2_real")
+
+sa$by_age   # view the plot in RStudio's plot pane
+
+
+
+
+
+
+
+
+
+
 # ── Step 1: fit model on SIMULATED data ──────────────────────────────────────
 out.sim <- load_seal_results("IPM_v3.2_sim")
 names(out.sim$sim_data)
