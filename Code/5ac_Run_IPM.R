@@ -1,13 +1,7 @@
 ##2026-06-08 startup process
 
-
-# 1. ONLY FOR NEW CONTAINERS   If packages missing after container restart:
-source("restore_packages.R")   # restores + restarts automatically
-
-
-# everytime
-source("harbor_seal_setup.R")  # sets up git, CmdStan, .Rprofile
-
+# 1
+source("restore_packages.R")   # installs packages + restarts R automatically
 # 2. After restart, normal workflow:
 source("00_load.R")
 source("Code/harbor_seal_ipm_v3.2.R")
@@ -16,7 +10,7 @@ out <- load_seal_results("IPM_v3.2_real")
 filter <- dplyr::filter   # prevent stats::filter masking
 
 
-source("restore_packages.R")   # installs packages + restarts R automatically
+
 # after restart:
 # 
 # #only if cmdstan missing
@@ -24,8 +18,6 @@ source("restore_packages.R")   # installs packages + restarts R automatically
 # # then normal startup above
 
 
-# LOAD (after restart)
-invisible(lapply(readRDS("session_packages.rds"), library, character.only = TRUE))
 
 # if just running post_model analyses/plots
 Results.real <- readRDS("Output/harbor_seal_IPM_v3.2_real_fit.rds")
@@ -102,12 +94,16 @@ cat("draws method works:", is.function(out$fit$draws), "\n")  # should be TRUE
 source("Code/harbor_seal_ipm_v3.2.R")
 source("Code/harbor_seal_ipm_v3.2_plots.R")
 
-out <- load_seal_results("IPM_v3.2_real")
+results.real <- out <- load_seal_results("IPM_v3.2_real")
+
+out <- load_seal_results('IPM_v3.2_real')
+run_all_plots_v3.2(out$fit, out$sim_data, prefix='IPM_v3.2_real')
+
 filter <- dplyr::filter
 
 run_all_plots_v3.2(
-  fit           = results.real$fit,
-  sim_data      = results.real$data,   # note: $data not $sim_data
+  fit           = out$fit,
+  sim_data      = out$data,   # note: $data not $sim_data
   prefix        = "IPM_v3.2_real",
   run_portfolio = TRUE,
   run_synchrony = TRUE
@@ -193,6 +189,10 @@ results.sim$recovery$table |>
   dplyr::arrange(desc(abs(rel_bias_pct))) |>
   dplyr::select(variable, true_value, mean, rel_bias_pct, identifiability) |>
   print(n=30)
+
+
+
+
 
 
 
