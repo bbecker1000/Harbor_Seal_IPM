@@ -1,32 +1,32 @@
-Category,Parameter,Estimate,rhat,ess_bulk
-Survival,"Pup survival, logit scale (sex-neutral)","-1.272 (-1.946, -0.612)",0.9994955748899674,3101.3980967323937
-Survival,Juvenile survival (sex-neutral),"0.697 (0.539, 0.840)",1.0013034842183406,2722.2185040450336
-Survival,Adult female survival (logit scale),"2.908 (2.643, 3.182)",1.0003296002781126,3365.637957548419
-Survival,"Adult female survival (probability scale, derived)","0.948 (0.934, 0.960)",1.0002903807952037,3365.6319751996994
-Survival,Adult M-F survival difference,"0.018 (0.003, 0.034)",1.001356985656084,2007.4840342592433
-Reproduction,Fecundity: primiparous (4-5 yr),"0.498 (0.335, 0.670)",1.0001801883176094,3623.420333706552
-Reproduction,"Fecundity: mature (6+ yr, experienced breeders)","0.435 (0.380, 0.490)",0.9995261970494654,2392.6507969433746
-Reproduction,Proportion female at birth,"0.533 (0.465, 0.589)",1.0014492664450663,4753.423637830518
-Reproduction,Average fecundity (weighted),"0.447 (0.420, 0.478)",1.000211570431875,2251.401636007552
-Observation / Derived,Male haul-out fraction (breeding season),"0.059 (0.023, 0.100)",1.0012844069356304,2357.8299325514345
-Coyote (site-specific),Coyote → pup survival (BL),"-0.225 (-0.535, 0.088)",0.9999953490242625,6256.787658296905
-Coyote (site-specific),Coyote → pup survival (DE),"-0.310 (-0.610, -0.001)",1.0017351589873302,6238.661422211873
-Coyote (site-specific),Coyote → pup survival (DP),"-0.387 (-0.683, -0.097)",1.0005180531045095,6278.83446217875
-Disturbance (site-specific),Disturbance → pup survival (BL),"-0.141 (-0.455, 0.176)",1.0008257118695467,5974.400663795105
-Disturbance (site-specific),Disturbance → pup survival (DE),"-0.056 (-0.372, 0.264)",1.0008099441175795,4961.556944820813
-Disturbance (site-specific),Disturbance → pup survival (DP),"-0.085 (-0.393, 0.221)",1.0003392228409576,5571.1739034012835
-Disturbance (site-specific),Disturbance → pup survival (PRH),"-0.162 (-0.479, 0.149)",0.9998667323998399,6835.8140329065955
-Disturbance (site-specific),Disturbance → pup survival (TB),"-0.196 (-0.506, 0.123)",1.0029617255494807,6809.914369517524
-Disturbance (site-specific),Disturbance → pup survival (TP),"-0.147 (-0.465, 0.169)",1.0000327652197896,6544.963112126251
-Reproduction,MOCI Fall (OND) → fecundity,"-0.210 (-0.277, -0.141)",1.0002024766646131,1826.2127209317052
-Shared covariates,MOCI spring AMJ (t-1) → pup survival,"-0.140 (-0.449, 0.164)",1.0017414695587812,6085.136284476727
-Shared covariates,MOCI winter → juvenile survival,"-0.179 (-0.411, 0.057)",1.0005892920868733,6106.749130056434
-Shared covariates,MOCI winter → adult survival,"-0.172 (-0.332, -0.006)",1.0007839536985816,6308.639864414128
-Shared covariates,Elephant seal → pup survival,"0.051 (-0.254, 0.360)",1.0020012191896894,6634.109832760744
-Shared covariates,MOCI spring → molt detection,"0.114 (0.023, 0.210)",0.9999113997425833,5168.905795170468
-Error terms,Process error (σ),"0.244 (0.211, 0.277)",1.0015972025099442,658.8457113858913
-Error terms,Obs error adult (σ),"0.203 (0.179, 0.229)",1.001839643452903,2316.0470733599172
-Error terms,Obs error pup (σ),"0.161 (0.130, 0.191)",1.006372009913131,586.9701361264405
-Error terms,Obs error molt (σ),"0.295 (0.264, 0.329)",1.0002776065328585,3044.7577032892264
-Error terms,Site random effect (σ),"0.229 (0.072, 0.383)",1.0002980116531963,3189.3913949218722
-Survival,"Pup survival, probability scale (derived)","0.227 (0.125, 0.352)",NA,NA
+Category,variable,Estimate,rhat,ess_bulk
+Survival,phi_pup_logit,"-1.260 (-1.915, -0.631)",1.0007550595638772,5597.166697992071
+Survival,phi_juv_base,"0.700 (0.543, 0.838)",1.000576848010922,5203.9701312824045
+Survival,phi_adult_F_logit,"2.906 (2.640, 3.176)",1.000546704913993,5500.342319634433
+Survival,phi_adult_F_base,"0.948 (0.933, 0.960)",1.0005467052929389,5500.342186683947
+Survival,delta_adult,"0.018 (0.003, 0.034)",1.0009912618293004,3119.2739446427377
+Reproduction,fecund_primip,"0.498 (0.333, 0.669)",1.0002737697407305,6386.710349689249
+Reproduction,fecund_mature,"0.434 (0.380, 0.489)",1.0012528540942838,3993.278383799221
+Reproduction,prop_female,"0.533 (0.462, 0.590)",1.0001045673999125,6415.3952080851805
+Reproduction,avg_fecundity,"0.447 (0.419, 0.477)",1.0010661195853714,3411.5524971147465
+Observation/Derived,p_male_breed,"0.058 (0.021, 0.099)",1.0003552429920588,3729.5475935848626
+Coyote,beta_coy[1],"-0.228 (-0.539, 0.076)",0.9999602678307653,10886.489254320586
+Coyote,beta_coy[2],"-0.313 (-0.613, -0.006)",0.9999106928451137,10883.670652771809
+Coyote,beta_coy[3],"-0.406 (-0.697, -0.110)",0.999963178016985,9750.238234714567
+Disturbance,beta_dist_surv[1],"-0.146 (-0.464, 0.170)",1.0021354491029963,11703.476682381195
+Disturbance,beta_dist_surv[2],"-0.052 (-0.367, 0.257)",1.0002281477492472,10673.863357318598
+Disturbance,beta_dist_surv[3],"-0.086 (-0.401, 0.225)",1.0003447229492024,10989.218891005932
+Disturbance,beta_dist_surv[4],"-0.161 (-0.463, 0.149)",1.0002024067198638,10605.04650017166
+Disturbance,beta_dist_surv[5],"-0.197 (-0.507, 0.115)",1.000520821880697,10308.459888283258
+Disturbance,beta_dist_surv[6],"-0.151 (-0.469, 0.174)",1.0005759298021586,9749.085837237333
+Reproduction,beta_moci_ond_fecund,"-0.211 (-0.278, -0.144)",1.0004477266054346,3516.368620710271
+Shared covariates,beta_moci_amj_pup,"-0.138 (-0.443, 0.172)",0.9999108407995021,9258.548291569436
+Shared covariates,beta_moci_jfm_juv,"-0.177 (-0.417, 0.063)",1.000030068950717,10188.088381718439
+Shared covariates,beta_moci_jfm_adult,"-0.169 (-0.331, -0.005)",1.0000736462704083,8317.144290793814
+Shared covariates,beta_eseal_pup,"0.066 (-0.239, 0.374)",1.0006377711210421,9436.582733658528
+Shared covariates,beta_moci_amj_molt,"0.115 (0.026, 0.207)",1.0011887766883718,6990.489623615838
+Error terms,sigma_process,"0.245 (0.211, 0.279)",1.0013164858272086,1324.9710476633002
+Error terms,sigma_obs_adult,"0.203 (0.178, 0.230)",1.0003748444589557,3731.1601960419544
+Error terms,sigma_obs_pup,"0.160 (0.129, 0.191)",1.0005645454972991,1068.998002269685
+Error terms,sigma_obs_molt,"0.295 (0.264, 0.327)",1.0002305856855351,6089.55290526768
+Error terms,sigma_site,"0.229 (0.080, 0.382)",1.0008077824042327,5563.243413725541
+Survival,phi_pup_base (prob),"0.228 (0.128, 0.347)",NA,NA

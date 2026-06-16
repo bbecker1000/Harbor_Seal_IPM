@@ -804,11 +804,8 @@ create_site_age_timeseries_v3.2 <- function(fit, sim_data, save=TRUE, prefix="IP
   p <- ggplot(all_sum,aes(x=Year,y=mean,color=Site,fill=Site)) +
     geom_ribbon(aes(ymin=lo,ymax=hi),alpha=0.15,color=NA) +
     geom_line(linewidth=1) + facet_wrap(~Age_Class,scales="free_y",ncol=1) +
-    scale_y_continuous(
-      limits = c(0, NA),
-      labels = scales::comma,
-      expand = c(0, 0)
-    ) +
+    expand_limits(y = 0) +
+    scale_y_continuous(labels = scales::comma) +
     labs(x="Year",y="Population Size",title="Population by Age Class Across Sites") +
     theme_seal() + theme(legend.position="bottom")
   if (save) ggsave(paste0("Output/Plots/",prefix,"_age_class_timeseries.jpeg"),

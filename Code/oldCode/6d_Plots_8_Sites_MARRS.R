@@ -119,6 +119,83 @@ p1 <- ggplot(d_diff, aes(x = Year, y = log_diff,
 
 ggsave("Output/Plots/8site_log_abundance.jpeg", p1, width = 22, height = 30, units = "cm")
 
+
+
+# ── PLOT 1b: Smoothed state trajectories (Adult, Molt) — all 8 sites ─────────
+# Raw log-abundance scale (not relative to 1997), for Methods/Appendix figure.
+# Pup panel omitted: DR and PB pup states are NA throughout.
+
+# ── PLOT 1b: Smoothed state trajectories (Pup, Adult, Molt) — all 8 sites ────
+# Abundance scale (not log). DR and PB excluded from Pup panel (NA throughout).
+
+breakpoint_year <- 2004
+
+d_smoothed <- d_plot %>%
+  mutate(Class    = factor(Class, levels = c("Pup", "Adult", "Molt")),
+         estimate = exp(log_est),
+         lo89_n   = exp(lo89),
+         hi89_n   = exp(hi89)) %>%
+  dplyr::filter(!(Class == "Pup" & Site %in% c("DR", "PB")))  # drop NA pup rows
+
+p1b <- ggplot(d_smoothed, aes(x = Year, y = estimate,
+                              colour = Site, linetype = Site, group = Site)) +
+  geom_vline(xintercept = breakpoint_year, linetype = 2, colour = "grey40",
+             linewidth = 0.6) +
+  geom_ribbon(aes(ymin = lo89_n, ymax = hi89_n, fill = Site),
+              alpha = 0.12, colour = NA) +
+  geom_line(linewidth = 1) +
+  scale_colour_manual(values = SITE_COLS) +
+  scale_fill_manual(values = SITE_COLS) +
+  scale_linetype_manual(values = SITE_LTY,
+                        labels = c(paste0(names(SITE_LTY)[SITE_LTY==1]," (breeding)"),
+                                   paste0(names(SITE_LTY)[SITE_LTY==2]," (haul-out)"))) +
+  scale_y_continuous(labels = scales::comma) +
+  facet_wrap(~Class, ncol = 1, scales = "free_y") +
+  labs(x = "Year", y = "Estimated abundance",
+       title = "MARSS Smoothed State Trajectories — All 8 Sites",
+       subtitle = paste0("Lines = posterior-smoothed abundance estimates; bands = ", CI_LABEL,
+                         "; dashed lines = DR (purple) and PB (cyan), haul-out only"),
+       caption = paste0("Vertical dashed line = ", breakpoint_year,
+                        " growth-rate breakpoint. Pup panel excludes DR and PB (missing throughout).")) +
+  theme_seal() +
+  theme(legend.position = "right")
+
+ggsave("Output/Plots/8site_smoothed_states.jpeg", p1b,
+       width = 22, height = 30, units = "cm")
+
+# ── PLOT 1c: Total real-scale abundance summed across all 8 sites ────────────
+# Faceted by class (Pup, Adult, Molt). Pup total reflects 6 breeding sites only
+# (DR and PB pup states are NA and excluded via na.rm).
+
+d_total <- d_plot %>%
+  mutate(Class    = factor(Class, levels = c("Pup", "Adult", "Molt")),
+         estimate = exp(log_est),
+         lo89_n   = exp(lo89),
+         hi89_n   = exp(hi89)) %>%
+  group_by(Year, Class) %>%
+  summarise(
+    total    = sum(estimate, na.rm = TRUE),
+    total_lo = sum(lo89_n,   na.rm = TRUE),
+    total_hi = sum(hi89_n,   na.rm = TRUE),
+    .groups  = "drop"
+  )
+
+p1c <- ggplot(d_total, aes(x = Year, y = total)) +
+  geom_ribbon(aes(ymin = total_lo, ymax = total_hi),
+              alpha = 0.20, fill = "#2166AC", colour = NA) +
+  geom_line(colour = "#2166AC", linewidth = 1.2) +
+  scale_y_continuous(limits = c(0, NA), labels = scales::comma, expand = c(0, 0)) +
+  facet_wrap(~Class, ncol = 1, scales = "free_y") +
+  labs(x = "Year", y = "Total estimated abundance",
+       title = "MARSS Total Estimated Abundance — Sum Across All 8 Sites",
+       subtitle = paste0("Lines = sum of posterior-smoothed abundance estimates; bands = ", CI_LABEL),
+       caption = "Pup total reflects 6 breeding sites only (DR and PB pup states unobserved, excluded)") +
+  theme_seal()
+
+ggsave("Output/Plots/8site_total_abundance.jpeg", p1c,
+       width = 22, height = 24, units = "cm")
+
+
 # ── PLOT 2: Haul-out sites vs breeding site mean ──────────────────────────────
 # KEY NEW PLOT: Do DR and PB track the breeding sites?
 # Tests ecological hypothesis: same population, different use pattern

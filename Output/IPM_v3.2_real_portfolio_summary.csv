@@ -1,7 +1,4 @@
-Metric,Value,Interpretation
-Portfolio Effect Ratio (CV_meta / CV_sites),0.817,Portfolio buffering present (< 1)
-Mean between-site correlation (lambda),0.6,High synchrony — weak portfolio effect
-Min between-site correlation (lambda),0.415,—
-Max between-site correlation (lambda),0.885,—
-Overall mean lambda (across sites and years),0.993,Population declining on average
-SD of annual mean lambda,0.069,—
+Metric,Value
+Portfolio Effect Ratio (CVmeta/CVsites),0.818
+Mean between-site corr (lambda),0.603
+Overall mean lambda,0.993

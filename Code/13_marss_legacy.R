@@ -34,36 +34,32 @@ classes <- sapply(state_names_legacy, get_class)
 # ── Time-varying U: 2-phase model with 2004 breakpoint ───────────────────────
 # Phase 1 (pre-2004): shared growth rate within class (t1_A, t1_M, t1_P)
 # Phase 2 (2004+):    shared growth rate within class (t2_A, t2_M, t2_P)
-# Pups retain t1_P throughout — sparse data makes 2-phase pup trend unreliable
-# and no significant pup trend shift was detected in the 8-site analysis.
+# All three classes now allowed to shift at the 2004 breakpoint.
+# Pups previously held constant (t1_P throughout) based on 8-site analysis
+# (1997-2025 only); the longer legacy time series justifies estimating a
+# separate Phase 2 pup trend.
 
 bp_year <- 2004
 bp_col  <- which(years_legacy == bp_year)
 
 if (length(bp_col) == 0) {
   warning("Breakpoint year ", bp_year, " not in years_legacy — using constant U")
-  bp_col <- TT + 1  # effectively no phase-1
+  bp_col <- TT + 1
 }
 cat("2004 breakpoint at column", bp_col,
     "(year", years_legacy[min(bp_col, TT)], ")\n")
 
-# Phase 1 matrix: shared trend within class
 U1 <- matrix(paste0("t1_", classes), n_states, 1,
              dimnames = list(state_names_legacy, NULL))
 
-# Phase 2 matrix: adults and molt shift; pups unchanged
-U2 <- matrix(ifelse(classes == "P",
-                    paste0("t1_", classes),   # pups: no shift
-                    paste0("t2_", classes)),  # adults/molt: new rate
-             n_states, 1,
+U2 <- matrix(paste0("t2_", classes), n_states, 1,  # all classes shift
              dimnames = list(state_names_legacy, NULL))
 
-# Build time-varying array (n_states × 1 × TT)
 Ut <- array(U2, dim = c(n_states, 1, TT))
 if (bp_col > 1) Ut[, , 1:(bp_col - 1)] <- U1
 
-cat("Phase 1 (pre-", bp_year, ") U parameters:\n"); print(unique(U1))
-cat("Phase 2 (", bp_year, "+) U parameters:\n"); print(unique(U2))
+cat("Phase 1 U parameters:\n"); print(unique(U1))
+cat("Phase 2 U parameters:\n"); print(unique(U2))
 
 # ── Shared model components ───────────────────────────────────────────────────
 common_model <- list(
@@ -123,19 +119,19 @@ cat("\nBest model:", df_aic_legacy$Model[1], "\n")
 cat("\n── Estimated trend parameters (best model) ──────────────────────────────\n")
 u_ests <- BEST_LEGACY$par$U
 cat("Phase 1 adult growth rate (t1_A):",
-    round(u_ests["t1_A", 1], 4), "(per year, log scale)\n")
+     round(u_ests["t1_A", 1], 4), "\n")
 cat("Phase 1 molt  growth rate (t1_M):",
     round(u_ests["t1_M", 1], 4), "\n")
 cat("Phase 1 pup   growth rate (t1_P):",
     round(u_ests["t1_P", 1], 4), "\n")
-if ("t2_A" %in% rownames(u_ests)) {
-  cat("Phase 2 adult growth rate (t2_A):",
-      round(u_ests["t2_A", 1], 4), "\n")
-  cat("Phase 2 molt  growth rate (t2_M):",
-      round(u_ests["t2_M", 1], 4), "\n")
-}
+cat("Phase 2 adult growth rate (t2_A):",
+    round(u_ests["t2_A", 1], 4), "\n")
+cat("Phase 2 molt  growth rate (t2_M):",
+    round(u_ests["t2_M", 1], 4), "\n")
+cat("Phase 2 pup   growth rate (t2_P):",
+    round(u_ests["t2_P", 1], 4), "\n")
 cat("Process variance (Q):",
-    round(BEST_LEGACY$par$Q["Q.diag", 1], 5), "\n")
+    round(BEST_LEGACY$par$Q[1], 5), "\n")
 
 # ── 89% CIs for best model ────────────────────────────────────────────────────
 cat("\n── Computing 89% CIs ────────────────────────────────────────────────────\n")
@@ -148,3 +144,4 @@ print(u_ci)
 
 cat("\nObjects created: m.LA, m.LB, CIs_legacy, df_aic_legacy\n")
 cat("Source 7c_plots_legacy_MARSS.R to generate plots.\n")
+
