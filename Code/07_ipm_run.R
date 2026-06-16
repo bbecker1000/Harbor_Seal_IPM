@@ -17,7 +17,7 @@
 # ║ BLOCK 0 — STARTUP                                                          ║
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
-source("00_load.R")                       # packages + dirs + banner
+source("Code/00_load.R")                       # packages + dirs + banner
 source("Code/05_ipm_model.R")             # Stan model + functions + orchestrator
 source("Code/06_ipm_plots.R")             # plotting + load_seal_results()
 filter <- dplyr::filter                   # guard against stats::filter masking
@@ -105,37 +105,15 @@ run_all_plots_v3.2(
 # ╔══════════════════════════════════════════════════════════════════════════╗
 # ║ BLOCK 4 — SIMULATION FIT + PARAMETER RECOVERY                              ║
 # ╚══════════════════════════════════════════════════════════════════════════╝
-# Faster settings for the simulation check. NOTE[P2]: the simulator sets each
-# true value = its prior mean, so recovery over-covers; treat "100%" with care
-# until the simulator is changed to draw truths from the priors.
 
-out.sim <- run_full_analysis_v3.2(
-  use_real_data = FALSE,
-  seed          = 42,
-  iter_warmup   = 1000,
-  iter_sampling = 500,
-  adapt_delta   = 0.90,
-  run_recovery  = FALSE   # recovery run explicitly below for the plot object
+source("Code/00_load.R")
+source("Code/05_ipm_model.R")      # writes the .stan, defines functions (with the edit)
+source("Code/05b_recovery_sbc.R")
+filter <- dplyr::filter
+
+
+sbc <- run_recovery_check_v3.2(n_datasets = 10, base_seed = 1000)"
 )
-
-rec <- check_parameter_recovery_v3.2(
-  fit      = out.sim$fit,
-  sim_data = out.sim$sim_data,             # carries true_params
-  save     = TRUE,
-  prefix   = "IPM_v3.2_sim"
-)
-
-cat("Recovery coverage:", sum(rec$table$recovered), "/", nrow(rec$table), "\n")
-
-# What drives bias?
-rec$table |>
-  dplyr::arrange(dplyr::desc(abs(rel_bias_pct))) |>
-  dplyr::select(variable, true_value, mean, rel_bias_pct, identifiability) |>
-  print(n = 30)
-
-ggsave("Output/Plots/IPM_v3.2_sim_recovery.jpeg",
-       rec$plot, width = 30, height = 22, units = "cm")
-
 
 # ╔══════════════════════════════════════════════════════════════════════════╗
 # ║ BLOCK 5 — HOUSEKEEPING                                                     ║

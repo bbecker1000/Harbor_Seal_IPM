@@ -143,5 +143,5 @@ u_ci <- tidy(CIs_legacy) %>% filter(grepl("^U\\.", term))
 print(u_ci)
 
 cat("\nObjects created: m.LA, m.LB, CIs_legacy, df_aic_legacy\n")
-cat("Source 7c_plots_legacy_MARSS.R to generate plots.\n")
+cat("Source 14_marss_legacy_plots.R to generate plots.\n")
 

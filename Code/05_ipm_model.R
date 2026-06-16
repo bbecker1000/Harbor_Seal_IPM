@@ -510,13 +510,14 @@ cat("Stan model written to Code/harbor_seal_ipm_v3.2.stan\n")
 # claiming "100% recovery" in the manuscript.
 # ============================================================================
 
-simulate_seal_ipm_data_v3.2 <- function(T=29, S=6, T_proj=10, seed=123) {
+simulate_seal_ipm_data_v3.2 <- function(T=29, S=6, T_proj=10, seed=123,
+                                        true_params=NULL) {
   
   set.seed(seed)
   site_names <- c("BL","DE","DP","PRH","TB","TP")
   N_coy <- 3
   
-  true_params <- list(
+  if (is.null(true_params)) true_params <- list(
     phi_pup_logit     = qlogis(0.23),
     phi_juv_base      = 0.70,
     phi_adult_F_logit = qlogis(0.90),
@@ -858,7 +859,7 @@ run_full_analysis_v3.2 <- function(use_real_data  = FALSE,
                      scenario_names = dl$scenario_names,
                      true_params    = NULL)
   } else {
-    sim_data <- simulate_seal_ipm_data_v3.2(T=29, S=6, T_proj=T_proj, seed=seed)
+    sim_data <- simulate_seal_ipm_data_v3.2(T=29, S=6, T_proj=T_proj, seed=123)
   }
   
   cat("Compiling Stan model...\n")
