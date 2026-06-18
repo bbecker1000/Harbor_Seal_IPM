@@ -31,7 +31,7 @@ Results.real <- readRDS("Output/harbor_seal_IPM_v3.2_real_fit.rds")
 
 # Reload
 input_data <- readRDS("Output/ipm_input_data.rds")
-dat <- input_data$dat
+dat <- input_data$datdata:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAbElEQVR4Xs2RQQrAMAgEfZgf7W9LAguybljJpR3wEse5JOL3ZObDb4x1loDhHbBOFU6i2Ddnw2KNiXcdAXygJlwE8OFVBHDgKrLgSInN4WMe9iXiqIVsTMjH7z/GhNTEibOxQswcYIWYOR/zAjBJfiXh3jZ6AAAAAElFTkSuQmCC
 cov_t_scaled <- input_data$cov_t_scaled
 years <- input_data$years
 

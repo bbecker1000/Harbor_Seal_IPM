@@ -7,15 +7,12 @@
 # Produces:
 #   cov_t_scaled_8site : 20 x 29 numeric matrix (covariates x years), z-scored
 #
-# CANONICAL 20-row order (asserted; the 24-state C matrix in 10_marss8_models.R
-# indexes these rows positionally for Models A and B; Model C constructs its own
-# 9-row grouped covariate matrix from this full matrix internally):
+# CANONICAL 20-row order (asserted; the 24-state C matrix indexes these rows):
 #    1  MOCI_JFM     2  MOCI_AMJ     3  MOCI_OND
 #    4  Dist_BL  5 Dist_DE  6 Dist_DP  7 Dist_DR  8 Dist_PB  9 Dist_PRH 10 Dist_TB 11 Dist_TP
 #   12  Coyote_BL 13 Coyote_DE 14 Coyote_DP 15 Coyote_DR(0) 16 Coyote_PB(0)
 #   17  Coyote_PRH(0) 18 Coyote_TB(0) 19 Coyote_TP(0)
 #   20  eSeal_Sum_Imm_MaxCount
-#
 # DR/PB/PRH/TB/TP coyote rows are structurally zero (no sightings); kept for
 # completeness and left unscaled (zero variance).
 #
@@ -62,8 +59,8 @@ coyote_rate <- coyote %>%
 coyote_wide <- coyote_rate %>%
   pivot_wider(names_from = Site, values_from = weighted_rate)
 
-# Pre-survey years (1996–1999): all sites zero.
-# DR & PB confirmed zero throughout; PRH/TB/TP also zero.
+# Pre-survey years (1996–1999): all sites zero. new_rows fixes column order;
+# DR & PB stay zero throughout (confirmed no coyote activity).
 new_rows <- tibble(Year = 1996:1999,
                    BL = 0, DE = 0, DP = 0, DR = 0, PB = 0,
                    PRH = 0, TB = 0, TP = 0)
@@ -71,7 +68,7 @@ coyote_wide <- bind_rows(new_rows, coyote_wide) %>%
   arrange(Year) %>%
   rename_with(~ paste0("Coyote_", .), -Year)
 
-# ── Human disturbance (per site; DR & PB retained for 8-site analysis) ──────
+# ── Human disturbance (per site; DR & PB RETAINED for the 8-site analysis) ──
 HumanDisturbance <- read_excel("Data/HumanDisturbanceRate_1996To2025.xlsx")
 HumanDisturbance <- HumanDisturbance[, -5]
 HumanDisturbance <- HumanDisturbance %>%
@@ -86,7 +83,7 @@ HumanDisturbance.wide <- HumanDisturbance %>%
 if ("Dist_DP" %in% names(HumanDisturbance.wide))
   HumanDisturbance.wide$Dist_DP[HumanDisturbance.wide$Year == 2020] <- 0
 
-# ── MOCI (OND lead-shifted to align with following pup year) ─────────────────
+# ── MOCI (OND lead-shifted) ─────────────────────────────────────────────────
 MOCI <- read_csv("Data/CaliforniaMOCI.csv", show_col_types = FALSE)
 MOCI.dat <- MOCI %>%
   mutate(mean_value = (`North California (38-42N)` +
@@ -117,7 +114,7 @@ covariates <- MOCI.dat %>%
   arrange(Year)
 cov_years <- covariates$Year
 
-# ── Assemble rows in EXPLICIT canonical order ─────────────────────────────────
+# ── Assemble rows in EXPLICIT canonical order ───────────────────────────────
 pull_row <- function(name) {
   if (!name %in% names(covariates))
     stop("Covariate column not found: ", name,
@@ -127,13 +124,13 @@ pull_row <- function(name) {
 cov_t <- do.call(rbind, setNames(lapply(CANON_COV_ROWS, pull_row), CANON_COV_ROWS))
 colnames(cov_t) <- cov_years
 
-# ── Single scaling pass (zero-variance rows left unscaled) ───────────────────
+# ── Single scaling pass (zero-variance rows left unscaled) ──────────────────
 cov_t[is.na(cov_t)] <- 0
 cov_t_scaled_8site <- cov_t
 rows_to_scale <- apply(cov_t, 1, sd) > 0
 cov_t_scaled_8site[rows_to_scale, ] <- t(scale(t(cov_t[rows_to_scale, ])))
 
-# ── Assertions ────────────────────────────────────────────────────────────────
+# ── Assertions: shape, order, zero-coyote sanity, year alignment ────────────
 stopifnot(
   identical(rownames(cov_t_scaled_8site), CANON_COV_ROWS),
   nrow(cov_t_scaled_8site) == 20L
@@ -145,28 +142,15 @@ if (exists("years_8site") &&
     !identical(as.numeric(cov_years), as.numeric(years_8site)))
   stop("Covariate years do not match years_8site from 08_data_prep_8site.R")
 
-# ── Diagnostics ───────────────────────────────────────────────────────────────
+# ── Diagnostics ─────────────────────────────────────────────────────────────
 cat("\n── 8-site covariate matrix ─────────────────────────────────────────\n")
 cat(sprintf("cov_t_scaled_8site: %d covariates x %d years (%d-%d)\n",
             nrow(cov_t_scaled_8site), ncol(cov_t_scaled_8site),
             min(cov_years), max(cov_years)))
-cat("Row order (canonical):\n")
 for (i in seq_len(nrow(cov_t_scaled_8site)))
-  cat(sprintf("  %2d  %s  (SD=%.3f)\n", i,
-              rownames(cov_t_scaled_8site)[i],
-              apply(cov_t_scaled_8site, 1, sd)[i]))
-
-# ── Grouped covariate summaries for Model C (informational) ──────────────────
-# Model C (Estuary vs Coastal) constructs its grouped matrix inside
-# 10_marss8_models.R; this section just documents the group structure.
-cat("\n── Model C groupings (constructed in 10_marss8_models.R) ──────────────\n")
-cat("Estuary/Bay:    BL, DE, TB\n")
-cat("Coastal/Exposed: DP, DR, PB, PRH, TP\n")
-cat("  Dist_Est  = mean(Dist_BL, Dist_DE, Dist_TB)\n")
-cat("  Dist_Coast = mean(Dist_DP, Dist_DR, Dist_PB, Dist_PRH, Dist_TP)\n")
-cat("  Coy_Est   = mean(Coyote_BL, Coyote_DE)   [TB has zero]\n")
-cat("  Coy_Coast = Coyote_DP only               [PRH/TP/DR/PB all zero]\n")
-cat("  eSeal uses separate Est/Coast coefficients, same regional index\n")
+  cat(sprintf("  %2d  %s\n", i, rownames(cov_t_scaled_8site)[i]))
+cat("\nRow SDs (1 = scaled; 0 = structurally-zero coyote rows):\n")
+print(round(apply(cov_t_scaled_8site, 1, sd), 2))
 
 cat("\nObjects created: cov_t_scaled_8site\n")
-cat("Next: source('Code/10_marss8_models.R')\n")
+cat("Next: source(\"Code/10_marss8_models.R\")\n")
