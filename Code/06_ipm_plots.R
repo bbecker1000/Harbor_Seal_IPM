@@ -646,7 +646,7 @@ create_effect_plots_v3.2 <- function(fit, save=TRUE, prefix="IPM_v3.2") {
   ylm <- c(max(0,min(sapply(mci,`[[`,"yr"))-0.03), min(1,max(sapply(mci,`[[`,"yr"))+0.03))
   p_mci <- wrap_plots(lapply(mci_specs, function(x) mk(x[1],x[2],x[3],stage=x[4],ylims=ylm)$plot), ncol=3) +
     plot_annotation(title="Shared Covariate Effects on Pup Survival")
-  if (save) ggsave(paste0("Output/Plots/",prefix,"_effects_moci.jpeg"), p_mci, width=36, height=12, units="cm")
+  if (save) ggsave(paste0("Output/Plots/",prefix,"_effects_moci.jpeg"), p_mci, width=36, height=24, units="cm")
   
   list(coyote=p_coy, disturbance=p_dst, moci_pup=p_mci)
 }
