@@ -112,8 +112,8 @@ source("Code/05b_recovery_sbc.R")
 filter <- dplyr::filter
 
 
-sbc <- run_recovery_check_v3.2(n_datasets = 10, base_seed = 1000)"
-)
+sbc <- run_recovery_check_v3.2(n_datasets = 10, base_seed = 1000)
+
 
 # ╔══════════════════════════════════════════════════════════════════════════╗
 # ║ BLOCK 5 — HOUSEKEEPING                                                     ║
