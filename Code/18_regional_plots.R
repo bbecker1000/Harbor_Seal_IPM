@@ -179,7 +179,7 @@ check_diagnostics_regional <- function(fit) {
               "beta_moci_ond_fecund", "beta_moci_jfm_adult",
               "delta_moci_mouth_fecund", "delta_moci_mouth_surv",
               "delta_moci_south_fecund", "delta_moci_south_surv",
-              "sigma_county", "sigma_log_alpha",
+              "sigma_county", "sigma_site", "detect_breed_logit", "detect_molt_logit",
               "sigma_process", "sigma_obs_adult", "sigma_obs_pup", "sigma_obs_molt")
   
   s <- tryCatch(regional_fit_summary(fit, params), error = function(e) NULL)
@@ -187,15 +187,14 @@ check_diagnostics_regional <- function(fit) {
     cat("\nParameter Summary:\n")
     print(s |> select(variable, mean, sd, q_lo, q_hi, rhat, ess_bulk), n = nrow(s))
     
-    # Flag the key new parameters explicitly
-    bay_f <- s[s$variable == "delta_moci_mouth_fecund", ]
-    bay_s <- s[s$variable == "delta_moci_south_surv", ]
-    if (nrow(bay_f) > 0)
-      cat(sprintf("\ndelta_moci_bay_fecund: %.3f (%s: %.3f, %.3f)\n",
-                  bay_f$mean, CI_LABEL, bay_f$q_lo, bay_f$q_hi))
-    if (nrow(bay_s) > 0)
-      cat(sprintf("delta_moci_mouth_surv:   %.3f (%s: %.3f, %.3f)\n",
-                  bay_s$mean, CI_LABEL, bay_s$q_lo, bay_s$q_hi))
+    # Flag all four modifier parameters explicitly
+    for (p in c("delta_moci_mouth_fecund","delta_moci_mouth_surv",
+                "delta_moci_south_fecund","delta_moci_south_surv")) {
+      r <- s[s$variable == p, ]
+      if (nrow(r) > 0)
+        cat(sprintf("%s: %.3f (%s: %.3f, %.3f)\n",
+                    p, r$mean, CI_LABEL, r$q_lo, r$q_hi))
+    }
   }
   list(params = params, summary = s)
 }
@@ -208,6 +207,9 @@ create_county_trajectory_plots <- function(fit, model_data, save = TRUE, prefix 
   years <- model_data$years
   T <- length(years); C <- model_data$stan_data$C %||% 6
   county_names <- model_data$county_names %||% COUNTY_NAMES
+  # Guard: if county_names length differs from C, use generic labels
+  if (length(county_names) != C)
+    county_names <- paste0("County_", seq_len(C))
   
   # ── (a) County N_total trajectories ────────────────────────────────────────
   draws_all <- fit$draws(format = "matrix")
@@ -229,20 +231,33 @@ create_county_trajectory_plots <- function(fit, model_data, save = TRUE, prefix 
     )
   }) |> mutate(County = factor(County, levels = county_names))
   
+  # ── Survey coverage rug: which years had data in each county ────────────────
+  y_adult_obs_mat <- model_data$stan_data$y_adult_obs   # [S, T]
+  county_id_vec   <- model_data$stan_data$county_id     # [S]
+  rug_df <- map_dfr(seq_len(C), function(ci) {
+    sites_in_c <- which(county_id_vec == ci)
+    has_survey  <- apply(y_adult_obs_mat[sites_in_c, , drop = FALSE], 2, any)
+    tibble(County = county_names[ci],
+           Year   = years[has_survey])
+  }) |> mutate(County = factor(County, levels = county_names))
+  
   p_traj <- ggplot(traj_df, aes(x = Year, y = mean, colour = County, fill = County)) +
     geom_vline(xintercept = 2020, linetype = "dotted", colour = "grey50", linewidth = 0.8) +
     annotate("text", x = 2020.2, y = Inf, label = "2020\n(latent)", vjust = 1.3,
              hjust = 0, size = 3, colour = "grey50") +
     geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.15, colour = NA) +
     geom_line(linewidth = 1.1) +
+    geom_rug(data = rug_df, aes(x = Year), sides = "b",
+             colour = "grey35", linewidth = 0.5, length = unit(0.04, "npc"),
+             inherit.aes = FALSE) +
     scale_colour_manual(values = COUNTY_COLS) +
     scale_fill_manual(values = COUNTY_COLS) +
-    scale_y_continuous(labels = scales::comma, expand = c(0.02, 0)) +
+    scale_y_continuous(labels = scales::comma, expand = c(0.04, 0)) +
     facet_wrap(~ County, scales = "free_y", ncol = 3) +
     labs(x = "Year", y = "Total population (all ages)",
-         title = "Harbor Seal Population Trajectories by County, 2005–2025",
+         title = "County Population Trajectories (Historical)",
          subtitle = paste0("Posterior mean + ", CI_LABEL,
-                           "; dotted = 2020 latent year; shading = open coast (blue) / estuary (orange)")) +
+                           "; tick marks = years with survey data")) +
     theme_seal() + guides(colour = "none", fill = "none")
   if (save) ggsave(paste0("Output/Plots/", prefix, "_county_trajectories.jpeg"),
                    p_traj, width = 34, height = 22, units = "cm", dpi = 200)
@@ -480,7 +495,10 @@ create_regional_portfolio_plots <- function(fit, model_data, save = TRUE, prefix
   years <- model_data$years; T <- length(years)
   C <- model_data$stan_data$C %||% 6
   county_names <- model_data$county_names %||% COUNTY_NAMES
-  draws_all    <- fit$draws(format = "matrix")
+  # Guard: if county_names length doesn't match C, use generic labels
+  if (length(county_names) != C)
+    county_names <- paste0("County_", seq_len(C))
+  draws_all <- fit$draws(format = "matrix")
   
   # ── County lambda matrix (posterior mean per county per year) ──────────────
   lam_mat <- matrix(NA, C, T - 1, dimnames = list(county_names, head(years, -1)))
@@ -688,7 +706,7 @@ create_regional_summary_table <- function(fit, save = TRUE, prefix = "Regional")
     "beta_moci_amj_molt",
     "delta_moci_mouth_fecund", "delta_moci_mouth_surv",
     "delta_moci_south_fecund", "delta_moci_south_surv",
-    "sigma_county", "sigma_log_alpha",
+    "sigma_county", "sigma_site", "detect_breed_logit", "detect_molt_logit",
     "sigma_process", "sigma_obs_adult", "sigma_obs_pup", "sigma_obs_molt"
   )
   s <- regional_fit_summary(fit, params) |>
@@ -700,7 +718,8 @@ create_regional_summary_table <- function(fit, save = TRUE, prefix = "Regional")
         str_detect(variable, "fecund|prop|avg")                           ~ "Reproduction",
         variable == "rho_pup"                                             ~ "Molt attendance",
         str_detect(variable, "beta_moci") & !str_detect(variable, "bay") ~ "MOCI: open coast",
-        str_detect(variable, "sigma_county|sigma_log")                    ~ "Random effects",
+        str_detect(variable, "detect|sigma_site")                         ~ "Detection",
+        str_detect(variable, "sigma_county")                              ~ "Random effects",
         str_detect(variable, "sigma")                                     ~ "Error terms",
         TRUE                                                              ~ "Other"
       )

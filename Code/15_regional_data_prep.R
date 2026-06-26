@@ -318,59 +318,46 @@ moci_proj      <- matrix(c(0, 1, -1), nrow = N_scenarios, ncol = T_PROJ_REGIONAL
 
 # ── PART 7: BUILD STAN DATA LIST ──────────────────────────────────────────────
 county_id_vec  <- regional_sites$county_id
-is_breeder_vec <- regional_sites$is_breeder
-n_sites_county <- as.integer(table(factor(county_id_vec, levels = 1:C)))
 
-# First time index with survey data per county — used to initialize N at the
-# correct year rather than 2005 for late-starting counties (Mendocino = 2019).
-county_t1 <- vapply(seq_len(C), function(ci) {
-  min_start <- min(regional_sites$starts[regional_sites$county_id == ci])
-  which(YEARS_REGIONAL == min_start)
+# Site-level start index: first time index with survey data per site.
+# Most sites t=1 (2005). Point Arena (Mendocino) t=15 (2019).
+# Leslie matrix held flat at N_init for t < site_t1[s].
+site_t1 <- vapply(seq_len(S), function(si) {
+  which(YEARS_REGIONAL == regional_sites$starts[si])
 }, integer(1))
 
-cat(sprintf("Sites per county: %s\n",
-            paste(paste0(c("Marin","Bay Mouth","South Bay","San Mateo","Sonoma","Mendocino"),
-                         "=", n_sites_county), collapse = ", ")))
-cat(sprintf("County start indices (t1): %s\n",
-            paste(paste0(c("Marin","Bay Mouth","South Bay","San Mateo","Sonoma","Mendocino"),
-                         "=", county_t1), collapse = ", ")))
+late_sites <- which(site_t1 > 1)
+if (length(late_sites) > 0) {
+  cat("Late-starting sites (site_t1 > 1):\n")
+  for (si in late_sites)
+    cat(sprintf("  %s: t=%d (year %d)\n", regional_sites$site_name[si],
+                site_t1[si], YEARS_REGIONAL[site_t1[si]]))
+}
 
 regional_stan <- list(
-  # Dimensions
   T           = T,
   S           = S,
   C           = C,
   T_proj      = T_PROJ_REGIONAL,
   N_scenarios = N_scenarios,
   
-  # Count observations (log scale; 0 where unobserved)
   y_adult     = y_adult,
   y_pup       = y_pup,
   y_molt      = y_molt,
-  
-  # Observation indicators (1 = observed, 0 = not)
   y_adult_obs = y_adult_obs,
   y_pup_obs   = y_pup_obs,
   y_molt_obs  = y_molt_obs,
   
-  # Site-level classifiers
-  county_id      = county_id_vec,
-  is_breeder     = is_breeder_vec,
-  county_t1      = county_t1,        # first obs year index per county
-  n_sites_county = n_sites_county,   # Fix 2: calibrates mu_log_alpha per county
+  county_id   = county_id_vec,   # int[S]
+  site_t1     = site_t1,         # int[S]: first time index per site
   
-  # County-level oceanographic type (0=coast, 1=bay mouth, 2=south bay)
-  county_type = COUNTY_TYPE,
+  county_type = COUNTY_TYPE,     # int[C]: 0=coast, 1=bay mouth, 2=south bay
   
-  # MOCI covariates (scaled; length T each)
   moci_jfm    = moci_scaled$moci_jfm,
   moci_amj    = moci_scaled$moci_amj,
   moci_ond    = moci_scaled$moci_ond,
   
-  # Projections
-  moci_proj   = moci_proj,
-  
-  # p_male_breed fixed at Marin IPM posterior mean
+  moci_proj    = moci_proj,
   p_male_fixed = 0.057
 )
 

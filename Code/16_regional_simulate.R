@@ -34,7 +34,7 @@ if (!exists("regional_sites")) {
 }
 
 # ── SIMULATION FUNCTION ───────────────────────────────────────────────────────
-simulate_regional_ipm <- function(T    = 21,           # 2005–2025 incl. 2020 latent
+simulate_regional_ipm <- function(T    = 21,
                                   S    = 24,
                                   C    = 6,
                                   T_proj = 10,
@@ -44,18 +44,18 @@ simulate_regional_ipm <- function(T    = 21,           # 2005–2025 incl. 2020 
   set.seed(seed)
   
   if (is.null(true_params)) true_params <- list(
-    # ── Vital rates (shared across all counties) ────────────────────────────
-    phi_pup_logit      = qlogis(0.22),       # ~22% pup survival
-    phi_juv_base       = 0.70,
-    phi_adult_F_logit  = qlogis(0.93),       # ~93% adult female survival
-    delta_adult        = 0.017,              # female survival advantage
-    fecund_primip      = 0.60,
-    fecund_mature      = 0.85,
-    prop_female        = 0.50,
-    rho_pup            = 0.18,               # pup molt attendance fraction
-    p_male_fixed       = 0.057,              # fixed; not estimated
+    # ── Vital rates ───────────────────────────────────────────────────────────
+    phi_pup_logit     = qlogis(0.22),
+    phi_juv_base      = 0.70,
+    phi_adult_F_logit = qlogis(0.93),
+    delta_adult       = 0.017,
+    fecund_primip     = 0.60,
+    fecund_mature     = 0.85,
+    prop_female       = 0.50,
+    rho_pup           = 0.18,
+    p_male_fixed      = 0.057,
     
-    # ── MOCI effects (open coast baseline) ─────────────────────────────────
+    # ── MOCI (open coast baseline) ────────────────────────────────────────────
     beta_moci_ond_fecund = -0.15,
     beta_moci_ond_pup    = -0.15,
     beta_moci_amj_pup    = -0.15,
@@ -64,150 +64,126 @@ simulate_regional_ipm <- function(T    = 21,           # 2005–2025 incl. 2020 
     beta_moci_jfm_adult  = -0.10,
     beta_moci_amj_molt   =  0.05,
     
-    # ── Bay vs. Coast MOCI modifier (KEY TEST PARAMETER) ───────────────────
-    # Positive = Bay counties less negatively affected by poor MOCI
-    # If recovery fails, the model cannot distinguish bay from coast responses
-    delta_moci_mouth_fecund = 0.08,   # Bay Mouth less MOCI-sensitive than coast
+    # ── Bay modifiers ─────────────────────────────────────────────────────────
+    delta_moci_mouth_fecund = 0.08,
     delta_moci_mouth_surv   = 0.06,
-    delta_moci_south_fecund = 0.14,   # South Bay most decoupled (expected > mouth)
+    delta_moci_south_fecund = 0.14,
     delta_moci_south_surv   = 0.10,
     
-    # ── County random effects ───────────────────────────────────────────────
-    sigma_county     = 0.15,
-    county_effect    = NULL,         # drawn below
+    # ── County random effects ─────────────────────────────────────────────────
+    sigma_county  = 0.15,
+    county_effect = NULL,
     
-    # ── Site availability (log scale; county-specific means) ─────────────────
-    # These are set per-county in the Stan model using -log(n_sites_county[c]).
-    # For simulation we use county-mean values consistent with that prior.
-    mu_log_alpha_breed = -1.5,   # average across counties (weighted)
-    mu_log_alpha_pup   = -1.2,
-    mu_log_alpha_molt  = -1.5,
-    sigma_log_alpha    = 0.30,   # Fix 3: tightened from 0.40
+    # ── Site detection (replaces county alpha in site-level model) ─────────────
+    detect_breed_logit = 1.20,   # inv_logit(1.20) ≈ 0.77
+    detect_molt_logit  = 0.75,   # inv_logit(0.75) ≈ 0.68
+    sigma_site         = 0.20,   # site-to-site detection SD
+    site_detect        = NULL,   # drawn below
     
-    # ── Error structure ─────────────────────────────────────────────────────
+    # ── Error structure ───────────────────────────────────────────────────────
     sigma_process   = 0.15,
     sigma_obs_adult = 0.18,
     sigma_obs_pup   = 0.15,
-    sigma_obs_molt  = 0.30
+    sigma_obs_molt  = 0.30,
+    
+    # ── Site initial populations (per-site, site-level model) ─────────────────
+    mu_log_adult = 5.5,   # exp(5.5) ≈ 245 per site
+    mu_log_juv   = 4.5,
+    mu_log_pup   = 4.5,
+    sigma_init   = 0.30
   )
   
-  # ── County random effects ─────────────────────────────────────────────────
+  # ── Draw random effects if not supplied ──────────────────────────────────────
   if (is.null(true_params$county_effect))
     true_params$county_effect <- rnorm(C, 0, true_params$sigma_county)
+  if (is.null(true_params$site_detect))
+    true_params$site_detect <- rnorm(nrow(site_meta), 0, true_params$sigma_site)
   
-  # ── Derived quantities ────────────────────────────────────────────────────
+  # ── Derived scalars ───────────────────────────────────────────────────────────
   phi_adult_M_base <- plogis(true_params$phi_adult_F_logit) - true_params$delta_adult
   avg_fecundity    <- 0.20 * true_params$fecund_primip + 0.80 * true_params$fecund_mature
+  county_type      <- c(0L, 1L, 2L, 0L, 0L, 0L)  # coast/mouth/south/coast/coast/coast
+  years_sim        <- 2005:2025
   
-  # ── County-level oceanographic type ──────────────────────────────────────
-  # 0=coast, 1=bay mouth, 2=south bay — matches Stan data county_type vector
-  county_type <- c(0L, 1L, 2L, 0L, 0L, 0L)
+  # ── Site start indices ────────────────────────────────────────────────────────
+  site_t1 <- vapply(seq_len(nrow(site_meta)), function(si) {
+    which(years_sim == site_meta$starts[si])
+  }, integer(1))
   
-  # Year vector — defined locally to avoid global dependency on years_regional
-  years_sim <- 2005:2025
-  
-  # ── MOCI time series (simulate realistic structure) ───────────────────────
-  T_mid  <- 10
+  # ── MOCI time series ──────────────────────────────────────────────────────────
+  T_mid <- 10
   moci_base <- c(seq(-0.5, 0.5, length.out = T_mid),
                  seq( 0.5,-0.5, length.out = T - T_mid)) +
     as.vector(arima.sim(list(ar = 0.5), n = T)) * 0.5
-  moci_jfm  <- as.vector(scale(moci_base))
-  moci_amj  <- as.vector(scale(moci_base * 0.80 +
-                                 as.vector(arima.sim(list(ar = 0.3), n = T)) * 0.4))
-  moci_ond  <- as.vector(scale(moci_base * 0.70 +
-                                 as.vector(arima.sim(list(ar = 0.3), n = T)) * 0.5))
+  moci_jfm <- as.vector(scale(moci_base))
+  moci_amj <- as.vector(scale(moci_base * 0.80 +
+                                as.vector(arima.sim(list(ar = 0.3), n = T)) * 0.4))
+  moci_ond <- as.vector(scale(moci_base * 0.70 +
+                                as.vector(arima.sim(list(ar = 0.3), n = T)) * 0.5))
   
-  # ── Site availability parameters (per site, log scale) ───────────────────
-  log_alpha_breed <- rnorm(nrow(site_meta), true_params$mu_log_alpha_breed,
-                           true_params$sigma_log_alpha)
-  log_alpha_pup   <- rnorm(nrow(site_meta), true_params$mu_log_alpha_pup,
-                           true_params$sigma_log_alpha)
-  log_alpha_molt  <- rnorm(nrow(site_meta), true_params$mu_log_alpha_molt,
-                           true_params$sigma_log_alpha)
-  
-  # Type H sites: set alpha_pup to effectively 0 (will be excluded from likelihood)
-  log_alpha_pup[site_meta$is_breeder == 0] <- -10
-  
-  # ── Initialize county populations ────────────────────────────────────────
-  # County-scale populations calibrated to raw count totals:
-  #   Marin molt counts sum to ~1,000-1,500/yr across 8 sites
-  #   Bay Mouth breed counts sum to ~300-500/yr across 3 sites
-  #   South Bay breed counts sum to ~150-250/yr across 2 sites
-  #   San Mateo breed counts sum to ~400-700/yr across 6 sites
-  #   Sonoma breed counts sum to ~500-800/yr across 4 sites
-  #   Mendocino breed counts ~100-150/yr at 1 site
-  N_adult_F_init <- c(1200, 400, 200, 700, 650, 120)  # Marin, BayMouth, SouthBay, SMat, Son, Men
+  # ── Site initial populations (site-level) ─────────────────────────────────────
+  N_adult_F_init <- exp(rnorm(nrow(site_meta), true_params$mu_log_adult, true_params$sigma_init))
   N_adult_M_init <- N_adult_F_init * 0.9
-  N_juv_F_init   <- N_adult_F_init * 0.30
+  N_juv_F_init   <- exp(rnorm(nrow(site_meta), true_params$mu_log_juv,   true_params$sigma_init)) * 0.5
   N_juv_M_init   <- N_juv_F_init
-  N_pup_init     <- N_adult_F_init * 0.40
+  N_pup_init     <- exp(rnorm(nrow(site_meta), true_params$mu_log_pup,   true_params$sigma_init))
   
-  # ── County-level state arrays ─────────────────────────────────────────────
-  N_adult_F  <- N_adult_M  <- matrix(NA, C, T)
-  N_juv_F    <- N_juv_M    <- matrix(NA, C, T)
-  N_pup      <- matrix(NA, C, T)
+  # ── Site-level state arrays ───────────────────────────────────────────────────
+  S_model <- nrow(site_meta)
+  N_adult_F  <- N_adult_M  <- matrix(NA, S_model, T)
+  N_juv_F    <- N_juv_M    <- matrix(NA, S_model, T)
+  N_pup      <- matrix(NA, S_model, T)
   
-  N_adult_F[, 1] <- N_adult_F_init; N_adult_M[, 1] <- N_adult_M_init
-  N_juv_F[, 1]   <- N_juv_F_init;   N_juv_M[, 1]   <- N_juv_M_init
-  N_pup[, 1]     <- N_pup_init
-  
-  # Time-varying vital rates (county × time)
-  phi_pup_ct     <- phi_juv_ct <- phi_adult_F_ct <- phi_adult_M_ct <- matrix(NA, C, T)
-  detect_molt_ct <- matrix(NA, C, T)
-  
-  for (c in 1:C) {
-    for (t in 1:T) {
-      t_birth <- max(t - 1, 1)
-      
-      # Three-way MOCI modifier by county type
-      bay_fec <- (county_type[c] == 1) * true_params$delta_moci_mouth_fecund +
-        (county_type[c] == 2) * true_params$delta_moci_south_fecund
-      bay_sur <- (county_type[c] == 1) * true_params$delta_moci_mouth_surv +
-        (county_type[c] == 2) * true_params$delta_moci_south_surv
-      
-      phi_pup_ct[c, t] <- plogis(
-        true_params$phi_pup_logit + true_params$county_effect[c] +
-          (true_params$beta_moci_amj_pup + bay_sur) * moci_amj[t_birth] +
-          (true_params$beta_moci_ond_pup + bay_sur) * moci_ond[t] +
-          (true_params$beta_moci_jfm_pup + bay_sur) * moci_jfm[t])
-      
-      phi_juv_ct[c, t] <- plogis(
-        qlogis(true_params$phi_juv_base) + true_params$county_effect[c] * 0.5 +
-          (true_params$beta_moci_jfm_juv + bay_sur) * moci_jfm[t])
-      
-      phi_adult_F_ct[c, t] <- plogis(
-        true_params$phi_adult_F_logit + true_params$county_effect[c] * 0.25 +
-          (true_params$beta_moci_jfm_adult + bay_sur) * moci_jfm[t])
-      
-      phi_adult_M_ct[c, t] <- plogis(
-        qlogis(phi_adult_M_base) + true_params$county_effect[c] * 0.25 +
-          (true_params$beta_moci_jfm_adult + bay_sur) * moci_jfm[t])
-      
-      detect_molt_ct[c, t] <- plogis(
-        0.25 + true_params$beta_moci_amj_molt * moci_amj[t])
-      
-      if (t > 1) {
+  # ── Simulate Leslie matrix per site ──────────────────────────────────────────
+  for (s in seq_len(S_model)) {
+    ci      <- site_meta$county_id[s]
+    bay_fec <- (county_type[ci] == 1) * true_params$delta_moci_mouth_fecund +
+      (county_type[ci] == 2) * true_params$delta_moci_south_fecund
+    bay_sur <- (county_type[ci] == 1) * true_params$delta_moci_mouth_surv +
+      (county_type[ci] == 2) * true_params$delta_moci_south_surv
+    
+    for (t in seq_len(T)) {
+      if (t <= site_t1[s]) {
+        # Hold at initial values before site's first survey year
+        N_adult_F[s,t] <- N_adult_F_init[s]
+        N_adult_M[s,t] <- N_adult_M_init[s]
+        N_juv_F[s,t]   <- N_juv_F_init[s]
+        N_juv_M[s,t]   <- N_juv_M_init[s]
+        N_pup[s,t]     <- N_pup_init[s]
+      } else {
+        t_birth <- t - 1
+        phi_pup_val <- plogis(
+          true_params$phi_pup_logit + true_params$county_effect[ci] +
+            (true_params$beta_moci_amj_pup + bay_sur) * moci_amj[t_birth] +
+            (true_params$beta_moci_ond_pup + bay_sur) * moci_ond[t] +
+            (true_params$beta_moci_jfm_pup + bay_sur) * moci_jfm[t])
+        phi_juv_val <- plogis(
+          qlogis(true_params$phi_juv_base) + true_params$county_effect[ci] * 0.5 +
+            (true_params$beta_moci_jfm_juv + bay_sur) * moci_jfm[t])
+        phi_aF_val <- plogis(
+          true_params$phi_adult_F_logit + true_params$county_effect[ci] * 0.25 +
+            (true_params$beta_moci_jfm_adult + bay_sur) * moci_jfm[t])
+        phi_aM_val <- plogis(
+          qlogis(phi_adult_M_base) + true_params$county_effect[ci] * 0.25 +
+            (true_params$beta_moci_jfm_adult + bay_sur) * moci_jfm[t])
         fecund_t <- plogis(qlogis(avg_fecundity) +
                              (true_params$beta_moci_ond_fecund + bay_fec) * moci_ond[t])
         
-        ep  <- N_adult_F[c, t-1] * fecund_t
-        njF <- N_pup[c, t-1] * true_params$prop_female       * phi_pup_ct[c, t]
-        njM <- N_pup[c, t-1] * (1 - true_params$prop_female) * phi_pup_ct[c, t]
-        jsF <- N_juv_F[c, t-1] * phi_juv_ct[c, t] * (2/3)
-        jsM <- N_juv_M[c, t-1] * phi_juv_ct[c, t] * (2/3)
-        jaF <- N_juv_F[c, t-1] * phi_juv_ct[c, t] * (1/3)
-        jaM <- N_juv_M[c, t-1] * phi_juv_ct[c, t] * (1/3)
+        ep  <- N_adult_F[s,t-1] * fecund_t
+        njF <- N_pup[s,t-1] * true_params$prop_female     * phi_pup_val
+        njM <- N_pup[s,t-1] * (1-true_params$prop_female) * phi_pup_val
+        jsF <- N_juv_F[s,t-1] * phi_juv_val * (2/3)
+        jsM <- N_juv_M[s,t-1] * phi_juv_val * (2/3)
+        jaF <- N_juv_F[s,t-1] * phi_juv_val * (1/3)
+        jaM <- N_juv_M[s,t-1] * phi_juv_val * (1/3)
         
-        N_pup[c, t]     <- exp(rnorm(1, log(max(ep, 1)),
-                                     true_params$sigma_process))
-        N_juv_F[c, t]   <- exp(rnorm(1, log(max(njF + jsF, 0.1)),
-                                     true_params$sigma_process * 0.5))
-        N_juv_M[c, t]   <- exp(rnorm(1, log(max(njM + jsM, 0.1)),
-                                     true_params$sigma_process * 0.5))
-        N_adult_F[c, t] <- exp(rnorm(1, log(max(N_adult_F[c, t-1] * phi_adult_F_ct[c, t] + jaF, 1)),
-                                     true_params$sigma_process * 0.5))
-        N_adult_M[c, t] <- exp(rnorm(1, log(max(N_adult_M[c, t-1] * phi_adult_M_ct[c, t] + jaM, 1)),
-                                     true_params$sigma_process * 0.5))
+        N_pup[s,t]     <- exp(rnorm(1, log(max(ep,           1)), true_params$sigma_process))
+        N_juv_F[s,t]   <- exp(rnorm(1, log(max(njF+jsF, 0.1)), true_params$sigma_process*0.5))
+        N_juv_M[s,t]   <- exp(rnorm(1, log(max(njM+jsM, 0.1)), true_params$sigma_process*0.5))
+        N_adult_F[s,t] <- exp(rnorm(1, log(max(N_adult_F[s,t-1]*phi_aF_val+jaF, 1)),
+                                    true_params$sigma_process*0.5))
+        N_adult_M[s,t] <- exp(rnorm(1, log(max(N_adult_M[s,t-1]*phi_aM_val+jaM, 1)),
+                                    true_params$sigma_process*0.5))
       }
     }
   }
@@ -216,53 +192,46 @@ simulate_regional_ipm <- function(T    = 21,           # 2005–2025 incl. 2020 
   N_juv_total   <- N_juv_F   + N_juv_M
   N_molt_true   <- N_juv_total + N_adult_total + true_params$rho_pup * N_pup
   
-  # ── Generate site-level observations ────────────────────────────────────
-  S_model <- nrow(site_meta)
+  # ── Generate site-level observations ─────────────────────────────────────────
   y_adult <- y_pup <- y_molt <- matrix(NA, S_model, T)
   
-  for (s in 1:S_model) {
-    c   <- site_meta$county_id[s]
-    bay <- site_meta$is_bay[s]
-    br  <- site_meta$is_breeder[s]
+  for (s in seq_len(S_model)) {
+    ci <- site_meta$county_id[s]
     
-    for (t in 1:T) {
-      # 2020 latent year: skip observations
-      if (years_sim[t] == 2020) next
-      # Before site started: skip
-      if (years_sim[t] < site_meta$starts[s]) next
+    detect_breed <- plogis(true_params$detect_breed_logit + true_params$site_detect[s])
+    bay_sur <- (county_type[ci] == 1) * true_params$delta_moci_mouth_surv +
+      (county_type[ci] == 2) * true_params$delta_moci_south_surv
+    
+    for (t in seq_len(T)) {
+      if (years_sim[t] == 2020) next          # latent year
+      if (years_sim[t] < site_meta$starts[s]) next  # before site open
       
-      alpha_b <- exp(log_alpha_breed[s])
-      alpha_p <- exp(log_alpha_pup[s])
-      alpha_m <- exp(log_alpha_molt[s])
+      detect_molt <- plogis(true_params$detect_molt_logit +
+                              true_params$beta_moci_amj_molt * moci_amj[t] +
+                              true_params$site_detect[s])
       
-      # Adult/breeding count
-      N_adult_obs <- (N_adult_F[c, t] + N_adult_M[c, t] * true_params$p_male_fixed)
-      if (N_adult_obs > 0 & alpha_b > 0)
-        y_adult[s, t] <- log(N_adult_obs * alpha_b) +
-        rnorm(1, 0, true_params$sigma_obs_adult)
+      N_ao <- N_adult_F[s,t] + N_adult_M[s,t] * true_params$p_male_fixed
+      if (N_ao > 0)
+        y_adult[s,t] <- rnorm(1, log(N_ao * detect_breed), true_params$sigma_obs_adult)
       
-      # Pup count (breeding sites only)
-      if (br == 1 && N_pup[c, t] > 0 && alpha_p > 0)
-        y_pup[s, t] <- log(N_pup[c, t] * alpha_p) +
-        rnorm(1, 0, true_params$sigma_obs_pup)
+      if (N_pup[s,t] > 0)
+        y_pup[s,t] <- rnorm(1, log(N_pup[s,t] * detect_breed), true_params$sigma_obs_pup)
       
-      # Molt count (all sites)
-      if (N_molt_true[c, t] > 0 && alpha_m > 0)
-        y_molt[s, t] <- log(N_molt_true[c, t] * alpha_m * detect_molt_ct[c, t]) +
-        rnorm(1, 0, true_params$sigma_obs_molt)
+      if (N_molt_true[s,t] > 0)
+        y_molt[s,t] <- rnorm(1, log(N_molt_true[s,t] * detect_molt), true_params$sigma_obs_molt)
     }
   }
   
-  # Introduce ~5% random missingness beyond structural gaps
-  n_obs <- S_model * T
+  # Random 5% additional missingness
   set_na <- function(mat) {
-    mat[sample(which(!is.na(mat)), round(0.05 * sum(!is.na(mat))))] <- NA; mat
+    idx <- which(!is.na(mat))
+    mat[sample(idx, round(0.05 * length(idx)))] <- NA
+    mat
   }
   y_adult <- set_na(y_adult)
   y_pup   <- set_na(y_pup)
   y_molt  <- set_na(y_molt)
   
-  # Build indicator matrices and replace NA with 0
   y_adult_obs <- ifelse(!is.na(y_adult), 1L, 0L)
   y_pup_obs   <- ifelse(!is.na(y_pup),   1L, 0L)
   y_molt_obs  <- ifelse(!is.na(y_molt),  1L, 0L)
@@ -270,39 +239,24 @@ simulate_regional_ipm <- function(T    = 21,           # 2005–2025 incl. 2020 
   y_pup[is.na(y_pup)]     <- 0
   y_molt[is.na(y_molt)]   <- 0
   
-  # Enforce Type H: no pup obs
-  y_pup_obs[site_meta$is_breeder == 0, ] <- 0L
-  y_pup[site_meta$is_breeder == 0, ]     <- 0
-  
-  # ── Projection scenarios ─────────────────────────────────────────────────
-  N_scen <- 3
+  # ── Stan data ─────────────────────────────────────────────────────────────────
+  N_scen    <- 3
   moci_proj <- matrix(c(0, 1, -1), nrow = N_scen, ncol = T_proj)
-  
-  n_sites_county <- as.integer(table(factor(site_meta$county_id, levels = 1:C)))
-  county_t1 <- vapply(seq_len(C), function(ci) {
-    min_start <- min(site_meta$starts[site_meta$county_id == ci])
-    which(2005:2025 == min_start)
-  }, integer(1))
   
   stan_data <- list(
     T = T, S = S_model, C = C, T_proj = T_proj, N_scenarios = N_scen,
     y_adult = y_adult, y_pup = y_pup, y_molt = y_molt,
     y_adult_obs = y_adult_obs, y_pup_obs = y_pup_obs, y_molt_obs = y_molt_obs,
-    county_id      = site_meta$county_id,
-    is_breeder     = site_meta$is_breeder,
-    county_t1      = county_t1,
-    n_sites_county = n_sites_county,
-    county_type    = county_type,
+    county_id   = site_meta$county_id,
+    site_t1     = site_t1,
+    county_type = county_type,
     moci_jfm = moci_jfm, moci_amj = moci_amj, moci_ond = moci_ond,
-    moci_proj = moci_proj,
+    moci_proj    = moci_proj,
     p_male_fixed = 0.057
   )
   
-  true_params$county_effect <- true_params$county_effect  # ensure saved
-  true_params$log_alpha_breed <- log_alpha_breed
-  true_params$log_alpha_pup   <- log_alpha_pup
-  true_params$log_alpha_molt  <- log_alpha_molt
-  true_params$county_type     <- county_type
+  true_params$county_type  <- county_type
+  true_params$site_t1      <- site_t1
   
   list(
     stan_data   = stan_data,
@@ -311,9 +265,7 @@ simulate_regional_ipm <- function(T    = 21,           # 2005–2025 incl. 2020 
       N_adult_F = N_adult_F, N_adult_M = N_adult_M,
       N_juv_F = N_juv_F, N_juv_M = N_juv_M, N_pup = N_pup,
       N_adult_total = N_adult_total, N_juv_total = N_juv_total,
-      N_molt_true = N_molt_true,
-      phi_pup = phi_pup_ct, phi_juv = phi_juv_ct,
-      phi_adult_F = phi_adult_F_ct, phi_adult_M = phi_adult_M_ct
+      N_molt_true = N_molt_true
     ),
     county_names   = c("Marin","Bay Mouth","South Bay","San Mateo","Sonoma","Mendocino"),
     site_meta      = site_meta,
@@ -349,13 +301,23 @@ cat(sprintf("  2020 observations (should be 0): adult=%d, pup=%d, molt=%d\n",
             sum(sim_regional$stan_data$y_pup_obs[,   16]),
             sum(sim_regional$stan_data$y_molt_obs[,  16])))
 
-# Quick sanity check: county trajectories look biologically plausible
-cat("\nCounty total N (adults) at t=1 and t=21:\n")
-for (c in 1:6) {
-  n1 <- round(sum(sim_regional$true_states$N_adult_total[c, 1]))
-  n21 <- round(sum(sim_regional$true_states$N_adult_total[c, 21]))
+# Quick sanity check: site totals look biologically plausible
+cat("\nSite N_adult at t=1 (selected sites):\n")
+check_sites <- c(1, 9, 12, 14, 20, 24)  # BL, Castro, Mowry, Fitzgerald, Jenner, PointArena
+for (si in check_sites) {
+  n1 <- round(sim_regional$true_states$N_adult_total[si, 1])
+  n_last <- round(sim_regional$true_states$N_adult_total[si, T])
   cat(sprintf("  %s: %d → %d\n",
-              sim_regional$county_names[c], n1, n21))
+              sim_regional$site_meta$site_name[si], n1, n_last))
+}
+
+# County totals (sum across sites)
+cat("\nCounty total N_adult at t=1 and t=21 (summed across sites):\n")
+for (ci in seq_len(6)) {
+  sites_in_c <- which(sim_regional$site_meta$county_id == ci)
+  n1   <- round(sum(sim_regional$true_states$N_adult_total[sites_in_c, 1]))
+  n21  <- round(sum(sim_regional$true_states$N_adult_total[sites_in_c, T]))
+  cat(sprintf("  %s: %d → %d\n", sim_regional$county_names[ci], n1, n21))
 }
 
 cat("\nObjects created: sim_regional\n")

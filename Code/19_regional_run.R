@@ -23,8 +23,8 @@
 # ============================================================================
 
 # ── Part 0: SETTINGS ──────────────────────────────────────────────────────────
-USE_REAL_DATA  <- FALSE     # FALSE = simulated data for testing; TRUE = real data
-RUN_SIMTEST    <- TRUE    # Set TRUE to run simulation test before real data
+USE_REAL_DATA  <- TRUE     # FALSE = simulated data for testing; TRUE = real data
+RUN_SIMTEST    <- FALSE    # Set TRUE to run simulation test before real data
 # Adds ~8 min but confirms model identifiability
 
 ITER_WARMUP    <- 2000
