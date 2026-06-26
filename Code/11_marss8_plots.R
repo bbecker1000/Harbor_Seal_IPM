@@ -216,7 +216,14 @@ C_df <- tryCatch(
     stop("Could not tidy CIs_8site: ", conditionMessage(e))
 )
 
-# Annotate with site and covariate type
+# Annotate with site and covariate type.
+# IMPORTANT: MOCI coefficients (e.g. "MOCI_JFM_A") are SHARED across all 8
+# sites — one estimate per season x class, not per site — so they contain no
+# site-code substring and `site` comes back NA for all 9 of them. An earlier
+# version of this script filtered on !is.na(site) globally, which silently
+# dropped every MOCI row before plotting (no error, just an empty MOCI facet).
+# Fixed here by routing MOCI rows to their own panel, coloured by season
+# instead of site.
 C_df <- C_df %>%
   mutate(
     significant = (conf.low > 0) | (conf.up < 0),
@@ -228,12 +235,13 @@ C_df <- C_df %>%
       str_detect(coef_name, "ES-")   ~ "Elephant seal",
       TRUE ~ "Other"),
     site_type = ifelse(site %in% c("DR","PB"), "Haul-out", "Breeding")
-  ) %>%
-  filter(!is.na(site))
+  )
 
-# Forest plot grouped by covariate type
-p.A3 <- ggplot(C_df, aes(x = estimate, y = reorder(coef_name, estimate),
-                         colour = site, shape = significant)) +
+# ── Site-specific panel: Coyote, Disturbance, Elephant seal ─────────────────
+site_df <- C_df %>% filter(!is.na(site))
+
+p_site <- ggplot(site_df, aes(x = estimate, y = reorder(coef_name, estimate),
+                              colour = site, shape = significant)) +
   geom_vline(xintercept = 0, linetype = "dashed", colour = "grey40") +
   geom_linerange(aes(xmin = conf.low, xmax = conf.up),
                  linewidth = 0.7, alpha = 0.7) +
@@ -244,19 +252,60 @@ p.A3 <- ggplot(C_df, aes(x = estimate, y = reorder(coef_name, estimate),
                      name = NULL) +
   scale_colour_manual(values = SITE_COLS_8, name = "Site") +
   facet_wrap(~ cov_type, ncol = 2, scales = "free") +
-  labs(x = "Coefficient estimate (log scale)", y = NULL,
-       title = "MARSS Covariate Effects — All 8 Sites",
-       subtitle = paste0("Model A (24 independent states); bars = 89% CI; ",
-                         "filled = excludes zero"),
-       caption = paste0("Haul-out sites (DR, PB) have MOCI and disturbance terms only ",
+  labs(x = NULL, y = NULL,
+       title = "Site-Specific Covariate Effects",
+       caption = paste0("Haul-out sites (DR, PB) have disturbance terms only ",
                         "(coyote/eSeal structurally absent).")) +
   theme_seal(base_size = 12) +
   theme(legend.position = "bottom",
         strip.text = element_text(size = rel(0.95), face = "bold"))
 
+# ── MOCI panel: shared across sites, varies by season x demographic class ───
+moci_df <- C_df %>%
+  filter(cov_type == "MOCI") %>%
+  mutate(
+    season = str_extract(coef_name, "JFM|AMJ|OND"),
+    vital_class = case_when(
+      str_detect(coef_name, "_A$") ~ "Adult",
+      str_detect(coef_name, "_M$") ~ "Molt",
+      str_detect(coef_name, "_P$") ~ "Pup",
+      TRUE ~ NA_character_),
+    label = paste0(vital_class, " (", season, ")")
+  )
+stopifnot(nrow(moci_df) > 0, !any(is.na(moci_df$season)),
+          !any(is.na(moci_df$vital_class)))
+
+MOCI_SEASON_COLS <- c(JFM = "#1B7837", AMJ = "#74C476", OND = "#08519C")
+
+p_moci <- ggplot(moci_df, aes(x = estimate, y = reorder(label, estimate),
+                              colour = season, shape = significant)) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "grey40") +
+  geom_linerange(aes(xmin = conf.low, xmax = conf.up),
+                 linewidth = 0.7, alpha = 0.7) +
+  geom_point(size = 2.5) +
+  scale_shape_manual(values = c("FALSE" = 1, "TRUE" = 16),
+                     labels = c("FALSE" = "Includes zero",
+                                "TRUE"  = "Excludes zero"),
+                     name = NULL) +
+  scale_colour_manual(values = MOCI_SEASON_COLS, name = "MOCI season") +
+  labs(x = "Coefficient estimate (log scale)", y = NULL,
+       title = "MOCI Effects (Shared Across All 8 Sites)",
+       caption = "One coefficient per season x demographic class; not site-specific.") +
+  theme_seal(base_size = 12) +
+  theme(legend.position = "bottom")
+
+# ── Combine into one Appendix figure ─────────────────────────────────────────
+p.A3 <- (p_site / p_moci) +
+  plot_layout(heights = c(2, 1)) +
+  plot_annotation(
+    title = "MARSS Covariate Effects — All 8 Sites",
+    subtitle = "Model A (24 independent states); bars = 89% CI; filled = excludes zero",
+    theme = theme(plot.title = element_text(size = 16, face = "bold"),
+                  plot.subtitle = element_text(size = 11, colour = "grey30")))
+
 ggsave("Output/Plots/marss8_covariate_effects.jpeg", p.A3,
-       width = 30, height = 32, units = "cm", dpi = 200)
-cat("Saved: Figure A3 — covariate effects\n")
+       width = 30, height = 40, units = "cm", dpi = 200)
+cat("Saved: Figure A3 — covariate effects (site-specific + MOCI panels)\n")
 
 # ── MODEL COMPARISON TABLE (printed for Appendix A, Table S2) ─────────────────
 if (exists("df_aic_8site")) {
@@ -265,7 +314,10 @@ if (exists("df_aic_8site")) {
   cat("\nInterpretation:\n")
   cat("  Model A vs C: tests whether Estuary/Coastal grouping explains site dynamics\n")
   cat("  Model A vs B: tests haul-out vs breeding distinction (confounded with covariate pooling)\n")
-  cat("  Large deltaAICc for B and C confirms sites are better treated as independent.\n")
+  cat("  Large deltaAICc for both confirms sites are better treated as independent;\n")
+  cat("  Model C fits worse than Model B, indicating tidal shelter / oceanographic\n")
+  cat("  exposure explains less of the site-level heterogeneity than the haul-out\n")
+  cat("  vs. breeding distinction does (though neither approaches Model A).\n")
 }
 
 # ── U parameter trends from best model ───────────────────────────────────────

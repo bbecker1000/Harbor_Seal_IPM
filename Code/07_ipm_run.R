@@ -54,7 +54,7 @@ cat(sprintf("Inputs ready: dat %dx%d | cov %dx%d | years %d-%d\n",
 # treedepth 12) reproduce the 8000-draw fit reported in the manuscript.
 # run_full_analysis_v3.2() saves the fit + input bundle and runs all plots.
 
-out <- run_full_analysis_v3.2(
+out.male.0.20 <- run_full_analysis_v3.3(
   use_real_data = TRUE,
   dat           = dat,
   cov_t_scaled  = cov_t_scaled,
@@ -82,7 +82,7 @@ out$fit$summary("phi_juv_base")[, c("variable", "mean")]   # expect ~0.70
 # ╚══════════════════════════════════════════════════════════════════════════╝
 # Use in later sessions to regenerate plots/tables from the saved fit.
 
-out <- load_seal_results("IPM_v3.2_real")   # -> list(fit, sim_data)
+out <- load_seal_results("IPM_v3.3_real")   # -> list(fit, sim_data)
 filter <- dplyr::filter
 
 cat("fit class:", class(out$fit)[1], "| draws() works:",
@@ -91,7 +91,7 @@ cat("fit class:", class(out$fit)[1], "| draws() works:",
 run_all_plots_v3.2(
   fit           = out$fit,
   sim_data      = out$sim_data,            # consistent shape ($sim_data)
-  prefix        = "IPM_v3.2_real",
+  prefix        = "IPM_v3.3_real",
   run_portfolio = TRUE,
   run_synchrony = TRUE
 )
