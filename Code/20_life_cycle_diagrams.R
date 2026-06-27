@@ -4,20 +4,24 @@
 #   (A) Marin IPM v3.3   — MOCI seasons as small colored text labels
 #   (B) Regional IPM     — adds county-type modifier notation on fecundity
 #
-# Strategy: no boxes, no arrows for MOCI.
-# Small italic season abbreviations sit directly below each affected vital rate
-# label. Colors: OND = red, AMJ = green, JFM = blue. Subtitle decodes colors.
+# MOCI label placement:
+#   φ_pup arrows        → OND · AMJ · JFM (stacked, both arrows)
+#   2/3 φ_juv stasis    → JFM (both sexes)
+#   1/3 φ_juv → adult  → JFM (both sexes) — same φ_juv, same MOCI effect
+#   φ_adult stasis      → JFM (both sexes)
+#   fecundity arc       → OND
+#   Regional only: fecundity arc also notes county modifier
 # =============================================================================
 
 library(tidyverse)
 library(ggforce)
 
 # ── Node centres ──────────────────────────────────────────────────────────────
-px  <- 1.00;  py  <-  0.00   # Pup
-jfx <- 3.40;  jfy <-  1.00   # Juv Female
-jmx <- 3.40;  jmy <- -1.00   # Juv Male
-afx <- 5.90;  afy <-  1.00   # Adult Female
-amx <- 5.90;  amy <- -1.00   # Adult Male
+px  <- 1.00;  py  <-  0.00
+jfx <- 3.40;  jfy <-  1.00
+jmx <- 3.40;  jmy <- -1.00
+afx <- 5.90;  afy <-  1.00
+amx <- 5.90;  amy <- -1.00
 
 r        <- 0.52
 gap      <- 0.09
@@ -32,10 +36,10 @@ lw      <- 1.00
 lw_loop <- 0.85
 lw_rep  <- 0.85
 
-# ── MOCI label colors ─────────────────────────────────────────────────────────
-col_ond <- "#B03A3E"   # muted red
-col_amj <- "#2E7D32"   # muted green
-col_jfm <- "#1A5EA8"   # muted blue
+# ── MOCI label colours ────────────────────────────────────────────────────────
+col_ond <- "#B03A3E"   # muted red    — OND
+col_amj <- "#2E7D32"   # muted green  — AMJ
+col_jfm <- "#1A5EA8"   # muted blue   — JFM
 moci_sz <- 3.4         # font size for MOCI labels
 
 # ── Helper: point on circle edge toward target ────────────────────────────────
@@ -58,26 +62,32 @@ jm_to_am_a  <- edge(amx, amy, jmx, jmy)
 fec_d <- c(afx - 0.20, afy - r - gap)
 fec_a <- c(px  + r + gap, py + 0.10)
 
-# ── Midpoints of transition arrows (for label placement) ─────────────────────
+# Midpoints of pup survival arrows
 mid_pup_jf <- c((pup_to_jf_d[1] + pup_to_jf_a[1]) / 2,
                 (pup_to_jf_d[2] + pup_to_jf_a[2]) / 2)
 mid_pup_jm <- c((pup_to_jm_d[1] + pup_to_jm_a[1]) / 2,
                 (pup_to_jm_d[2] + pup_to_jm_a[2]) / 2)
 
+# Midpoints of juv → adult transition arrows
+mid_jf_af <- c((jf_to_af_d[1] + jf_to_af_a[1]) / 2,
+               (jf_to_af_d[2] + jf_to_af_a[2]) / 2)
+mid_jm_am <- c((jm_to_am_d[1] + jm_to_am_a[1]) / 2,
+               (jm_to_am_d[2] + jm_to_am_a[2]) / 2)
+
 # ── Base life-cycle layers ────────────────────────────────────────────────────
 base_layers <- list(
   
-  # Circles
-  geom_circle(aes(x0=px,  y0=py,  r=r), fill="white", color=NA,      linewidth=0),
-  geom_circle(aes(x0=jfx, y0=jfy, r=r), fill="white", color=NA,      linewidth=0),
-  geom_circle(aes(x0=jmx, y0=jmy, r=r), fill="white", color=NA,      linewidth=0),
-  geom_circle(aes(x0=afx, y0=afy, r=r), fill="white", color=NA,      linewidth=0),
-  geom_circle(aes(x0=amx, y0=amy, r=r), fill="white", color=NA,      linewidth=0),
-  geom_circle(aes(x0=px,  y0=py,  r=r), fill=NA, color="black",      linewidth=1.4),
-  geom_circle(aes(x0=jfx, y0=jfy, r=r), fill=NA, color="black",      linewidth=1.4),
-  geom_circle(aes(x0=jmx, y0=jmy, r=r), fill=NA, color="black",      linewidth=1.4),
-  geom_circle(aes(x0=afx, y0=afy, r=r), fill=NA, color="black",      linewidth=1.4),
-  geom_circle(aes(x0=amx, y0=amy, r=r), fill=NA, color="black",      linewidth=1.4),
+  # Circles — fill first, then border
+  geom_circle(aes(x0=px,  y0=py,  r=r), fill="white", color=NA, linewidth=0),
+  geom_circle(aes(x0=jfx, y0=jfy, r=r), fill="white", color=NA, linewidth=0),
+  geom_circle(aes(x0=jmx, y0=jmy, r=r), fill="white", color=NA, linewidth=0),
+  geom_circle(aes(x0=afx, y0=afy, r=r), fill="white", color=NA, linewidth=0),
+  geom_circle(aes(x0=amx, y0=amy, r=r), fill="white", color=NA, linewidth=0),
+  geom_circle(aes(x0=px,  y0=py,  r=r), fill=NA, color="black", linewidth=1.4),
+  geom_circle(aes(x0=jfx, y0=jfy, r=r), fill=NA, color="black", linewidth=1.4),
+  geom_circle(aes(x0=jmx, y0=jmy, r=r), fill=NA, color="black", linewidth=1.4),
+  geom_circle(aes(x0=afx, y0=afy, r=r), fill=NA, color="black", linewidth=1.4),
+  geom_circle(aes(x0=amx, y0=amy, r=r), fill=NA, color="black", linewidth=1.4),
   
   # Node labels
   annotate("text", x=px,  y=py +0.13, label="bold('N'['pup'])",      parse=TRUE, size=6),
@@ -131,46 +141,42 @@ base_layers <- list(
            curvature=1.6, ncp=25, color="black",
            arrow=ar_loop, linewidth=lw_loop),
   
-  # Fecundity arrow
+  # Fecundity arrow (Adult F → Pup)
   annotate("curve",
            x=fec_d[1]-0.2, y=fec_d[2]+0.2,
            xend=fec_a[1], yend=fec_a[2]-0.1,
-           curvature=-0.1, color="grey40", arrow=ar_repro,
-           linewidth=lw_rep),
+           curvature=-0.1, color="grey40",
+           arrow=ar_repro, linewidth=lw_rep),
   
   # ── Vital-rate labels on transitions ─────────────────────────────────────────
   
-  # Pup survival — upper arrow
+  # Pup survival arrows
   annotate("text",
            x = mid_pup_jf[1] - 0.25,
            y = mid_pup_jf[2] + 0.26,
            label = "phi[pup]~rho[F]", parse = TRUE,
            size = 5, fontface = "bold"),
-  
-  # Pup survival — lower arrow
   annotate("text",
            x = mid_pup_jm[1] - 0.25,
            y = mid_pup_jm[2] - 0.26,
            label = "phi[pup]~(1-rho[F])", parse = TRUE,
            size = 5, fontface = "bold"),
   
-  # Juv → Adult transitions
+  # Juv → Adult transition arrows
   annotate("text",
-           x = (jf_to_af_d[1]+jf_to_af_a[1])/2, y = jfy + 0.25,
+           x = mid_jf_af[1], y = jfy + 0.25,
            label = "frac(1,3)~phi[juv]", parse = TRUE,
            size = 5, fontface = "bold"),
   annotate("text",
-           x = (jm_to_am_d[1]+jm_to_am_a[1])/2, y = jmy - 0.25,
+           x = mid_jm_am[1], y = jmy - 0.25,
            label = "frac(1,3)~phi[juv]", parse = TRUE,
            size = 5, fontface = "bold"),
   
-  # Juv stasis labels
+  # Stasis labels
   annotate("text", x = jfx, y = jfy + r + 0.23,
            label = "frac(2,3)~phi[juv]", parse = TRUE, size = 4),
   annotate("text", x = jmx, y = jmy - r - 0.23,
            label = "frac(2,3)~phi[juv]", parse = TRUE, size = 4),
-  
-  # Adult stasis labels
   annotate("text", x = afx, y = afy + r + 0.23,
            label = "phi[adult~F]", parse = TRUE, size = 4),
   annotate("text", x = amx, y = amy - r - 0.23,
@@ -184,84 +190,86 @@ base_layers <- list(
 )
 
 # ── MOCI text label layers ────────────────────────────────────────────────────
-# Small italic colored season abbreviations placed below each affected label.
-# One line per season, color-coded. No arrows, no boxes.
-#
-# Placement logic:
-#   φ_pup arrows   → seasons below the vital-rate label on each arrow
-#   Juv stasis     → season below "2/3 φ_juv" on both loops
-#   Adult stasis   → season below "φ_adult F/M" on both loops
-#   Fecundity arc  → season below "f_t (fecundity)" label
+# Small italic coloured season abbreviations placed near each affected label.
+# The 1/3 φ_juv advancement arrows carry the same JFM label as the stasis
+# loops because both depend on the common annual juvenile survival φ_juv.
 
 moci_labels <- list(
   
-  # ── Pup survival: all three seasons ──────────────────────────────────────────
-  # Upper arrow (φ_pup ρ_F): stack OND · AMJ · JFM below the label
-  annotate("text",
-           x = mid_pup_jf[1] - 0.25,
-           y = mid_pup_jf[2] + 0.04,
-           label = "italic('OND')", parse = TRUE,
-           size = moci_sz, color = col_ond, fontface = "italic"),
-  annotate("text",
-           x = mid_pup_jf[1] - 0.25,
-           y = mid_pup_jf[2] - 0.12,
-           label = "italic('AMJ')", parse = TRUE,
-           size = moci_sz, color = col_amj, fontface = "italic"),
-  annotate("text",
-           x = mid_pup_jf[1] - 0.25,
-           y = mid_pup_jf[2] - 0.28,
-           label = "italic('JFM')", parse = TRUE,
-           size = moci_sz, color = col_jfm, fontface = "italic"),
+  # ── Pup survival: OND · AMJ · JFM (both arrows) ──────────────────────────
   
-  # Lower arrow (φ_pup (1−ρ_F)): same three seasons
+  # Upper arrow (φ_pup ρ_F) — stack below the vital-rate label
   annotate("text",
-           x = mid_pup_jm[1] - 0.25,
-           y = mid_pup_jm[2] - 0.04,
+           x = mid_pup_jf[1] - 0.25, y = mid_pup_jf[2] + 0.04,
            label = "italic('OND')", parse = TRUE,
-           size = moci_sz, color = col_ond, fontface = "italic"),
+           size = moci_sz, color = col_ond),
   annotate("text",
-           x = mid_pup_jm[1] - 0.25,
-           y = mid_pup_jm[2] + 0.12,
+           x = mid_pup_jf[1] - 0.25, y = mid_pup_jf[2] - 0.12,
            label = "italic('AMJ')", parse = TRUE,
-           size = moci_sz, color = col_amj, fontface = "italic"),
+           size = moci_sz, color = col_amj),
   annotate("text",
-           x = mid_pup_jm[1] - 0.25,
-           y = mid_pup_jm[2] + 0.28,
+           x = mid_pup_jf[1] - 0.25, y = mid_pup_jf[2] - 0.28,
            label = "italic('JFM')", parse = TRUE,
-           size = moci_sz, color = col_jfm, fontface = "italic"),
+           size = moci_sz, color = col_jfm),
   
-  # ── Juvenile stasis: JFM only ─────────────────────────────────────────────
-  # Female juv — below "2/3 φ_juv" label (which is at y = jfy + r + 0.23 ≈ 1.75)
+  # Lower arrow (φ_pup (1−ρ_F)) — stack above the vital-rate label
+  annotate("text",
+           x = mid_pup_jm[1] - 0.25, y = mid_pup_jm[2] - 0.04,
+           label = "italic('OND')", parse = TRUE,
+           size = moci_sz, color = col_ond),
+  annotate("text",
+           x = mid_pup_jm[1] - 0.25, y = mid_pup_jm[2] + 0.12,
+           label = "italic('AMJ')", parse = TRUE,
+           size = moci_sz, color = col_amj),
+  annotate("text",
+           x = mid_pup_jm[1] - 0.25, y = mid_pup_jm[2] + 0.28,
+           label = "italic('JFM')", parse = TRUE,
+           size = moci_sz, color = col_jfm),
+  
+  # ── Juvenile stasis loops: JFM ────────────────────────────────────────────
+  # Female — below "2/3 φ_juv" (at y = jfy + r + 0.23 ≈ 1.75)
   annotate("text",
            x = jfx, y = jfy + r + 0.48,
            label = "italic('JFM')", parse = TRUE,
-           size = moci_sz, color = col_jfm, fontface = "italic"),
+           size = moci_sz, color = col_jfm),
   
-  # Male juv — above "2/3 φ_juv" label (below circle, which is at y ≈ −1.75)
+  # Male — above "2/3 φ_juv" (at y = jmy - r - 0.23 ≈ −1.75)
   annotate("text",
            x = jmx, y = jmy - r - 0.48,
            label = "italic('JFM')", parse = TRUE,
-           size = moci_sz, color = col_jfm, fontface = "italic"),
+           size = moci_sz, color = col_jfm),
   
-  # ── Adult stasis: JFM only ───────────────────────────────────────────────
-  # Adult female — below "φ_adult F" (at y = afy + r + 0.23 ≈ 1.75)
+  # ── Juv → Adult advancement arrows: JFM ──────────────────────────────────
+  # Same φ_juv, same MOCI effect as stasis.
+  # Label placed just below "1/3 φ_juv" (female) and above "1/3 φ_juv" (male).
+  annotate("text",
+           x = mid_jf_af[1], y = jfy + 0.02,
+           label = "italic('JFM')", parse = TRUE,
+           size = moci_sz, color = col_jfm),
+  annotate("text",
+           x = mid_jm_am[1], y = jmy - 0.02,
+           label = "italic('JFM')", parse = TRUE,
+           size = moci_sz, color = col_jfm),
+  
+  # ── Adult stasis loops: JFM ───────────────────────────────────────────────
+  # Female — below "φ_adult F" (at y = afy + r + 0.23 ≈ 1.75)
   annotate("text",
            x = afx, y = afy + r + 0.48,
            label = "italic('JFM')", parse = TRUE,
-           size = moci_sz, color = col_jfm, fontface = "italic"),
+           size = moci_sz, color = col_jfm),
   
-  # Adult male — above "φ_adult M" (at y = amy - r - 0.23 ≈ −1.75)
+  # Male — above "φ_adult M" (at y = amy - r - 0.23 ≈ −1.75)
   annotate("text",
            x = amx, y = amy - r - 0.48,
            label = "italic('JFM')", parse = TRUE,
-           size = moci_sz, color = col_jfm, fontface = "italic"),
+           size = moci_sz, color = col_jfm),
   
-  # ── Fecundity arc: OND only ──────────────────────────────────────────────
+  # ── Fecundity arc: OND ────────────────────────────────────────────────────
   # Below "f_t (fecundity)" which is at y = −0.10
   annotate("text",
            x = (px + afx)/2 + 0.30, y = -0.32,
            label = "italic('OND')", parse = TRUE,
-           size = moci_sz, color = col_ond, fontface = "italic")
+           size = moci_sz, color = col_ond)
 )
 
 # ── Shared theme ──────────────────────────────────────────────────────────────
@@ -275,20 +283,23 @@ shared_theme <- list(
     plot.subtitle   = element_text(size = 9.5, hjust = 0.5, color = "grey30",
                                    margin = margin(b = 10))
   ),
-  coord_equal(xlim = c(0.0, 7.10), ylim = c(-2.35, 2.60)),
+  coord_equal(xlim = c(0.0, 7.10), ylim = c(-2.40, 2.65)),
   scale_x_continuous(expand = c(0, 0)),
   scale_y_continuous(expand = c(0, 0))
 )
 
 # =============================================================================
-# VERSION A: Marin IPM v3.3
+# VERSION A — Marin IPM v3.3
 # =============================================================================
 
 sub_marin <- paste0(
-  "\u03c6pup: pup survival  |  \u03c6juv: juvenile survival  |  ",
+  "\u03c6pup: pup survival  |  \u03c6juv: juvenile survival (stasis and advancement)  |  ",
   "\u03c6adult F: adult female  |  \u03c6adult M = \u03c6adult F \u2212 \u03b4adult\n",
-  "Italic season labels on transitions: ",
-  "OND (Oct\u2013Dec)  \u00b7  AMJ (Apr\u2013Jun)  \u00b7  JFM (Jan\u2013Mar)"
+  "Italic season labels: ",
+  "OND = Oct\u2013Dec  \u00b7  ",
+  "AMJ = Apr\u2013Jun  \u00b7  ",
+  "JFM = Jan\u2013Mar  ",
+  "(MOCI effect applies equally to stasis and advancement fractions of \u03c6juv)"
 )
 
 life_cycle_marin <- ggplot() +
@@ -307,24 +318,24 @@ ggsave("Output/Plots/life_cycle_marin_v3.3.jpeg",
 cat("Saved: Output/Plots/life_cycle_marin_v3.3.jpeg\n")
 
 # =============================================================================
-# VERSION B: Regional IPM
-# Identical to Marin version plus:
-#   — county-type modifier notation on fecundity arc
-#   — slightly wider subtitle noting county modifier structure
+# VERSION B — Regional IPM
+# Identical structure; adds county-type modifier note on fecundity arc.
 # =============================================================================
 
-# Extra annotation: county modifier text below the OND fecundity label
 regional_extras <- list(
+  # County modifier text below the OND fecundity label
   annotate("text",
            x = (px + afx)/2 + 0.30, y = -0.54,
-           label = "italic('+ county modifier ('*delta[Marin]*', '*delta[Bay]*', '*delta[SB]*')')",
-           parse = TRUE, size = 3.0, color = "grey40", fontface = "italic")
+           label = paste0("italic('+ county modifier'~",
+                          "(delta[Marin]*', '*delta[Bay]*', '*delta[SB])~",
+                          "'[fecundity only]')"),
+           parse = TRUE, size = 2.9, color = "grey45")
 )
 
 sub_regional <- paste0(
-  "\u03c6pup: pup survival  |  \u03c6juv: juvenile survival  |  ",
+  "\u03c6pup: pup survival  |  \u03c6juv: juvenile survival (stasis and advancement)  |  ",
   "\u03c6adult F: adult female  |  \u03c6adult M = \u03c6adult F \u2212 \u03b4adult\n",
-  "Italic season labels: OND (Oct\u2013Dec)  \u00b7  AMJ (Apr\u2013Jun)  \u00b7  JFM (Jan\u2013Mar)",
+  "Italic season labels: OND = Oct\u2013Dec  \u00b7  AMJ = Apr\u2013Jun  \u00b7  JFM = Jan\u2013Mar  ",
   "  |  Fecundity additionally modulated by county-type MOCI modifiers"
 )
 

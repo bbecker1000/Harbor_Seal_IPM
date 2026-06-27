@@ -128,5 +128,5 @@ sbc <- run_recovery_check_v3.2(n_datasets = 10, base_seed = 1000)
 
 # Commit.
 # system('git add -A')
-# system('git commit -m "IPM v3.3 rerun"')
+# system('git commit -m "regional models"')
 # system('git push origin main')
