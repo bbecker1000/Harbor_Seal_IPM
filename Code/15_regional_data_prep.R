@@ -49,7 +49,7 @@ dir.create("Output", showWarnings = FALSE)
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 YEARS_REGIONAL <- 2005:2025          # T = 21; index 16 = 2020 (latent)
-T_PROJ_REGIONAL <- 10
+T_PROJ_REGIONAL <- 5    # 5-year projections
 LATENT_YEAR <- 2020                  # no surveys; kept as unobserved state year
 
 # ── SITE METADATA TABLE ───────────────────────────────────────────────────────
@@ -218,10 +218,15 @@ cat(sprintf("MOCI data: %d years; JFM mean=%.3f, AMJ mean=%.3f, OND mean=%.3f\n"
 # Observation indicators: y_*_obs[S, T] = 1 if surveyed, 0 if not
 #
 # Three reasons for obs = 0:
-#   (a) 2020 latent year — no surveys anywhere
-#   (b) Site not yet started (before first year in metadata)
-#   (c) Explicit ND (not surveyed) in a given year
-#   (d) Type H site: y_pup_obs always 0 (is_breeder == 0)
+#   (a) Site not yet started (before first year in metadata)
+#   (b) Explicit ND (not surveyed / COVID closure / no access) in a given year
+#   (c) Type H site: y_pup surveys retained but pup likelihood controlled by data
+#
+# NOTE: 2020 is NOT forcibly excluded. Most regional sites had no surveys due to
+# COVID closures, so 2020 will be effectively latent for those sites (y_obs = 0
+# from ND in the raw data). However, a few Marin sites did conduct limited surveys
+# in 2020 — those counts are real data and should enter the likelihood normally.
+# The fill loop handles this correctly: ND → NA → y_obs = 0; real count → y_obs = 1.
 
 # Initialize matrices
 year_idx <- setNames(seq_along(YEARS_REGIONAL), YEARS_REGIONAL)
@@ -231,28 +236,15 @@ make_matrix <- function(fill = NA_real_) matrix(fill, nrow = S, ncol = T,
                                                                 YEARS_REGIONAL))
 y_adult <- make_matrix(); y_pup <- make_matrix(); y_molt <- make_matrix()
 
-# Fill observed counts (log scale for Normal likelihood, as in Marin IPM)
-#
-# ZERO CONVENTION: count = 0 means the site WAS surveyed but no animals were
-# seen — this is real information and must be kept as an observation.
-# NA (from "ND" in the XLSX or missing Marin years) means no survey occurred.
-#
-# log(0) is undefined under the log-normal model, so true zero counts use a
-# lower-bound offset: log(0.5). This is equivalent to saying "we observed
-# fewer than 1 animal" and constrains N * alpha * d to be near zero for that
-# site-year while keeping the observation in the likelihood.
-
-LOG_ZERO_OFFSET <- log(0.5)   # offset for true zero counts
-
-n_zeros <- 0L  # track how many zero-count observations are present
+LOG_ZERO_OFFSET <- log(0.5)   # offset for true zero counts (surveyed, no animals)
+n_zeros <- 0L
 
 for (i in seq_len(nrow(regional_counts))) {
   row <- regional_counts[i, ]
   s <- row$site_id
   t <- year_idx[as.character(row$Year)]
   if (is.na(t)) next
-  if (row$Year == LATENT_YEAR) next   # 2020: latent year, no observations
-  if (row$Year < row$starts)   next   # before this site began monitoring
+  if (row$Year < row$starts) next    # before this site began monitoring
   
   val <- if      (is.na(row$count))   NA_real_        # ND = not surveyed
   else if (row$count == 0)    { n_zeros <- n_zeros + 1L; LOG_ZERO_OFFSET }
@@ -376,8 +368,18 @@ cat("\n── Final data dimensions ──────────────�
 cat(sprintf("y_adult obs: %d / %d site-years\n", sum(y_adult_obs), S * T))
 cat(sprintf("y_pup   obs: %d / %d site-years\n", sum(y_pup_obs),   S * T))
 cat(sprintf("y_molt  obs: %d / %d site-years\n", sum(y_molt_obs),  S * T))
-cat(sprintf("Latent year 2020: all obs = 0 (confirmed: %s)\n",
-            all(y_adult_obs[, year_idx["2020"]] == 0)))
+t_2020 <- year_idx["2020"]
+n_adult_2020 <- sum(y_adult_obs[, t_2020])
+n_pup_2020   <- sum(y_pup_obs[,   t_2020])
+n_molt_2020  <- sum(y_molt_obs[,  t_2020])
+cat(sprintf("2020 observations: adult=%d, pup=%d, molt=%d site-surveys\n",
+            n_adult_2020, n_pup_2020, n_molt_2020))
+if (n_adult_2020 > 0) {
+  sites_2020 <- regional_sites$site_name[which(y_adult_obs[, t_2020] == 1)]
+  cat(sprintf("  Sites with 2020 adult data: %s\n", paste(sites_2020, collapse = ", ")))
+} else {
+  cat("  2020 fully latent (no surveys) — Leslie matrix runs unobserved.\n")
+}
 
 cat("\nObjects created: regional_sites, regional_counts, regional_moci,")
 cat("\n                 regional_stan, years_regional")

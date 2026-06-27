@@ -175,12 +175,12 @@ check_diagnostics_regional <- function(fit) {
   }, error = function(e) cat("Diagnostics unavailable (CSVs gone).\n"))
   
   params <- c("phi_pup_logit", "phi_juv_base", "phi_adult_F_logit", "delta_adult",
-              "avg_fecundity", "rho_pup",
+              "avg_fecundity", "rho_pup", "rho_juv_molt",
               "beta_moci_ond_fecund", "beta_moci_jfm_adult",
               "delta_moci_mouth_fecund", "delta_moci_mouth_surv",
-              "delta_moci_south_fecund", "delta_moci_south_surv",
+              "delta_moci_south_fecund", "delta_moci_south_surv", "delta_moci_marin_fecund",
               "sigma_county", "sigma_site", "detect_breed_logit", "detect_molt_logit",
-              "sigma_process", "sigma_obs_adult", "sigma_obs_pup", "sigma_obs_molt")
+              "sigma_process", "sigma_obs_adult", "sigma_obs_molt")
   
   s <- tryCatch(regional_fit_summary(fit, params), error = function(e) NULL)
   if (!is.null(s)) {
@@ -326,7 +326,8 @@ create_bay_coast_moci_plots <- function(fit, model_data, save = TRUE, prefix = "
     list(nm="delta_moci_mouth_fecund", lbl="Bay Mouth: fecundity",  sd=0.15),
     list(nm="delta_moci_mouth_surv",   lbl="Bay Mouth: survival",   sd=0.15),
     list(nm="delta_moci_south_fecund", lbl="South Bay: fecundity",  sd=0.20),
-    list(nm="delta_moci_south_surv",   lbl="South Bay: survival",   sd=0.20)
+    list(nm="delta_moci_south_surv",   lbl="South Bay: survival",   sd=0.20),
+    list(nm="delta_moci_marin_fecund", lbl="Marin core: fecundity", sd=0.10)
   )
   mod_df <- map_dfr(mod_params, function(mp) {
     d <- as.numeric(draws[[mp$nm]])
@@ -356,6 +357,7 @@ create_bay_coast_moci_plots <- function(fit, model_data, save = TRUE, prefix = "
   beta_ond_f    <- as.numeric(draws$beta_moci_ond_fecund[idx])
   d_mouth_f     <- as.numeric(draws$delta_moci_mouth_fecund[idx])
   d_south_f     <- as.numeric(draws$delta_moci_south_fecund[idx])
+  d_marin_f     <- as.numeric(draws$delta_moci_marin_fecund[idx])
   avg_fec       <- as.numeric(draws$avg_fecundity[idx])
   
   fec_df <- do.call(rbind, lapply(xr, function(x) {
@@ -363,10 +365,12 @@ create_bay_coast_moci_plots <- function(fit, model_data, save = TRUE, prefix = "
     fc    <- plogis(base + beta_ond_f * x)
     fm    <- plogis(base + (beta_ond_f + d_mouth_f) * x)
     fs    <- plogis(base + (beta_ond_f + d_south_f) * x)
+    fmr   <- plogis(base + (beta_ond_f + d_marin_f) * x)
     data.frame(moci = x,
-               mn_coast = mean(fc), lo_coast = quantile(fc, CI_LO), hi_coast = quantile(fc, CI_HI),
-               mn_mouth = mean(fm), lo_mouth = quantile(fm, CI_LO), hi_mouth = quantile(fm, CI_HI),
-               mn_south = mean(fs), lo_south = quantile(fs, CI_LO), hi_south = quantile(fs, CI_HI))
+               mn_coast = mean(fc),  lo_coast = quantile(fc,  CI_LO), hi_coast = quantile(fc,  CI_HI),
+               mn_mouth = mean(fm),  lo_mouth = quantile(fm,  CI_LO), hi_mouth = quantile(fm,  CI_HI),
+               mn_south = mean(fs),  lo_south = quantile(fs,  CI_LO), hi_south = quantile(fs,  CI_HI),
+               mn_marin = mean(fmr), lo_marin = quantile(fmr, CI_LO), hi_marin = quantile(fmr, CI_HI))
   }))
   
   p_fec_resp <- ggplot(fec_df, aes(x = moci)) +
@@ -376,11 +380,13 @@ create_bay_coast_moci_plots <- function(fit, model_data, save = TRUE, prefix = "
     geom_line(aes(y=mn_mouth,colour="Bay Mouth"),linewidth=1.2)+
     geom_ribbon(aes(ymin=lo_south,ymax=hi_south),alpha=0.15,fill="#D94801")+
     geom_line(aes(y=mn_south,colour="South Bay"),linewidth=1.2)+
+    geom_ribbon(aes(ymin=lo_marin,ymax=hi_marin),alpha=0.15,fill="#08519C")+
+    geom_line(aes(y=mn_marin,colour="Marin Core"),linewidth=1.2)+
     geom_vline(xintercept=0,linetype="dashed",colour="grey50")+
-    scale_colour_manual(values=COAST_TYPE_COLS,name="County type")+
+    scale_colour_manual(values=c(COAST_TYPE_COLS, "Marin Core"="#08519C"),name="County type")+
     labs(x="MOCI OND (SD units)",y="Fecundity (prob. of pupping)",
-         title="OND MOCI → Fecundity by County Type",
-         subtitle="Expected: South Bay flattest, Open Coast steepest")+
+         title="OND MOCI to Fecundity by County Type",
+         subtitle="Marin core site expected steepest response (informed by Marin IPM v3.3)")+
     coord_cartesian(ylim=c(0,1))+theme_seal()
   if (save) ggsave(paste0("Output/Plots/",prefix,"_moci_fecundity_county_type.jpeg"),
                    p_fec_resp,width=22,height=12,units="cm")
@@ -439,24 +445,19 @@ create_regional_projection_plots <- function(fit, model_data, save = TRUE, prefi
   C <- model_data$stan_data$C %||% 6
   county_names   <- model_data$county_names   %||% COUNTY_NAMES
   scenario_names <- model_data$scenario_names %||% c("Status Quo","Warm (MOCI +1)","Cool (MOCI -1)")
-  T_proj   <- model_data$stan_data$T_proj %||% 10
+  T_proj   <- model_data$stan_data$T_proj %||% 5
   N_scen   <- length(scenario_names)
   pyrs     <- (max(years) + 1):(max(years) + T_proj)
   draws_all <- fit$draws(format = "matrix")
   
-  # ── County-level projection draws ─────────────────────────────────────────
-  # Note: projections stored as N_total_county[c,t] extended forward
-  # If not in generated quantities, reconstruct from regional total
-  # For now build from county trajectories + simple Leslie matrix forward pass
-  # using posterior draws — delegate to in-model generated quantities if available
+  # ── Check for projection generated quantities ─────────────────────────────
+  proj_avail <- any(grepl("N_total_county_proj", colnames(draws_all)))
+  if (!proj_avail) {
+    cat("  (Projection plots require generated quantity N_total_county_proj;")
+    cat(" placeholder produced — re-generate after Stan model update.)\n")
+  }
   
-  # Regional total projections (if in generated quantities)
-  # These would need to be added in a future Stan model iteration;
-  # for now compute from county totals at T (last observed year)
-  cat("  (Projection plots require generated quantity N_total_county_proj;")
-  cat(" placeholder produced — re-generate after Stan model update.)\n")
-  
-  # ── Historical county totals for context ──────────────────────────────────
+  # ── Historical county totals ───────────────────────────────────────────────
   hist_df <- map_dfr(1:C, function(c) {
     cols <- paste0("N_total_county[", c, ",", 1:T, "]")
     cols_ok <- cols[cols %in% colnames(draws_all)]
@@ -465,26 +466,116 @@ create_regional_projection_plots <- function(fit, model_data, save = TRUE, prefi
     tibble(County = county_names[c], Year = years[seq_along(cols_ok)],
            mean = colMeans(mat),
            lo = apply(mat, 2, quantile, CI_LO), hi = apply(mat, 2, quantile, CI_HI),
-           Period = "Historical")
+           Scenario = "Historical", Period = "Historical")
   }) |> mutate(County = factor(County, levels = county_names))
   
-  p_hist <- ggplot(hist_df, aes(x = Year, y = mean, colour = County, fill = County)) +
+  if (!proj_avail) {
+    p_hist <- ggplot(hist_df, aes(x = Year, y = mean, colour = County, fill = County)) +
+      geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.15, colour = NA) +
+      geom_line(linewidth = 1.1) +
+      geom_vline(xintercept = 2020, linetype = "dotted", colour = "grey50") +
+      scale_colour_manual(values = COUNTY_COLS) +
+      scale_fill_manual(values = COUNTY_COLS) +
+      scale_y_continuous(labels = scales::comma) +
+      facet_wrap(~ County, scales = "free_y", ncol = 3) +
+      labs(x = "Year", y = "Total population",
+           title = "County Population Trajectories (Historical)",
+           subtitle = paste0("Posterior mean + ", CI_LABEL,
+                             "; use these as baselines for projection comparison")) +
+      theme_seal() + guides(colour = "none", fill = "none")
+    if (save) ggsave(paste0("Output/Plots/", prefix, "_county_historical.jpeg"),
+                     p_hist, width = 34, height = 22, units = "cm", dpi = 200)
+    return(list(historical = p_hist, data = hist_df))
+  }
+  
+  # ── Extract projection draws: N_total_county_proj[c, sc, tp] ─────────────
+  SCEN_COLS <- c("Status Quo" = "#2166AC", "Warm (MOCI +1)" = "#D94801",
+                 "Cool (MOCI -1)" = "#4DAF4A")
+  
+  proj_df <- map_dfr(1:C, function(c) {
+    map_dfr(seq_along(scenario_names), function(sc) {
+      cols <- paste0("N_total_county_proj[", c, ",", sc, ",", 1:T_proj, "]")
+      cols_ok <- cols[cols %in% colnames(draws_all)]
+      if (!length(cols_ok)) return(NULL)
+      mat <- draws_all[, cols_ok, drop = FALSE]
+      tibble(County   = county_names[c],
+             Scenario = scenario_names[sc],
+             Year     = pyrs[seq_along(cols_ok)],
+             mean     = colMeans(mat),
+             lo       = apply(mat, 2, quantile, CI_LO),
+             hi       = apply(mat, 2, quantile, CI_HI),
+             Period   = "Projection")
+    })
+  }) |> mutate(County   = factor(County,   levels = county_names),
+               Scenario = factor(Scenario, levels = scenario_names))
+  
+  # Combine historical + projection for each county
+  plot_df <- bind_rows(
+    hist_df |> mutate(Scenario = "Historical"),
+    proj_df
+  ) |> mutate(Scenario = factor(Scenario, levels = c("Historical", scenario_names)))
+  
+  p_proj <- ggplot(plot_df, aes(x = Year, colour = Scenario, fill = Scenario)) +
     geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.15, colour = NA) +
-    geom_line(linewidth = 1.1) +
-    geom_vline(xintercept = 2020, linetype = "dotted", colour = "grey50") +
-    scale_colour_manual(values = COUNTY_COLS) +
-    scale_fill_manual(values = COUNTY_COLS) +
+    geom_line(aes(y = mean), linewidth = 1.0) +
+    geom_vline(xintercept = max(years), linetype = "dashed", colour = "grey40") +
+    scale_colour_manual(values = c("Historical" = "#1A1A2E", SCEN_COLS), name = NULL) +
+    scale_fill_manual(  values = c("Historical" = "#444466", SCEN_COLS), name = NULL) +
     scale_y_continuous(labels = scales::comma) +
     facet_wrap(~ County, scales = "free_y", ncol = 3) +
-    labs(x = "Year", y = "Total population",
-         title = "County Population Trajectories (Historical)",
-         subtitle = paste0("Posterior mean + ", CI_LABEL,
-                           "; use these as baselines for projection comparison")) +
-    theme_seal() + guides(colour = "none", fill = "none")
-  if (save) ggsave(paste0("Output/Plots/", prefix, "_county_historical.jpeg"),
-                   p_hist, width = 34, height = 22, units = "cm", dpi = 200)
+    labs(x = "Year", y = "Total population (all ages)",
+         title = "County Population Projections: 5-Year Scenarios",
+         subtitle = sprintf(
+           "Dashed line = end of historical record (%d); shading = %s CrI",
+           max(years), CI_LABEL)) +
+    theme_seal(base_size = 11) +
+    theme(legend.position = "bottom")
+  if (save) ggsave(paste0("Output/Plots/", prefix, "_county_projections.jpeg"),
+                   p_proj, width = 36, height = 24, units = "cm", dpi = 200)
   
-  list(historical = p_hist, data = hist_df)
+  # ── Regional total projection ──────────────────────────────────────────────
+  reg_hist <- tibble(
+    Year = years, Scenario = "Historical",
+    mean = colMeans(draws_all[, paste0("N_total_regional[", 1:T, "]"), drop=FALSE]),
+    lo   = apply(draws_all[, paste0("N_total_regional[", 1:T, "]"), drop=FALSE],
+                 2, quantile, CI_LO),
+    hi   = apply(draws_all[, paste0("N_total_regional[", 1:T, "]"), drop=FALSE],
+                 2, quantile, CI_HI))
+  
+  reg_proj <- map_dfr(seq_along(scenario_names), function(sc) {
+    map_dfr(1:T_proj, function(tp) {
+      cols <- paste0("N_total_county_proj[", 1:C, ",", sc, ",", tp, "]")
+      cols_ok <- cols[cols %in% colnames(draws_all)]
+      if (!length(cols_ok)) return(NULL)
+      totals <- rowSums(draws_all[, cols_ok, drop = FALSE])
+      tibble(Year = pyrs[tp], Scenario = scenario_names[sc],
+             mean = mean(totals), lo = quantile(totals, CI_LO),
+             hi   = quantile(totals, CI_HI))
+    })
+  })
+  
+  reg_df <- bind_rows(reg_hist, reg_proj) |>
+    mutate(Scenario = factor(Scenario, levels = c("Historical", scenario_names)))
+  
+  p_reg <- ggplot(reg_df, aes(x = Year, colour = Scenario, fill = Scenario)) +
+    geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.15, colour = NA) +
+    geom_line(aes(y = mean), linewidth = 1.2) +
+    geom_vline(xintercept = max(years), linetype = "dashed", colour = "grey40") +
+    scale_colour_manual(values = c("Historical" = "#1A1A2E", SCEN_COLS), name = NULL) +
+    scale_fill_manual(  values = c("Historical" = "#444466", SCEN_COLS), name = NULL) +
+    scale_y_continuous(labels = scales::comma) +
+    labs(x = "Year", y = "Total population (all counties)",
+         title = "Regional Harbor Seal Population: Historical + 5-Year Projections",
+         subtitle = "Central-Northern California; Sum across 6 county groups; 89% CrI") +
+    theme_seal() +
+    theme(legend.position  = "bottom",
+          legend.text      = element_text(size = 11),
+          legend.key.width = unit(1.5, "cm"))
+  if (save) ggsave(paste0("Output/Plots/", prefix, "_regional_projection.jpeg"),
+                   p_reg, width = 28, height = 16, units = "cm", dpi = 200)
+  
+  list(county_plot = p_proj, regional_plot = p_reg,
+       proj_data = proj_df, hist_data = hist_df)
 }
 
 # ============================================================================
@@ -598,19 +689,20 @@ create_regional_portfolio_plots <- function(fit, model_data, save = TRUE, prefix
 create_regional_forest_plot <- function(fit, save = TRUE, prefix = "Regional") {
   params <- tribble(
     ~variable,                  ~label,                              ~group,
-    "beta_moci_ond_fecund",     "MOCI OND → fecundity (baseline)",  "MOCI: open coast",
-    "beta_moci_ond_pup",        "MOCI OND → pup survival",          "MOCI: open coast",
-    "beta_moci_jfm_pup",        "MOCI JFM → pup survival",          "MOCI: open coast",
-    "beta_moci_amj_pup",        "MOCI AMJ → pup survival",          "MOCI: open coast",
-    "beta_moci_jfm_juv",        "MOCI JFM → juvenile survival",     "MOCI: open coast",
-    "beta_moci_jfm_adult",      "MOCI JFM → adult survival",        "MOCI: open coast",
-    "beta_moci_amj_molt",       "MOCI AMJ → molt detection",        "MOCI: open coast",
-    "delta_moci_mouth_fecund",  "Bay Mouth: fecundity modifier",   "Bay modifier",
-    "delta_moci_mouth_surv",    "Bay Mouth: survival modifier",    "Bay modifier",
-    "delta_moci_south_fecund",  "South Bay: fecundity modifier",   "Bay modifier",
-    "delta_moci_south_surv",    "South Bay: survival modifier",    "Bay modifier"
+    "beta_moci_ond_fecund",     "MOCI OND: fecundity (open coast)", "Open coast baseline",
+    "beta_moci_ond_pup",        "MOCI OND: pup survival",           "Open coast baseline",
+    "beta_moci_amj_pup",        "MOCI AMJ: pup survival",           "Open coast baseline",
+    "beta_moci_jfm_pup",        "MOCI JFM: pup survival",           "Open coast baseline",
+    "beta_moci_jfm_juv",        "MOCI JFM: juvenile survival",      "Open coast baseline",
+    "beta_moci_jfm_adult",      "MOCI JFM: adult survival",         "Open coast baseline",
+    "beta_moci_amj_molt",       "MOCI AMJ: molt detection",         "Open coast baseline",
+    "delta_moci_marin_fecund",  "Marin core: fecundity modifier",   "Site modifier",
+    "delta_moci_mouth_fecund",  "Bay Mouth: fecundity modifier",    "Site modifier",
+    "delta_moci_mouth_surv",    "Bay Mouth: survival modifier",     "Site modifier",
+    "delta_moci_south_fecund",  "South Bay: fecundity modifier",    "Site modifier",
+    "delta_moci_south_surv",    "South Bay: survival modifier",     "Site modifier"
   )
-  grp_cols <- c("MOCI: open coast" = "#2166AC", "Bay modifier" = "#D94801")
+  grp_cols <- c("Open coast baseline" = "#2166AC", "Site modifier" = "#D94801")
   
   draws_all <- tryCatch(fit$draws(format = "draws_df"),
                         error = function(e) fit$draws(format = "matrix"))
@@ -639,12 +731,12 @@ create_regional_forest_plot <- function(fit, save = TRUE, prefix = "Regional") {
     facet_grid(group ~ ., scales = "free_y", space = "free_y") +
     labs(x = "Coefficient (logit scale)", y = NULL,
          title = "Regional IPM: MOCI Effect Forest Plot",
-         subtitle = paste0("Open-coast baseline (blue) + Bay vs. Coast modifier (orange); thick=50% CrI, thin=89% CrI")) +
+         subtitle = "Open-coast baseline (blue) + site-specific modifiers (orange); thick=50% CrI, thin=89% CrI") +
     theme_seal(base_size = 13) +
     theme(panel.grid.major.y = element_blank(),
           strip.text.y = element_text(angle = 0, face = "bold"))
   if (save) ggsave(paste0("Output/Plots/", prefix, "_forest_plot.jpeg"),
-                   p, width = 28, height = 20, units = "cm", dpi = 200)
+                   p, width = 28, height = 24, units = "cm", dpi = 200)
   list(plot = p, data = df)
 }
 
@@ -654,43 +746,46 @@ create_regional_forest_plot <- function(fit, save = TRUE, prefix = "Regional") {
 create_site_availability_plots <- function(fit, model_data, save = TRUE, prefix = "Regional") {
   site_meta <- model_data$site_meta
   if (is.null(site_meta)) {
-    cat("  site_meta not available — skipping availability plots.\n")
+    cat("  site_meta not available — skipping site detection plots.\n")
     return(NULL)
   }
   S <- nrow(site_meta)
   
-  alpha_summ <- regional_fit_summary(
-    fit, c(paste0("log_alpha_breed[", 1:S, "]"),
-           paste0("log_alpha_pup[",   1:S, "]"),
-           paste0("log_alpha_molt[",  1:S, "]")))
+  sigma_d <- tryCatch(
+    mean(as.numeric(fit$draws("sigma_site", format = "matrix"))),
+    error = function(e) 1.0)
   
-  alpha_df <- alpha_summ |>
+  detect_summ <- regional_fit_summary(fit, paste0("site_detect_raw[", 1:S, "]"))
+  
+  detect_df <- detect_summ |>
     mutate(
-      param_type = case_when(
-        str_detect(variable, "breed") ~ "Breeding (adult count)",
-        str_detect(variable, "pup")   ~ "Pup count",
-        str_detect(variable, "molt")  ~ "Molt count"),
       s_idx = as.integer(str_extract(variable, "\\d+")),
+      mean  = mean  * sigma_d,
+      q_lo  = q_lo  * sigma_d,
+      q_hi  = q_hi  * sigma_d
     ) |>
-    left_join(site_meta |> select(site_id, site_name, county), by = c("s_idx" = "site_id")) |>
+    left_join(site_meta |> select(site_id, site_name, county),
+              by = c("s_idx" = "site_id")) |>
     filter(!is.na(site_name)) |>
     mutate(site_name = factor(site_name, levels = rev(site_meta$site_name)),
-           alpha = exp(mean))   # back-transform for interpretability
+           county    = factor(county, levels = names(COUNTY_COLS)))
   
-  p_alpha <- ggplot(alpha_df, aes(y = site_name, colour = county)) +
+  p_detect <- ggplot(detect_df, aes(y = site_name, colour = county)) +
     geom_vline(xintercept = 0, linetype = "dashed", colour = "grey50") +
     geom_linerange(aes(xmin = q_lo, xmax = q_hi), linewidth = 0.8, alpha = 0.7) +
     geom_point(aes(x = mean), size = 2.5) +
     scale_colour_manual(values = COUNTY_COLS, name = "County") +
-    facet_wrap(~ param_type, ncol = 3) +
-    labs(x = "log(alpha): site availability × detection (log scale)", y = NULL,
-         title = "Site Availability Parameters by Survey Type",
-         subtitle = "Higher = more of county population visible at this site; bars = 89% CrI") +
+    labs(x = "Site detection offset (logit scale; scaled by sigma_site)", y = NULL,
+         title = "Site Detection Random Effects",
+         subtitle = paste0(
+           sprintf("sigma_site = %.2f (mean posterior)  ", sigma_d),
+           "Positive = more detectable than baseline; bars = 89% CrI")) +
     theme_seal(base_size = 12) +
     theme(axis.text.y = element_text(size = 8))
-  if (save) ggsave(paste0("Output/Plots/", prefix, "_site_availability.jpeg"),
-                   p_alpha, width = 34, height = 24, units = "cm", dpi = 200)
-  list(plot = p_alpha, data = alpha_df)
+  
+  if (save) ggsave(paste0("Output/Plots/", prefix, "_site_detection.jpeg"),
+                   p_detect, width = 22, height = 28, units = "cm", dpi = 200)
+  list(plot = p_detect, data = detect_df)
 }
 
 # ============================================================================
@@ -700,14 +795,14 @@ create_regional_summary_table <- function(fit, save = TRUE, prefix = "Regional")
   params <- c(
     "phi_pup_logit", "phi_juv_base", "phi_adult_F_logit", "phi_adult_F_base",
     "delta_adult", "fecund_primip", "fecund_mature", "prop_female", "avg_fecundity",
-    "rho_pup",
+    "rho_pup", "rho_juv_molt",
     "beta_moci_ond_fecund", "beta_moci_ond_pup", "beta_moci_amj_pup",
     "beta_moci_jfm_pup", "beta_moci_jfm_juv", "beta_moci_jfm_adult",
     "beta_moci_amj_molt",
     "delta_moci_mouth_fecund", "delta_moci_mouth_surv",
-    "delta_moci_south_fecund", "delta_moci_south_surv",
+    "delta_moci_south_fecund", "delta_moci_south_surv", "delta_moci_marin_fecund",
     "sigma_county", "sigma_site", "detect_breed_logit", "detect_molt_logit",
-    "sigma_process", "sigma_obs_adult", "sigma_obs_pup", "sigma_obs_molt"
+    "sigma_process", "sigma_obs_adult", "sigma_obs_molt"
   )
   s <- regional_fit_summary(fit, params) |>
     mutate(
@@ -716,9 +811,9 @@ create_regional_summary_table <- function(fit, save = TRUE, prefix = "Regional")
         str_detect(variable, "phi|delta_adult")                            ~ "Survival",
         str_detect(variable, "delta_moci_mouth|delta_moci_south")         ~ "MOCI: Bay modifier",
         str_detect(variable, "fecund|prop|avg")                           ~ "Reproduction",
-        variable == "rho_pup"                                             ~ "Molt attendance",
+        variable %in% c("rho_pup","rho_juv_molt")                         ~ "Molt attendance",
         str_detect(variable, "beta_moci") & !str_detect(variable, "bay") ~ "MOCI: open coast",
-        str_detect(variable, "detect|sigma_site")                         ~ "Detection",
+        str_detect(variable, "detect|sigma_site")                        ~ "Detection",
         str_detect(variable, "sigma_county")                              ~ "Random effects",
         str_detect(variable, "sigma")                                     ~ "Error terms",
         TRUE                                                              ~ "Other"

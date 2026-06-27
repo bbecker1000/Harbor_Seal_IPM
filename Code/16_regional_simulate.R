@@ -53,6 +53,7 @@ simulate_regional_ipm <- function(T    = 21,
     fecund_mature     = 0.85,
     prop_female       = 0.50,
     rho_pup           = 0.18,
+    rho_juv_molt      = 0.36,   # Beta(8,14) prior mean
     p_male_fixed      = 0.057,
     
     # ── MOCI (open coast baseline) ────────────────────────────────────────────
@@ -69,6 +70,7 @@ simulate_regional_ipm <- function(T    = 21,
     delta_moci_mouth_surv   = 0.06,
     delta_moci_south_fecund = 0.14,
     delta_moci_south_surv   = 0.10,
+    delta_moci_marin_fecund = -0.10,  # Marin-specific fecundity MOCI enhancement
     
     # ── County random effects ─────────────────────────────────────────────────
     sigma_county  = 0.15,
@@ -77,7 +79,7 @@ simulate_regional_ipm <- function(T    = 21,
     # ── Site detection (replaces county alpha in site-level model) ─────────────
     detect_breed_logit = 1.20,   # inv_logit(1.20) ≈ 0.77
     detect_molt_logit  = 0.75,   # inv_logit(0.75) ≈ 0.68
-    sigma_site         = 0.20,   # site-to-site detection SD
+    sigma_site         = 0.20,
     site_detect        = NULL,   # drawn below
     
     # ── Error structure ───────────────────────────────────────────────────────
@@ -139,6 +141,7 @@ simulate_regional_ipm <- function(T    = 21,
     ci      <- site_meta$county_id[s]
     bay_fec <- (county_type[ci] == 1) * true_params$delta_moci_mouth_fecund +
       (county_type[ci] == 2) * true_params$delta_moci_south_fecund
+    marin_fec <- if (ci == 1) true_params$delta_moci_marin_fecund else 0.0
     bay_sur <- (county_type[ci] == 1) * true_params$delta_moci_mouth_surv +
       (county_type[ci] == 2) * true_params$delta_moci_south_surv
     
@@ -167,7 +170,7 @@ simulate_regional_ipm <- function(T    = 21,
           qlogis(phi_adult_M_base) + true_params$county_effect[ci] * 0.25 +
             (true_params$beta_moci_jfm_adult + bay_sur) * moci_jfm[t])
         fecund_t <- plogis(qlogis(avg_fecundity) +
-                             (true_params$beta_moci_ond_fecund + bay_fec) * moci_ond[t])
+                             (true_params$beta_moci_ond_fecund + bay_fec + marin_fec) * moci_ond[t])
         
         ep  <- N_adult_F[s,t-1] * fecund_t
         njF <- N_pup[s,t-1] * true_params$prop_female     * phi_pup_val
@@ -190,7 +193,8 @@ simulate_regional_ipm <- function(T    = 21,
   
   N_adult_total <- N_adult_F + N_adult_M
   N_juv_total   <- N_juv_F   + N_juv_M
-  N_molt_true   <- N_juv_total + N_adult_total + true_params$rho_pup * N_pup
+  # N_molt_true includes adults, a fraction of juveniles, and rho_pup * pups
+  N_molt_true   <- N_adult_total + true_params$rho_juv_molt * N_juv_total + true_params$rho_pup * N_pup
   
   # ── Generate site-level observations ─────────────────────────────────────────
   y_adult <- y_pup <- y_molt <- matrix(NA, S_model, T)
@@ -203,8 +207,10 @@ simulate_regional_ipm <- function(T    = 21,
       (county_type[ci] == 2) * true_params$delta_moci_south_surv
     
     for (t in seq_len(T)) {
-      if (years_sim[t] == 2020) next          # latent year
-      if (years_sim[t] < site_meta$starts[s]) next  # before site open
+      # Skip years before site started; 2020 handled by ND in real data
+      # (simulation assumes no 2020 data for simplicity, consistent with most sites)
+      if (years_sim[t] == 2020) next
+      if (years_sim[t] < site_meta$starts[s]) next
       
       detect_molt <- plogis(true_params$detect_molt_logit +
                               true_params$beta_moci_amj_molt * moci_amj[t] +
